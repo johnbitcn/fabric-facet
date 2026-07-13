@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "facet",
+  "version": "${version}",
+  "name": "Facet",
+  "description": "Renders crisp material-colored block outlines through Fabric chunk meshes.",
+  "icon": "assets/facet/icon.png",
+  "authors": ["ByteWave"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.facet.client.FacetClient"],
+    "modmenu": ["com.facet.client.FacetModMenu"]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_dependency}",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

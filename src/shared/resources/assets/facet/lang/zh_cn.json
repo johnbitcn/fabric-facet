@@ -1,0 +1,19 @@
+{
+  "key.category.facet.keybinds": "Facet",
+  "key.facet.toggle_outline": "切换 描边",
+  "key.facet.toggle_hover_outline": "切换 悬停描边",
+  "key.facet.toggle_distance_hud": "切换 距离探测",
+  "config.facet.title": "Facet",
+  "config.facet.section.general": "通用",
+  "config.facet.section.block_outline": "方块描边",
+  "config.facet.section.hover_outline": "悬停描边",
+  "config.facet.outline": "描边：%s",
+  "config.facet.hover_outline": "悬停描边：%s",
+  "config.facet.distance_path": "曼哈顿路径：%s",
+  "config.facet.opacity": "不透明度",
+  "config.facet.width": "宽度",
+  "config.facet.hover_opacity": "悬停不透明度",
+  "config.facet.hover_width": "悬停宽度",
+  "config.facet.reset": "重置",
+  "config.facet.slider": "%s：%s"
+}

@@ -1,0 +1,152 @@
+plugins {
+	id 'base'
+	id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+	id 'com.modrinth.minotaur' version "${minotaur_version}" apply false
+}
+
+def versionConfigs = [
+		":versions:v26_1": [
+				minecraftVersion: findProperty("minecraft_version_26_1"),
+				fabricApiVersion: findProperty("fabric_api_version_26_1"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_1"),
+				minecraftDependency: "~26.1",
+		],
+		":versions:v26_2": [
+				minecraftVersion: findProperty("minecraft_version_26_2"),
+				fabricApiVersion: findProperty("fabric_api_version_26_2"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_2"),
+				minecraftDependency: "~26.2",
+		],
+]
+
+allprojects {
+	group = rootProject.maven_group
+
+	repositories {
+		maven {
+			name = "Fabric"
+			url = "https://maven.fabricmc.net/"
+		}
+		maven {
+			name = "Terraformers"
+			url = "https://maven.terraformersmc.com/"
+		}
+		mavenCentral()
+	}
+}
+
+versionConfigs.each { projectPath, cfg ->
+	project(projectPath) {
+		apply plugin: "net.fabricmc.fabric-loom"
+		apply plugin: "com.modrinth.minotaur"
+
+		version = rootProject.mod_version
+
+		base {
+			archivesName = rootProject.archives_base_name
+		}
+
+		loom {
+			splitEnvironmentSourceSets()
+
+			mods {
+				"facet" {
+					sourceSet sourceSets.client
+				}
+			}
+		}
+
+		sourceSets {
+			client {
+				java.setSrcDirs([rootProject.file("src/shared/java"), file("src/client/java")])
+				resources.setSrcDirs([rootProject.file("src/shared/resources"), file("src/client/resources")])
+			}
+		}
+
+		dependencies {
+			minecraft "com.mojang:minecraft:${cfg.minecraftVersion}"
+			implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+			implementation "net.fabricmc.fabric-api:fabric-api:${cfg.fabricApiVersion}"
+			implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${cfg.lifecycleEventsVersion}"
+			implementation "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
+		}
+
+		tasks.withType(ProcessResources).configureEach {
+			inputs.property "version", rootProject.mod_version
+			inputs.property "loader_version", rootProject.loader_version
+			inputs.property "minecraft_dependency", cfg.minecraftDependency
+
+			filesMatching("fabric.mod.json") {
+				expand(
+						"version": rootProject.mod_version,
+						"loader_version": rootProject.loader_version,
+						"minecraft_dependency": cfg.minecraftDependency)
+			}
+		}
+
+		tasks.withType(JavaCompile).configureEach {
+			it.options.release = 25
+		}
+
+		tasks.withType(Jar).configureEach {
+			from(rootProject.file("LICENSE")) {
+				into("META-INF")
+			}
+		}
+
+		tasks.matching { it.name == "remapJar" }.configureEach {
+			archiveVersion.set("${rootProject.mod_version}-${cfg.minecraftVersion}")
+		}
+
+		tasks.matching { it.name == "jar" }.configureEach {
+			archiveVersion.set("${rootProject.mod_version}-${cfg.minecraftVersion}")
+		}
+
+		tasks.matching { it.name == "sourcesJar" }.configureEach {
+			archiveVersion.set("${rootProject.mod_version}-${cfg.minecraftVersion}")
+		}
+
+		java {
+			withSourcesJar()
+			sourceCompatibility = JavaVersion.VERSION_25
+			targetCompatibility = JavaVersion.VERSION_25
+		}
+
+		afterEvaluate {
+			def modrinthDebugMode = (findProperty("modrinth_debug") ?: "false").toString().toBoolean()
+
+			modrinth {
+				token = System.getenv("MODRINTH_TOKEN") ?: (modrinthDebugMode ? "debug-token" : null)
+				projectId = findProperty("modrinth_project_id") ?: System.getenv("MODRINTH_PROJECT_ID")
+				versionName = "${rootProject.archives_base_name} ${rootProject.mod_version} for Minecraft ${cfg.minecraftVersion}"
+				versionNumber = "${rootProject.mod_version}+mc${cfg.minecraftVersion}"
+				versionType = findProperty("modrinth_version_type") ?: "release"
+				uploadFile = tasks.named("jar").get()
+				gameVersions = [cfg.minecraftVersion]
+				loaders = ["fabric"]
+				changelog = findProperty("modrinth_changelog") ?: "Facet ${rootProject.mod_version} for Minecraft ${cfg.minecraftVersion}."
+				syncBodyFrom = rootProject.file("README.md").text
+				debugMode = modrinthDebugMode
+
+				dependencies {
+					required.project "fabric-api"
+					optional.project "modmenu"
+				}
+			}
+
+			tasks.named("modrinth") {
+				dependsOn tasks.named("jar")
+			}
+		}
+	}
+}
+
+tasks.named("build") {
+	dependsOn versionConfigs.keySet().collect { "${it}:build" }
+}
+
+tasks.register("publishModrinth") {
+	group = "publishing"
+	description = "Publishes all Minecraft-version artifacts to Modrinth."
+	dependsOn versionConfigs.keySet().collect { "${it}:modrinth" }
+}
