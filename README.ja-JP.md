@@ -2,6 +2,8 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
 
+公式プロジェクトページ：[Modrinth](https://modrinth.com/project/lW1ulmxe) | [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/facet)
+
 Facet は、Minecraft のブロック数カウント、ブロックアウトライン、距離確認、マンハッタン経路の測定を補助する軽量な Fabric クライアントサイド Mod です。建築、床張り、区画整理、ルート設計、大規模プロジェクトでブロック数を数えやすくしながら、お気に入りのリソースパックのテクスチャはそのまま使えます。
 
 ## 理念と開発意図

@@ -2,6 +2,8 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
 
+Official project pages: [Modrinth](https://modrinth.com/project/lW1ulmxe) | [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/facet)
+
 Facet is a lightweight client-side Fabric mod for Minecraft block counting, block outlines, distance probing, and Manhattan-path measurement. It helps builders count blocks for structures, flooring, borders, paths, and large projects without replacing their favorite resource pack textures.
 
 ## Purpose and Philosophy

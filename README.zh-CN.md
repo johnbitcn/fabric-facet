@@ -2,6 +2,8 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
 
+官方项目页面：[Modrinth](https://modrinth.com/project/lW1ulmxe) | [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/facet)
+
 Facet 是一个轻量级 Minecraft Fabric 客户端 Mod，专为建筑、铺地、圈地、路线规划和大型工程中的方块计数而设计。它通过可随时切换的方块描边、目标方块高亮、距离 HUD 和曼哈顿路径指示器，让你在不替换材质包的前提下快速看清每个方块的位置和数量。
 
 ## 理念与初衷
