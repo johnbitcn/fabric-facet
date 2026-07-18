@@ -43,6 +43,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -95,6 +98,10 @@ public final class FacetClient implements ClientModInitializer {
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderHoverOutline);
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
+		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) ->
+				GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, level), level.dimension().identifier()));
+		ClientChunkEvents.CHUNK_LOAD.register((level, chunk) -> GraffitiStore.reconcileChunk(level, chunk.getPos()));
+		ClientLifecycleEvents.CLIENT_STOPPING.register(minecraft -> GraffitiStore.flush());
 		ClientTickEvents.END_CLIENT_TICK.register(FacetClient::handleKeyMappings);
 	}
 
@@ -123,8 +130,6 @@ public final class FacetClient implements ClientModInitializer {
 	}
 
 	private static void handleKeyMappings(Minecraft minecraft) {
-		updateGraffitiContext(minecraft);
-
 		while (toggleOutlineKeyMapping.consumeClick()) {
 			FacetConfig.setEnabled(!FacetConfig.enabled());
 		}
@@ -140,16 +145,8 @@ public final class FacetClient implements ClientModInitializer {
 		while (graffitiKeyMapping.consumeClick()) {
 			toggleGraffiti(minecraft);
 		}
-	}
 
-	private static void updateGraffitiContext(Minecraft minecraft) {
-		if (minecraft.level == null) {
-			return;
-		}
-
-		if (GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, minecraft.level), minecraft.level.dimension().identifier())) {
-			FacetMcBridge.rebuildChunks(minecraft);
-		}
+		GraffitiStore.flush();
 	}
 
 	private static void toggleGraffiti(Minecraft minecraft) {
@@ -164,9 +161,9 @@ public final class FacetClient implements ClientModInitializer {
 		Direction direction = hitResult.getDirection();
 
 		if (GraffitiStore.has(pos, direction)) {
-			GraffitiStore.toggle(pos, direction);
+			GraffitiStore.toggle(pos, direction, state);
 			minecraft.player.sendOverlayMessage(Component.translatable("message.facet.graffiti.removed"));
-			FacetMcBridge.rebuildChunks(minecraft);
+			FacetMcBridge.rebuildBlockSection(minecraft, pos);
 			return;
 		}
 
@@ -182,9 +179,9 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		GraffitiStore.toggle(pos, direction);
+		GraffitiStore.toggle(pos, direction, state);
 		minecraft.player.sendOverlayMessage(Component.translatable("message.facet.graffiti.added"));
-		FacetMcBridge.rebuildChunks(minecraft);
+		FacetMcBridge.rebuildBlockSection(minecraft, pos);
 	}
 
 	private static void renderDistanceHud(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker) {

@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.facet.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ClientLevelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
