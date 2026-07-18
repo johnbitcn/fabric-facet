@@ -3,6 +3,7 @@ package com.facet.client;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.ClientLevel;
 
 final class FacetMcBridge {
 	private FacetMcBridge() {
@@ -24,5 +25,17 @@ final class FacetMcBridge {
 					mainCamera(minecraft),
 					minecraft.getBlockColors());
 		}
+	}
+
+	static String worldScope(Minecraft minecraft, ClientLevel level) {
+		if (minecraft.getCurrentServer() != null) {
+			return "server:" + minecraft.getCurrentServer().ip;
+		}
+
+		if (minecraft.getSingleplayerServer() != null) {
+			return "singleplayer:" + minecraft.getSingleplayerServer().getWorldData().getLevelName();
+		}
+
+		return "unknown";
 	}
 }
