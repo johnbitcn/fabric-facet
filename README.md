@@ -16,16 +16,13 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ## Feature Updates
 
-### Unreleased
-
-- Fixed the brief screen flash when opening or closing the graffiti wheel on Minecraft 26.2
-
 ### v1.1.2 — Graffiti Marking (2026-07-19)
 
 - Added four client-side graffiti markers for construction and exploration
 - Added an animated graffiti wheel opened with `G`, with number-key and mouse selection
 - Added per-world and per-dimension local storage; graffiti remains invisible to other players
 - Added automatic cleanup when a marked block is moved, destroyed, or replaced
+- Fixed the brief screen flash when opening or closing the graffiti wheel on Minecraft 26.2
 
 ### v1.0.0 — Block Counting Foundation (2026-07-13)
 
