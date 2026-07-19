@@ -65,6 +65,8 @@ public final class FacetClient implements ClientModInitializer {
 	private static final double EDGE_EPSILON = 1.0e-6;
 	private static final double SURFACE_BIAS = 1.0 / 1024.0;
 	private static final double GRAFFITI_SURFACE_BIAS = 1.0 / 512.0;
+	private static final double GRAFFITI_FACE_SIZE = 0.785;
+	private static final double GRAFFITI_FACE_INSET = (1.0 - GRAFFITI_FACE_SIZE) / 2.0;
 	private static final double HOVER_SURFACE_BIAS = 1.0 / 256.0;
 	private static final double HOVER_FACE_EPSILON = 1.0e-3;
 	private static final float OUTLINE_UV = 0.5f;
@@ -788,14 +790,16 @@ public final class FacetClient implements ClientModInitializer {
 
 		private void emitGraffitiFace(QuadEmitter emitter, Direction face, double plane, Material.Baked graffitiMaterial) {
 			double biasedPlane = plane + GRAFFITI_SURFACE_BIAS * face.getAxisDirection().getStep();
+			double min = GRAFFITI_FACE_INSET;
+			double max = 1.0 - GRAFFITI_FACE_INSET;
 
 			switch (face) {
 				case DOWN, UP -> emitGraffitiQuad(emitter, face, graffitiMaterial,
-						0.0, biasedPlane, 0.0, 1.0, biasedPlane, 0.0, 1.0, biasedPlane, 1.0, 0.0, biasedPlane, 1.0);
+						min, biasedPlane, min, max, biasedPlane, min, max, biasedPlane, max, min, biasedPlane, max);
 				case NORTH, SOUTH -> emitGraffitiQuad(emitter, face, graffitiMaterial,
-						0.0, 0.0, biasedPlane, 1.0, 0.0, biasedPlane, 1.0, 1.0, biasedPlane, 0.0, 1.0, biasedPlane);
+						min, min, biasedPlane, max, min, biasedPlane, max, max, biasedPlane, min, max, biasedPlane);
 				case WEST, EAST -> emitGraffitiQuad(emitter, face, graffitiMaterial,
-						biasedPlane, 0.0, 0.0, biasedPlane, 0.0, 1.0, biasedPlane, 1.0, 1.0, biasedPlane, 1.0, 0.0);
+						biasedPlane, min, min, biasedPlane, min, max, biasedPlane, max, max, biasedPlane, max, min);
 			}
 		}
 
