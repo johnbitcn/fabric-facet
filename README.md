@@ -25,7 +25,7 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ## Screenshot
 
-![Facet Minecraft block counting and outline mod screenshot](https://github.com/user-attachments/assets/e8ee53a9-b4e5-4eed-8d15-d981b1e03889)
+![Facet Minecraft block counting and outline mod screenshot](https://github.com/user-attachments/assets/90140d40-e72a-4002-8a0c-4284ece73deb)
 
 ## Key Bindings
 
