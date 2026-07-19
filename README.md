@@ -14,14 +14,26 @@ When you need a counting view, use key bindings to toggle all block outlines, th
 
 Graffiti gives builders a quick way to mark blocks during construction, and it can also serve as a trail marker while exploring. Aim at a supported block face and open the graffiti wheel to choose a marker. Graffiti is stored and rendered only on your client, so other players cannot see it. If the marked block is moved or destroyed, its graffiti is removed as well.
 
-## Features
+## Feature Updates
 
-- Toggleable block material outlines that preserve your own Minecraft resource pack textures
-- Neon outline for the targeted block, including targets outside the normal interaction range
-- Distance HUD with X, Z, Y, and total Manhattan-distance counts
-- Manhattan path indicator with clear colored path segments
-- Client-side graffiti markers for construction and exploration; other players cannot see them
-- Client-side settings for outline opacity, outline width, and targeted-block outline style
+### Unreleased
+
+- Fixed the brief screen flash when opening or closing the graffiti wheel on Minecraft 26.2
+
+### v1.1.2 — Graffiti Marking (2026-07-19)
+
+- Added four client-side graffiti markers for construction and exploration
+- Added an animated graffiti wheel opened with `G`, with number-key and mouse selection
+- Added per-world and per-dimension local storage; graffiti remains invisible to other players
+- Added automatic cleanup when a marked block is moved, destroyed, or replaced
+
+### v1.0.0 — Block Counting Foundation (2026-07-13)
+
+- Added toggleable material-colored block outlines that preserve resource pack textures
+- Added a neon outline for targeted blocks, including targets outside the normal interaction range
+- Added a distance HUD with X, Z, Y, and total Manhattan-distance counts
+- Added a color-coded Manhattan path indicator
+- Added client-side settings for outline opacity, width, and targeted-block outline style
 
 ## Screenshot
 
