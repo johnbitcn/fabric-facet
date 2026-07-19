@@ -16,7 +16,7 @@ final class FacetMcBridge {
 	}
 
 	static void showScreen(Minecraft minecraft, Screen screen) {
-		minecraft.setScreenAndShow(screen);
+		minecraft.gui.setScreen(screen);
 	}
 
 	static void rebuildChunks(Minecraft minecraft) {
