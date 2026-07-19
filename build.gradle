@@ -9,12 +9,14 @@ def versionConfigs = [
 				minecraftVersion: findProperty("minecraft_version_26_1"),
 				fabricApiVersion: findProperty("fabric_api_version_26_1"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_1"),
+				modMenuDependency: findProperty("modmenu_dependency_26_1"),
 				minecraftDependency: "~26.1",
 		],
 		":versions:v26_2": [
 				minecraftVersion: findProperty("minecraft_version_26_2"),
 				fabricApiVersion: findProperty("fabric_api_version_26_2"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_2"),
+				modMenuDependency: findProperty("modmenu_dependency_26_2"),
 				minecraftDependency: "~26.2",
 		],
 ]
@@ -30,6 +32,23 @@ allprojects {
 		maven {
 			name = "Terraformers"
 			url = "https://maven.terraformersmc.com/"
+		}
+		exclusiveContent {
+			forRepository {
+				ivy {
+					name = "Modrinth CDN"
+					url = "https://cdn.modrinth.com/data"
+					patternLayout {
+						artifact "[module]/versions/[revision]/modmenu-18.0.0.jar"
+					}
+					metadataSources {
+						artifact()
+					}
+				}
+			}
+			filter {
+				includeGroup "maven.modrinth"
+			}
 		}
 		mavenCentral()
 	}
@@ -68,7 +87,7 @@ versionConfigs.each { projectPath, cfg ->
 			implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
 			implementation "net.fabricmc.fabric-api:fabric-api:${cfg.fabricApiVersion}"
 			implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${cfg.lifecycleEventsVersion}"
-			implementation "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
+			implementation cfg.modMenuDependency
 		}
 
 		tasks.withType(ProcessResources).configureEach {

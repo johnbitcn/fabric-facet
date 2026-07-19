@@ -26,7 +26,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 public final class GraffitiStore {
 	private static final Path STORE_PATH = FabricLoader.getInstance().getConfigDir().resolve("facet-graffiti.properties");
-	private static final Map<GraffitiKey, Identifier> GRAFFITI = new HashMap<>();
+	private static final Map<GraffitiKey, GraffitiData> GRAFFITI = new HashMap<>();
 	private static final Map<GraffitiChunkKey, Set<BlockPos>> POSITIONS_BY_CHUNK = new HashMap<>();
 	private static String activeWorld = "";
 	private static Identifier activeDimension;
@@ -58,14 +58,13 @@ public final class GraffitiStore {
 				continue;
 			}
 
-			String storedValue = properties.getProperty(encoded);
-			Identifier blockId = "true".equals(storedValue) ? null : Identifier.tryParse(storedValue);
+			GraffitiData data = decodeData(properties.getProperty(encoded));
 
-			if (blockId == null && !"true".equals(storedValue)) {
+			if (data == null) {
 				continue;
 			}
 
-			GRAFFITI.put(key, blockId);
+			GRAFFITI.put(key, data);
 			addToChunkIndex(key);
 		}
 	}
@@ -75,26 +74,44 @@ public final class GraffitiStore {
 		activeDimension = dimension;
 	}
 
-	static boolean has(BlockPos pos, Direction direction) {
-		return activeDimension != null && GRAFFITI.containsKey(currentKey(pos, direction));
+	static GraffitiType getType(BlockPos pos, Direction direction) {
+		if (activeDimension == null) {
+			return null;
+		}
+
+		GraffitiData data = GRAFFITI.get(currentKey(pos, direction));
+		return data == null ? null : data.type();
 	}
 
-	static boolean toggle(BlockPos pos, Direction direction, BlockState state) {
+	static Change set(BlockPos pos, Direction direction, BlockState state, GraffitiType type) {
 		GraffitiKey key = currentKey(pos, direction);
-		boolean added;
+		GraffitiData previous = GRAFFITI.get(key);
 
-		if (GRAFFITI.containsKey(key)) {
-			GRAFFITI.remove(key);
-			removeFromChunkIndexIfEmpty(key);
-			added = false;
-		} else {
-			GRAFFITI.put(key, blockId(state));
+		if (previous != null && previous.type() == type && blockId(state).equals(previous.blockId())) {
+			return Change.UNCHANGED;
+		}
+
+		GRAFFITI.put(key, new GraffitiData(blockId(state), type));
+
+		if (previous == null) {
 			addToChunkIndex(key);
-			added = true;
 		}
 
 		dirty = true;
-		return added;
+		return previous == null ? Change.ADDED : Change.REPLACED;
+	}
+
+	static boolean clear(BlockPos pos, Direction direction) {
+		GraffitiKey key = currentKey(pos, direction);
+
+		if (!GRAFFITI.containsKey(key)) {
+			return false;
+		}
+
+		GRAFFITI.remove(key);
+		removeFromChunkIndexIfEmpty(key);
+		dirty = true;
+		return true;
 	}
 
 	public static void reconcileConfirmedBlock(ClientLevel level, BlockPos pos, BlockState confirmedState) {
@@ -145,12 +162,14 @@ public final class GraffitiStore {
 		for (Direction direction : Direction.values()) {
 			GraffitiKey key = currentKey(pos, direction);
 
-			if (!GRAFFITI.containsKey(key) || GRAFFITI.get(key) != null) {
+			GraffitiData data = GRAFFITI.get(key);
+
+			if (data == null || data.blockId() != null) {
 				continue;
 			}
 
 			if (GraffitiEligibility.evaluate(level, pos, state, direction) == GraffitiEligibility.Result.ALLOWED) {
-				GRAFFITI.put(key, blockId);
+				GRAFFITI.put(key, new GraffitiData(blockId, data.type()));
 			} else {
 				GRAFFITI.remove(key);
 			}
@@ -189,7 +208,7 @@ public final class GraffitiStore {
 			GraffitiKey key = new GraffitiKey(world, dimension, pos, direction);
 
 			if (GRAFFITI.containsKey(key)) {
-				Identifier storedBlockId = GRAFFITI.get(key);
+				Identifier storedBlockId = GRAFFITI.get(key).blockId();
 
 				if (storedBlockId != null && !storedBlockId.equals(blockId)) {
 					return true;
@@ -252,12 +271,36 @@ public final class GraffitiStore {
 		return BuiltInRegistries.BLOCK.getKey(state.getBlock());
 	}
 
+	private static GraffitiData decodeData(String storedValue) {
+		if ("true".equals(storedValue)) {
+			return new GraffitiData(null, GraffitiType.SQUARE);
+		}
+
+		if (storedValue.startsWith("v2|")) {
+			String[] fields = storedValue.split("\\|", -1);
+
+			if (fields.length != 3) {
+				return null;
+			}
+
+			Identifier blockId = Identifier.tryParse(fields[1]);
+			GraffitiType type = GraffitiType.byId(fields[2]);
+			return blockId == null || type == null ? null : new GraffitiData(blockId, type);
+		}
+
+		Identifier legacyBlockId = Identifier.tryParse(storedValue);
+		return legacyBlockId == null ? null : new GraffitiData(legacyBlockId, GraffitiType.SQUARE);
+	}
+
 	private static void save() {
 		Properties properties = new Properties();
 
-		for (Map.Entry<GraffitiKey, Identifier> entry : GRAFFITI.entrySet()) {
-			Identifier blockId = entry.getValue();
-			properties.setProperty(encode(entry.getKey()), blockId == null ? "true" : blockId.toString());
+		for (Map.Entry<GraffitiKey, GraffitiData> entry : GRAFFITI.entrySet()) {
+			GraffitiData data = entry.getValue();
+			String storedValue = data.blockId() == null
+					? "true"
+					: "v2|" + data.blockId() + "|" + data.type().id();
+			properties.setProperty(encode(entry.getKey()), storedValue);
 		}
 
 		try {
@@ -304,5 +347,14 @@ public final class GraffitiStore {
 	}
 
 	private record GraffitiChunkKey(String world, Identifier dimension, int x, int z) {
+	}
+
+	private record GraffitiData(Identifier blockId, GraffitiType type) {
+	}
+
+	enum Change {
+		ADDED,
+		REPLACED,
+		UNCHANGED
 	}
 }

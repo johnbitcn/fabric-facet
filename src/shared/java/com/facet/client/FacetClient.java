@@ -1,5 +1,7 @@
 package com.facet.client;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -77,9 +79,7 @@ public final class FacetClient implements ClientModInitializer {
 	private static final int DISTANCE_HUD_FONT_SIZE_INCREASE = 2;
 	private static final int OUT_OF_REACH_HOVER_COLOR = 0xFF36F6FF;
 	private static final Material OUTLINE_TEXTURE = new Material(Identifier.withDefaultNamespace("block/white_concrete"), true);
-	private static final Material GRAFFITI_TEXTURE = new Material(Identifier.fromNamespaceAndPath("facet", "block/graffiti"), true);
 	private static final ModelDebugName OUTLINE_DEBUG_NAME = () -> "facet:outline";
-	private static final ModelDebugName GRAFFITI_DEBUG_NAME = () -> "facet:graffiti";
 	private static final Identifier DISTANCE_HUD_ID = Identifier.fromNamespaceAndPath("facet", "distance_hud");
 	private static KeyMapping toggleOutlineKeyMapping;
 	private static KeyMapping toggleHoverOutlineKeyMapping;
@@ -143,13 +143,13 @@ public final class FacetClient implements ClientModInitializer {
 		}
 
 		while (graffitiKeyMapping.consumeClick()) {
-			toggleGraffiti(minecraft);
+			openGraffitiWheel(minecraft);
 		}
 
 		GraffitiStore.flush();
 	}
 
-	private static void toggleGraffiti(Minecraft minecraft) {
+	private static void openGraffitiWheel(Minecraft minecraft) {
 		if (minecraft.level == null || minecraft.player == null
 				|| !(minecraft.hitResult instanceof BlockHitResult hitResult)
 				|| hitResult.getType() != HitResult.Type.BLOCK) {
@@ -159,17 +159,11 @@ public final class FacetClient implements ClientModInitializer {
 		BlockPos pos = hitResult.getBlockPos();
 		BlockState state = minecraft.level.getBlockState(pos);
 		Direction direction = hitResult.getDirection();
-
-		if (GraffitiStore.has(pos, direction)) {
-			GraffitiStore.toggle(pos, direction, state);
-			minecraft.player.sendOverlayMessage(Component.translatable("message.facet.graffiti.removed"));
-			FacetMcBridge.rebuildBlockSection(minecraft, pos);
-			return;
-		}
+		GraffitiType currentType = GraffitiStore.getType(pos, direction);
 
 		GraffitiEligibility.Result result = GraffitiEligibility.evaluate(minecraft.level, pos, state, direction);
 
-		if (result != GraffitiEligibility.Result.ALLOWED) {
+		if (currentType == null && result != GraffitiEligibility.Result.ALLOWED) {
 			minecraft.player.sendOverlayMessage(Component.translatable(switch (result) {
 				case NON_SOLID -> "message.facet.graffiti.non_solid";
 				case FUNCTIONAL -> "message.facet.graffiti.functional";
@@ -179,9 +173,12 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		GraffitiStore.toggle(pos, direction, state);
-		minecraft.player.sendOverlayMessage(Component.translatable("message.facet.graffiti.added"));
-		FacetMcBridge.rebuildBlockSection(minecraft, pos);
+		FacetMcBridge.showScreen(minecraft, new GraffitiWheelScreen(
+				FacetMcBridge.worldScope(minecraft, minecraft.level),
+				minecraft.level.dimension().identifier(),
+				pos.immutable(),
+				direction,
+				BuiltInRegistries.BLOCK.getKey(state.getBlock())));
 	}
 
 	private static void renderDistanceHud(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker) {
@@ -308,9 +305,16 @@ public final class FacetClient implements ClientModInitializer {
 			}
 
 			Material.Baked outlineMaterial = modifierContext.baker().materials().get(OUTLINE_TEXTURE, OUTLINE_DEBUG_NAME);
-			Material.Baked graffitiMaterial = modifierContext.baker().materials().get(GRAFFITI_TEXTURE, GRAFFITI_DEBUG_NAME);
+			Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
+
+			for (GraffitiType type : GraffitiType.values()) {
+				Material texture = new Material(type.materialId(), true);
+				ModelDebugName debugName = () -> "facet:graffiti/" + type.id();
+				graffitiMaterials.put(type, modifierContext.baker().materials().get(texture, debugName));
+			}
+
 			FacetConfig.setTextureResolution(outlineMaterial.sprite().contents().width());
-			return new OutlineBlockStateModel(model, outlineMaterial, graffitiMaterial);
+			return new OutlineBlockStateModel(model, outlineMaterial, graffitiMaterials);
 		});
 	}
 
@@ -706,12 +710,13 @@ public final class FacetClient implements ClientModInitializer {
 
 	private static final class OutlineBlockStateModel extends WrapperBlockStateModel {
 		private final Material.Baked outlineMaterial;
-		private final Material.Baked graffitiMaterial;
+		private final Map<GraffitiType, Material.Baked> graffitiMaterials;
 
-		private OutlineBlockStateModel(BlockStateModel wrapped, Material.Baked outlineMaterial, Material.Baked graffitiMaterial) {
+		private OutlineBlockStateModel(BlockStateModel wrapped, Material.Baked outlineMaterial,
+				Map<GraffitiType, Material.Baked> graffitiMaterials) {
 			super(wrapped);
 			this.outlineMaterial = outlineMaterial;
-			this.graffitiMaterial = graffitiMaterial;
+			this.graffitiMaterials = graffitiMaterials;
 		}
 
 		@Override
@@ -770,29 +775,31 @@ public final class FacetClient implements ClientModInitializer {
 			}
 
 			for (Direction direction : Direction.values()) {
-				if (!GraffitiStore.has(pos, direction) || cullTest.test(direction)
+				GraffitiType type = GraffitiStore.getType(pos, direction);
+
+				if (type == null || cullTest.test(direction)
 						|| GraffitiEligibility.evaluate(level, pos, state, direction) != GraffitiEligibility.Result.ALLOWED) {
 					continue;
 				}
 
-				emitGraffitiFace(emitter, direction, GraffitiEligibility.facePlane(shape, direction));
+				emitGraffitiFace(emitter, direction, GraffitiEligibility.facePlane(shape, direction), graffitiMaterials.get(type));
 			}
 		}
 
-		private void emitGraffitiFace(QuadEmitter emitter, Direction face, double plane) {
+		private void emitGraffitiFace(QuadEmitter emitter, Direction face, double plane, Material.Baked graffitiMaterial) {
 			double biasedPlane = plane + GRAFFITI_SURFACE_BIAS * face.getAxisDirection().getStep();
 
 			switch (face) {
-				case DOWN, UP -> emitGraffitiQuad(emitter, face,
+				case DOWN, UP -> emitGraffitiQuad(emitter, face, graffitiMaterial,
 						0.0, biasedPlane, 0.0, 1.0, biasedPlane, 0.0, 1.0, biasedPlane, 1.0, 0.0, biasedPlane, 1.0);
-				case NORTH, SOUTH -> emitGraffitiQuad(emitter, face,
+				case NORTH, SOUTH -> emitGraffitiQuad(emitter, face, graffitiMaterial,
 						0.0, 0.0, biasedPlane, 1.0, 0.0, biasedPlane, 1.0, 1.0, biasedPlane, 0.0, 1.0, biasedPlane);
-				case WEST, EAST -> emitGraffitiQuad(emitter, face,
+				case WEST, EAST -> emitGraffitiQuad(emitter, face, graffitiMaterial,
 						biasedPlane, 0.0, 0.0, biasedPlane, 0.0, 1.0, biasedPlane, 1.0, 1.0, biasedPlane, 1.0, 0.0);
 			}
 		}
 
-		private void emitGraffitiQuad(QuadEmitter emitter, Direction face,
+		private void emitGraffitiQuad(QuadEmitter emitter, Direction face, Material.Baked graffitiMaterial,
 				double x1, double y1, double z1,
 				double x2, double y2, double z2,
 				double x3, double y3, double z3,
