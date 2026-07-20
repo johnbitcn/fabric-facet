@@ -75,7 +75,7 @@ public final class FacetConfigScreen extends Screen {
 		int titleToSectionGap = compact ? COMPACT_TITLE_TO_SECTION_GAP : TITLE_TO_SECTION_GAP;
 		int sectionGap = compact ? COMPACT_SECTION_GAP : SECTION_GAP;
 		int doneGap = compact ? COMPACT_DONE_GAP : DONE_GAP;
-		int generalSectionHeight = sectionHeight(3);
+		int generalSectionHeight = sectionHeight(4);
 		int blockSectionHeight = sectionHeight(2);
 		int hoverSectionHeight = sectionHeight(2);
 
@@ -125,6 +125,12 @@ public final class FacetConfigScreen extends Screen {
 		addRenderableWidget(Button.builder(distancePathVisibleMessage(), button -> {
 			FacetConfig.setDistancePathVisible(!FacetConfig.distancePathVisible());
 			button.setMessage(distancePathVisibleMessage());
+		}).bounds(x, rowY, controlWidth, ROW_HEIGHT).build());
+		rowY += ROW_HEIGHT + ROW_GAP;
+
+		addRenderableWidget(Button.builder(placementPreviewEnabledMessage(), button -> {
+			FacetConfig.setPlacementPreviewEnabled(!FacetConfig.placementPreviewEnabled());
+			button.setMessage(placementPreviewEnabledMessage());
 		}).bounds(x, rowY, controlWidth, ROW_HEIGHT).build());
 		rowY = firstRowY(blockSectionY);
 
@@ -207,7 +213,7 @@ public final class FacetConfigScreen extends Screen {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
 		drawPanel(graphics);
-		drawSection(graphics, generalSectionY, sectionHeight(3), Component.translatable("config.facet.section.general"));
+		drawSection(graphics, generalSectionY, sectionHeight(4), Component.translatable("config.facet.section.general"));
 		drawSection(graphics, blockSectionY, sectionHeight(2), Component.translatable("config.facet.section.block_outline"));
 		drawSection(graphics, hoverSectionY, sectionHeight(2), Component.translatable("config.facet.section.hover_outline"));
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -234,6 +240,12 @@ public final class FacetConfigScreen extends Screen {
 		return Component.translatable(
 				"config.facet.distance_path",
 				Component.translatable(FacetConfig.distancePathVisible() ? "options.on" : "options.off"));
+	}
+
+	private static Component placementPreviewEnabledMessage() {
+		return Component.translatable(
+				"config.facet.placement_preview",
+				Component.translatable(FacetConfig.placementPreviewEnabled() ? "options.on" : "options.off"));
 	}
 
 	private void drawPanel(GuiGraphicsExtractor graphics) {

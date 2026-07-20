@@ -25,6 +25,7 @@
 	"config.facet.outline": "アウトライン：%s",
 	"config.facet.hover_outline": "ホバーアウトライン：%s",
 	"config.facet.distance_path": "マンハッタン経路：%s",
+	"config.facet.placement_preview": "配置プレビュー：%s",
 	"config.facet.opacity": "不透明度",
 	"config.facet.width": "幅",
 	"config.facet.hover_opacity": "ホバー不透明度",
