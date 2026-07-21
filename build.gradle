@@ -11,6 +11,8 @@ def versionConfigs = [
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_1"),
 				modMenuDependency: findProperty("modmenu_dependency_26_1"),
 				minecraftDependency: "~26.1",
+				legacyRenderer: true,
+				modMenuRuntime: true,
 		],
 		":versions:v26_2": [
 				minecraftVersion: findProperty("minecraft_version_26_2"),
@@ -18,6 +20,17 @@ def versionConfigs = [
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_2"),
 				modMenuDependency: findProperty("modmenu_dependency_26_2"),
 				minecraftDependency: "~26.2",
+				legacyRenderer: true,
+				modMenuRuntime: true,
+		],
+		":versions:v26_3": [
+				minecraftVersion: findProperty("minecraft_version_26_3"),
+				fabricApiVersion: findProperty("fabric_api_version_26_3"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_3"),
+				modMenuDependency: findProperty("modmenu_dependency_26_3"),
+				minecraftDependency: "26.3-alpha.4",
+				legacyRenderer: false,
+				modMenuRuntime: false,
 		],
 ]
 
@@ -77,8 +90,16 @@ versionConfigs.each { projectPath, cfg ->
 
 		sourceSets {
 			client {
-				java.setSrcDirs([rootProject.file("src/shared/java"), file("src/client/java")])
-				resources.setSrcDirs([rootProject.file("src/shared/resources"), file("src/client/resources")])
+				def javaDirs = [rootProject.file("src/shared/java"), file("src/client/java")]
+				def resourceDirs = [file("src/client/resources"), rootProject.file("src/shared/resources")]
+
+				if (cfg.legacyRenderer) {
+					javaDirs.add(rootProject.file("src/legacy_renderer/java"))
+					resourceDirs.add(rootProject.file("src/legacy_renderer/resources"))
+				}
+
+				java.setSrcDirs(javaDirs)
+				resources.setSrcDirs(resourceDirs)
 			}
 		}
 
@@ -87,10 +108,15 @@ versionConfigs.each { projectPath, cfg ->
 			implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
 			implementation "net.fabricmc.fabric-api:fabric-api:${cfg.fabricApiVersion}"
 			implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${cfg.lifecycleEventsVersion}"
-			implementation cfg.modMenuDependency
+			if (cfg.modMenuRuntime) {
+				implementation cfg.modMenuDependency
+			} else {
+				compileOnly cfg.modMenuDependency
+			}
 		}
 
 		tasks.withType(ProcessResources).configureEach {
+			duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 			inputs.property "version", rootProject.mod_version
 			inputs.property "loader_version", rootProject.loader_version
 			inputs.property "minecraft_dependency", cfg.minecraftDependency
@@ -122,6 +148,7 @@ versionConfigs.each { projectPath, cfg ->
 		}
 
 		tasks.matching { it.name == "sourcesJar" }.configureEach {
+			duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 			archiveVersion.set("${rootProject.mod_version}-${cfg.minecraftVersion}")
 		}
 

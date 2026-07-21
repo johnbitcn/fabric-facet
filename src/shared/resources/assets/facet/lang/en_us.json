@@ -4,6 +4,7 @@
 	"key.facet.toggle_hover_outline": "Toggle Hover Outline",
 	"key.facet.toggle_distance_hud": "Toggle Distance Probe",
   "key.facet.graffiti": "Open Graffiti Wheel",
+  "key.facet.open_settings": "Open Facet Settings",
   "message.facet.graffiti.added": "Graffiti added",
   "message.facet.graffiti.replaced": "Graffiti replaced",
   "message.facet.graffiti.removed": "Graffiti removed",
