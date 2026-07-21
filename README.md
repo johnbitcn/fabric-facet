@@ -16,9 +16,10 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ## Feature Updates
 
-### Unreleased
+### v1.2.1 — Holographic Placement Preview (2026-07-21)
 
-- Added a real-time holographic placement preview
+- Added a real-time holographic placement preview to help players place blocks more accurately
+![Facet holographic placement preview](https://github.com/user-attachments/assets/6ea970c8-b516-489e-8054-4757b45e99bf)
 
 ### v1.1.2 — Graffiti Marking (2026-07-19)
 
