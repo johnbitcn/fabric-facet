@@ -16,6 +16,10 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ## Feature Updates
 
+### Unreleased
+
+- Added a real-time holographic placement preview
+
 ### v1.1.2 — Graffiti Marking (2026-07-19)
 
 - Added four client-side graffiti markers for construction and exploration

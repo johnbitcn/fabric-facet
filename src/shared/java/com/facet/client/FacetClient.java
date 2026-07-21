@@ -99,6 +99,7 @@ public final class FacetClient implements ClientModInitializer {
 		}
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderHoverOutline);
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
+		LevelRenderEvents.COLLECT_SUBMITS.register(PlacementPreview::render);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) ->
 				GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, level), level.dimension().identifier()));

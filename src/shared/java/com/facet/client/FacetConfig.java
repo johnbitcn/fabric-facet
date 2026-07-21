@@ -15,6 +15,7 @@ public final class FacetConfig {
 	public static final boolean DEFAULT_ENABLED = true;
 	public static final boolean DEFAULT_HOVER_ENABLED = true;
 	public static final boolean DEFAULT_DISTANCE_PATH_VISIBLE = true;
+	public static final boolean DEFAULT_PLACEMENT_PREVIEW_ENABLED = true;
 	public static final float DEFAULT_OPACITY = 0.75f;
 	public static final double DEFAULT_EDGE_WIDTH = 1.0 / 32.0;
 	public static final float DEFAULT_HOVER_OPACITY = 1.0f;
@@ -31,6 +32,7 @@ public final class FacetConfig {
 	private static boolean enabled = DEFAULT_ENABLED;
 	private static boolean hoverEnabled = DEFAULT_HOVER_ENABLED;
 	private static boolean distancePathVisible = DEFAULT_DISTANCE_PATH_VISIBLE;
+	private static boolean placementPreviewEnabled = DEFAULT_PLACEMENT_PREVIEW_ENABLED;
 	private static float opacity = DEFAULT_OPACITY;
 	private static double edgeWidth = DEFAULT_EDGE_WIDTH;
 	private static float hoverOpacity = DEFAULT_HOVER_OPACITY;
@@ -53,6 +55,9 @@ public final class FacetConfig {
 		enabled = Boolean.parseBoolean(properties.getProperty("enabled", Boolean.toString(DEFAULT_ENABLED)));
 		hoverEnabled = Boolean.parseBoolean(properties.getProperty("hoverEnabled", Boolean.toString(DEFAULT_HOVER_ENABLED)));
 		distancePathVisible = Boolean.parseBoolean(properties.getProperty("distancePathVisible", Boolean.toString(DEFAULT_DISTANCE_PATH_VISIBLE)));
+		placementPreviewEnabled = Boolean.parseBoolean(properties.getProperty(
+				"placementPreviewEnabled",
+				Boolean.toString(DEFAULT_PLACEMENT_PREVIEW_ENABLED)));
 		opacity = clampFloat(parseFloat(properties.getProperty("opacity", Float.toString(DEFAULT_OPACITY)), DEFAULT_OPACITY), 0.0f, 1.0f);
 		edgeWidth = clampDouble(parseDouble(properties.getProperty("edgeWidth", Double.toString(DEFAULT_EDGE_WIDTH)), DEFAULT_EDGE_WIDTH), STORED_MIN_EDGE_WIDTH, MAX_EDGE_WIDTH);
 		hoverOpacity = clampFloat(parseFloat(properties.getProperty("hoverOpacity", Float.toString(DEFAULT_HOVER_OPACITY)), DEFAULT_HOVER_OPACITY), 0.0f, 1.0f);
@@ -79,6 +84,10 @@ public final class FacetConfig {
 
 	public static boolean distancePathVisible() {
 		return distancePathVisible;
+	}
+
+	public static boolean placementPreviewEnabled() {
+		return placementPreviewEnabled;
 	}
 
 	public static float opacity() {
@@ -142,6 +151,11 @@ public final class FacetConfig {
 		save();
 	}
 
+	public static void setPlacementPreviewEnabled(boolean value) {
+		placementPreviewEnabled = value;
+		save();
+	}
+
 	public static void setOpacity(float value) {
 		opacity = clampFloat(value, 0.0f, 1.0f);
 		saveAndRebuildChunks();
@@ -188,6 +202,7 @@ public final class FacetConfig {
 		properties.setProperty("enabled", Boolean.toString(enabled));
 		properties.setProperty("hoverEnabled", Boolean.toString(hoverEnabled));
 		properties.setProperty("distancePathVisible", Boolean.toString(distancePathVisible));
+		properties.setProperty("placementPreviewEnabled", Boolean.toString(placementPreviewEnabled));
 		properties.setProperty("opacity", Float.toString(opacity));
 		properties.setProperty("edgeWidth", Double.toString(edgeWidth));
 		properties.setProperty("hoverOpacity", Float.toString(hoverOpacity));
