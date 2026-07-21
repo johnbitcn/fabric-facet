@@ -4,6 +4,7 @@
 	"key.facet.toggle_hover_outline": "切換懸停描邊",
 	"key.facet.toggle_distance_hud": "切換距離探測",
   "key.facet.graffiti": "開啟塗鴉輪盤",
+  "key.facet.open_settings": "開啟 Facet 設定",
   "message.facet.graffiti.added": "已新增塗鴉",
   "message.facet.graffiti.replaced": "已替換塗鴉",
   "message.facet.graffiti.removed": "已移除塗鴉",

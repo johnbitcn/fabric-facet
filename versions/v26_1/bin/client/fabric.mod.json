@@ -12,6 +12,12 @@
     "client": ["com.facet.client.FacetClient"],
     "modmenu": ["com.facet.client.FacetModMenu"]
   },
+  "mixins": [
+    {
+      "config": "facet.client.mixins.json",
+      "environment": "client"
+    }
+  ],
   "depends": {
     "fabricloader": ">=${loader_version}",
     "minecraft": "${minecraft_dependency}",

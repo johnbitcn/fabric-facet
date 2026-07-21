@@ -4,11 +4,16 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 
 final class FacetMcBridge {
 	private FacetMcBridge() {
+	}
+
+	static InputConstants.Type keyboardType() {
+		return InputConstants.Type.KEYSYM;
 	}
 
 	static Camera mainCamera(Minecraft minecraft) {

@@ -4,6 +4,7 @@
 	"key.facet.toggle_hover_outline": "ホバーアウトラインを切り替え",
 	"key.facet.toggle_distance_hud": "距離測定を切り替え",
   "key.facet.graffiti": "グラフィティホイールを開く",
+  "key.facet.open_settings": "Facet 設定を開く",
   "message.facet.graffiti.added": "グラフィティを追加しました",
   "message.facet.graffiti.replaced": "グラフィティを置き換えました",
   "message.facet.graffiti.removed": "グラフィティを削除しました",

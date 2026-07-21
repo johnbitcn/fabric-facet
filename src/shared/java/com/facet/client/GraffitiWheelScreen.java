@@ -14,7 +14,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.state.BlockState;
-import org.lwjgl.glfw.GLFW;
 
 final class GraffitiWheelScreen extends Screen {
 	private static final int OPTION_SIZE = 40;
@@ -137,17 +136,17 @@ final class GraffitiWheelScreen extends Screen {
 
 		int key = event.key();
 
-		if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_4) {
-			apply(GraffitiType.byNumber(key - GLFW.GLFW_KEY_0));
+		if (key >= InputConstants.KEY_1 && key <= InputConstants.KEY_4) {
+			apply(GraffitiType.byNumber(key - InputConstants.KEY_0));
 			return true;
 		}
 
-		if (key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE) {
+		if (key == InputConstants.KEY_BACKSPACE || key == InputConstants.KEY_DELETE) {
 			clear();
 			return true;
 		}
 
-		if (key == GLFW.GLFW_KEY_ESCAPE || key == InputConstants.KEY_G) {
+		if (key == InputConstants.KEY_ESCAPE || key == InputConstants.KEY_G) {
 			closeScreen();
 			return true;
 		}
@@ -161,7 +160,7 @@ final class GraffitiWheelScreen extends Screen {
 			return true;
 		}
 
-		if (event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+		if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) {
 			return super.mouseClicked(event, doubleClick);
 		}
 

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.facet.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "BlockItemInvoker",
+    "ClientLevelMixin",
+    "ModelBlockRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
