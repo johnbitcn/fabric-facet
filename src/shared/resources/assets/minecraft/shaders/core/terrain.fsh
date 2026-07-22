@@ -11,22 +11,11 @@ in float cylindricalVertexDistance;
 in vec4 vertexColor;
 in vec4 rawVertexColor;
 in vec2 texCoord0;
-in vec3 cameraRelativePosition;
 
 out vec4 fragColor;
 
-const float FACET_LIGHT_RADIUS = 15.0;
-const float FACET_LIGHT_BOOST = 0.18;
-
 bool isFacetOutline() {
     return rawVertexColor.a < 0.999;
-}
-
-vec4 facetOutlineColor() {
-    float distanceToPlayer = length(cameraRelativePosition.xz);
-    float boost = 1.0 - smoothstep(0.0, FACET_LIGHT_RADIUS, distanceToPlayer);
-    vec3 color = mix(rawVertexColor.rgb, vec3(1.0), boost * FACET_LIGHT_BOOST);
-    return vec4(color, rawVertexColor.a);
 }
 
 vec4 sampleNearest(sampler2D source, vec2 uv, vec2 pixelSize, vec2 du, vec2 dv, vec2 texelScreenSize) {
@@ -104,7 +93,7 @@ vec4 sampleRGSS(sampler2D source, vec2 uv, vec2 pixelSize) {
 void main() {
     vec4 color;
     if (isFacetOutline()) {
-        color = facetOutlineColor();
+        color = vertexColor;
     } else {
         color = (UseRgss == 1 ? sampleRGSS(Sampler0, texCoord0, 1.0f / TextureSize) : sampleNearest(Sampler0, texCoord0, 1.0f / TextureSize)) * vertexColor;
     }

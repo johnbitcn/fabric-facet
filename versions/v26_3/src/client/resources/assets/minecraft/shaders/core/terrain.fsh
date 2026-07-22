@@ -14,24 +14,13 @@ layout(location = 1) in float cylindricalVertexDistance;
 layout(location = 2) in vec4 vertexColor;
 layout(location = 3) in vec2 texCoord0;
 layout(location = 4) in vec4 rawVertexColor;
-layout(location = 5) in vec3 cameraRelativePosition;
 
 #ifndef OIT_ALPHA_ONLY
 layout(location = 0) out vec4 fragColor;
 #endif
 
-const float FACET_LIGHT_RADIUS = 15.0;
-const float FACET_LIGHT_BOOST = 0.18;
-
 bool isFacetOutline() {
     return rawVertexColor.a < 0.999;
-}
-
-vec4 facetOutlineColor() {
-    float distanceToPlayer = length(cameraRelativePosition.xz);
-    float boost = 1.0 - smoothstep(0.0, FACET_LIGHT_RADIUS, distanceToPlayer);
-    vec3 color = mix(rawVertexColor.rgb, vec3(1.0), boost * FACET_LIGHT_BOOST);
-    return vec4(color, rawVertexColor.a);
 }
 
 vec4 calculateFinalColor(vec4 color) {
@@ -47,7 +36,7 @@ vec4 calculateFinalColor(vec4 color) {
 void main() {
     vec4 color;
     if (isFacetOutline()) {
-        color = facetOutlineColor();
+        color = vertexColor;
     } else {
         color = (UseRgss == 1 ? sampleRGSS(Sampler0, texCoord0, 1.0f / TextureSize) : sampleNearest(Sampler0, texCoord0, 1.0f / TextureSize)) * vertexColor;
     }

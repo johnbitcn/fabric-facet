@@ -18,7 +18,6 @@ out float cylindricalVertexDistance;
 out vec4 vertexColor;
 out vec4 rawVertexColor;
 out vec2 texCoord0;
-out vec3 cameraRelativePosition;
 
 void main() {
     vec3 pos = Position + (ChunkPosition - CameraBlockPos) + CameraOffset;
@@ -29,5 +28,4 @@ void main() {
     vertexColor = Color * sample_lightmap(Sampler2, UV2);
     rawVertexColor = Color;
     texCoord0 = UV0;
-    cameraRelativePosition = pos;
 }

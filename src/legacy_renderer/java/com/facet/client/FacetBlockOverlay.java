@@ -16,7 +16,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.CarpetBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
@@ -27,7 +26,6 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.ShadeMode;
 import net.fabricmc.fabric.api.util.TriState;
 
 final class FacetBlockOverlay {
-	private static final double MIN_FACE_SIZE = 0.01;
 	private static final double SURFACE_BIAS = 1.0 / 1024.0;
 	private static final double GRAFFITI_SURFACE_BIAS = 1.0 / 512.0;
 	private static final double GRAFFITI_FACE_SIZE = 0.785;
@@ -102,24 +100,18 @@ final class FacetBlockOverlay {
 				return;
 			}
 
-			AABB bounds = shape.bounds();
 			int color = FacetClient.outlineColor(level, pos, state);
+			boolean isCarpet = state.getBlock() instanceof CarpetBlock;
 
-			shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
-				AABB box = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-
-				for (Direction direction : Direction.values()) {
-					boolean isCarpet = state.getBlock() instanceof CarpetBlock;
-					boolean isCarpetTop = isCarpet && direction == Direction.UP;
-
-					if (isCarpet && !isCarpetTop) {
-						continue;
-					}
-
-					if ((isCarpetTop || !cullTest.test(direction)) && FacetClient.touchesExteriorFace(box, bounds, direction)) {
-						emitFaceBorder(emitter, box, direction, color);
-					}
+			FacetShapeEdges.forEachSurfaceStrip(shape, FacetConfig.effectiveEdgeWidth(),
+					(direction, minX, minY, minZ, maxX, maxY, maxZ) -> {
+				if ((isCarpet && direction != Direction.UP)
+						|| (touchesBlockBoundary(direction, minX, minY, minZ, maxX, maxY, maxZ)
+						&& cullTest.test(direction))) {
+					return;
 				}
+
+				emitSurfaceStrip(emitter, direction, color, minX, minY, minZ, maxX, maxY, maxZ);
 			});
 		}
 
@@ -190,60 +182,35 @@ final class FacetBlockOverlay {
 					.emit();
 		}
 
-		private void emitFaceBorder(QuadEmitter emitter, AABB box, Direction direction, int color) {
-			switch (direction) {
-				case DOWN -> emitHorizontalFaceBorder(emitter, box, box.minY - SURFACE_BIAS, Direction.DOWN, color);
-				case UP -> emitHorizontalFaceBorder(emitter, box, box.maxY + SURFACE_BIAS, Direction.UP, color);
-				case NORTH -> emitZFaceBorder(emitter, box, box.minZ - SURFACE_BIAS, Direction.NORTH, color);
-				case SOUTH -> emitZFaceBorder(emitter, box, box.maxZ + SURFACE_BIAS, Direction.SOUTH, color);
-				case WEST -> emitXFaceBorder(emitter, box, box.minX - SURFACE_BIAS, Direction.WEST, color);
-				case EAST -> emitXFaceBorder(emitter, box, box.maxX + SURFACE_BIAS, Direction.EAST, color);
-			}
+		private boolean touchesBlockBoundary(Direction direction,
+				double minX, double minY, double minZ,
+				double maxX, double maxY, double maxZ) {
+			return switch (direction) {
+				case DOWN -> Math.abs(minY) <= FacetShapeEdges.AXIS_EPSILON;
+				case UP -> Math.abs(maxY - 1.0) <= FacetShapeEdges.AXIS_EPSILON;
+				case NORTH -> Math.abs(minZ) <= FacetShapeEdges.AXIS_EPSILON;
+				case SOUTH -> Math.abs(maxZ - 1.0) <= FacetShapeEdges.AXIS_EPSILON;
+				case WEST -> Math.abs(minX) <= FacetShapeEdges.AXIS_EPSILON;
+				case EAST -> Math.abs(maxX - 1.0) <= FacetShapeEdges.AXIS_EPSILON;
+			};
 		}
 
-		private void emitHorizontalFaceBorder(QuadEmitter emitter, AABB box, double y, Direction face, int color) {
-			if (box.maxX - box.minX < MIN_FACE_SIZE || box.maxZ - box.minZ < MIN_FACE_SIZE) {
-				return;
+		private void emitSurfaceStrip(QuadEmitter emitter, Direction face, int color,
+				double minX, double minY, double minZ,
+				double maxX, double maxY, double maxZ) {
+			double bias = SURFACE_BIAS * face.getAxisDirection().getStep();
+
+			switch (face) {
+				case DOWN, UP -> emitQuad(emitter, face, color,
+						minX, minY + bias, minZ, maxX, minY + bias, minZ,
+						maxX, minY + bias, maxZ, minX, minY + bias, maxZ);
+				case NORTH, SOUTH -> emitQuad(emitter, face, color,
+						minX, minY, minZ + bias, maxX, minY, minZ + bias,
+						maxX, maxY, minZ + bias, minX, maxY, minZ + bias);
+				case WEST, EAST -> emitQuad(emitter, face, color,
+						minX + bias, minY, minZ, minX + bias, minY, maxZ,
+						minX + bias, maxY, maxZ, minX + bias, maxY, minZ);
 			}
-
-			double edgeWidth = FacetConfig.effectiveEdgeWidth();
-			double widthX = Math.min(edgeWidth, box.maxX - box.minX);
-			double widthZ = Math.min(edgeWidth, box.maxZ - box.minZ);
-
-			emitQuad(emitter, face, color, box.minX, y, box.minZ, box.maxX, y, box.minZ, box.maxX, y, box.minZ + widthZ, box.minX, y, box.minZ + widthZ);
-			emitQuad(emitter, face, color, box.minX, y, box.maxZ - widthZ, box.maxX, y, box.maxZ - widthZ, box.maxX, y, box.maxZ, box.minX, y, box.maxZ);
-			emitQuad(emitter, face, color, box.minX, y, box.minZ, box.minX + widthX, y, box.minZ, box.minX + widthX, y, box.maxZ, box.minX, y, box.maxZ);
-			emitQuad(emitter, face, color, box.maxX - widthX, y, box.minZ, box.maxX, y, box.minZ, box.maxX, y, box.maxZ, box.maxX - widthX, y, box.maxZ);
-		}
-
-		private void emitZFaceBorder(QuadEmitter emitter, AABB box, double z, Direction face, int color) {
-			if (box.maxX - box.minX < MIN_FACE_SIZE || box.maxY - box.minY < MIN_FACE_SIZE) {
-				return;
-			}
-
-			double edgeWidth = FacetConfig.effectiveEdgeWidth();
-			double widthX = Math.min(edgeWidth, box.maxX - box.minX);
-			double widthY = Math.min(edgeWidth, box.maxY - box.minY);
-
-			emitQuad(emitter, face, color, box.minX, box.minY, z, box.maxX, box.minY, z, box.maxX, box.minY + widthY, z, box.minX, box.minY + widthY, z);
-			emitQuad(emitter, face, color, box.minX, box.maxY - widthY, z, box.maxX, box.maxY - widthY, z, box.maxX, box.maxY, z, box.minX, box.maxY, z);
-			emitQuad(emitter, face, color, box.minX, box.minY, z, box.minX + widthX, box.minY, z, box.minX + widthX, box.maxY, z, box.minX, box.maxY, z);
-			emitQuad(emitter, face, color, box.maxX - widthX, box.minY, z, box.maxX, box.minY, z, box.maxX, box.maxY, z, box.maxX - widthX, box.maxY, z);
-		}
-
-		private void emitXFaceBorder(QuadEmitter emitter, AABB box, double x, Direction face, int color) {
-			if (box.maxZ - box.minZ < MIN_FACE_SIZE || box.maxY - box.minY < MIN_FACE_SIZE) {
-				return;
-			}
-
-			double edgeWidth = FacetConfig.effectiveEdgeWidth();
-			double widthZ = Math.min(edgeWidth, box.maxZ - box.minZ);
-			double widthY = Math.min(edgeWidth, box.maxY - box.minY);
-
-			emitQuad(emitter, face, color, x, box.minY, box.minZ, x, box.minY, box.maxZ, x, box.minY + widthY, box.maxZ, x, box.minY + widthY, box.minZ);
-			emitQuad(emitter, face, color, x, box.maxY - widthY, box.minZ, x, box.maxY - widthY, box.maxZ, x, box.maxY, box.maxZ, x, box.maxY, box.minZ);
-			emitQuad(emitter, face, color, x, box.minY, box.minZ, x, box.minY, box.minZ + widthZ, x, box.maxY, box.minZ + widthZ, x, box.maxY, box.minZ);
-			emitQuad(emitter, face, color, x, box.minY, box.maxZ - widthZ, x, box.minY, box.maxZ, x, box.maxY, box.maxZ, x, box.maxY, box.maxZ - widthZ);
 		}
 
 		private void emitQuad(QuadEmitter emitter, Direction face, int color,
@@ -269,9 +236,9 @@ final class FacetBlockOverlay {
 					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
 					.nominalFace(face)
 					.chunkLayer(ChunkSectionLayer.TRANSLUCENT)
-					.emissive(true);
-			FacetMcBridge.applyShade(emitter, false);
-			emitter.ambientOcclusion(TriState.FALSE)
+					.emissive(false);
+			FacetMcBridge.applyShade(emitter, true);
+			emitter.ambientOcclusion(TriState.DEFAULT)
 					.shadeMode(ShadeMode.VANILLA)
 					.tintIndex(-1)
 					.emit();

@@ -31,6 +31,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -45,9 +46,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 
 public final class FacetClient implements ClientModInitializer {
-	private static final double EDGE_EPSILON = 1.0e-6;
-	private static final double HOVER_SURFACE_BIAS = 1.0 / 256.0;
-	private static final double HOVER_FACE_EPSILON = 1.0e-3;
 	private static final float OUTLINE_ALPHA_MARKER_MAX = 254.0f / 255.0f;
 	private static final float DARK_LUMINANCE_MAX = 0.25f;
 	private static final float DARK_CONTRAST_ADJUSTMENT = -0.25f;
@@ -343,17 +341,6 @@ public final class FacetClient implements ClientModInitializer {
 		return Math.min(FacetConfig.opacity(), OUTLINE_ALPHA_MARKER_MAX);
 	}
 
-	static boolean touchesExteriorFace(AABB box, AABB bounds, Direction direction) {
-		return switch (direction) {
-			case DOWN -> Math.abs(box.minY - bounds.minY) <= EDGE_EPSILON;
-			case UP -> Math.abs(box.maxY - bounds.maxY) <= EDGE_EPSILON;
-			case NORTH -> Math.abs(box.minZ - bounds.minZ) <= EDGE_EPSILON;
-			case SOUTH -> Math.abs(box.maxZ - bounds.maxZ) <= EDGE_EPSILON;
-			case WEST -> Math.abs(box.minX - bounds.minX) <= EDGE_EPSILON;
-			case EAST -> Math.abs(box.maxX - bounds.maxX) <= EDGE_EPSILON;
-		};
-	}
-
 	private static void renderDistancePath(LevelRenderContext context) {
 		if (!distanceHudVisible || !FacetConfig.distancePathVisible()) {
 			return;
@@ -445,15 +432,8 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		Direction direction = hitResult.getDirection();
-		Vec3 hitLocation = hitResult.getLocation();
-		Vec3 localHit = new Vec3(hitLocation.x - pos.getX(), hitLocation.y - pos.getY(), hitLocation.z - pos.getZ());
 		VoxelShape shape = state.getShape(level, pos);
-		AABB box = shape.isEmpty() ? null : hoverFaceBox(shape, direction, localHit);
-
-		if (box == null) {
-			box = new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-		}
+		VoxelShape outlineShape = shape.isEmpty() ? Shapes.block() : shape;
 
 		CameraRenderState camera = context.levelState().cameraRenderState;
 
@@ -461,103 +441,17 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		AABB faceBox = box;
 		sink.submit(context.poseStack(), RenderTypes.lines(),
-				(pose, consumer) -> renderHoverFace(pose, consumer, pos, camera.pos, faceBox, direction, color));
+				(pose, consumer) -> renderHoverShape(pose, consumer, pos, camera.pos, outlineShape, color));
 	}
 
-	private static AABB hoverFaceBox(VoxelShape shape, Direction direction, Vec3 localHit) {
-		AABB[] bestBox = new AABB[1];
-		double[] bestDistance = {Double.MAX_VALUE};
+	private static void renderHoverShape(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera,
+			VoxelShape shape, int color) {
+		int[] colorIndex = {0};
 
-		shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
-			AABB box = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-			double distance = faceDistance(box, direction, localHit);
-
-			if (distance <= HOVER_FACE_EPSILON && distance < bestDistance[0]) {
-				bestBox[0] = box;
-				bestDistance[0] = distance;
-			}
-		});
-
-		return bestBox[0];
-	}
-
-	private static double faceDistance(AABB box, Direction direction, Vec3 localHit) {
-		return switch (direction) {
-			case DOWN -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.z, box.minZ, box.maxZ)
-					? Math.abs(localHit.y - box.minY) : Double.MAX_VALUE;
-			case UP -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.z, box.minZ, box.maxZ)
-					? Math.abs(localHit.y - box.maxY) : Double.MAX_VALUE;
-			case NORTH -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.z - box.minZ) : Double.MAX_VALUE;
-			case SOUTH -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.z - box.maxZ) : Double.MAX_VALUE;
-			case WEST -> contains(localHit.z, box.minZ, box.maxZ) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.x - box.minX) : Double.MAX_VALUE;
-			case EAST -> contains(localHit.z, box.minZ, box.maxZ) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.x - box.maxX) : Double.MAX_VALUE;
-		};
-	}
-
-	private static boolean contains(double value, double min, double max) {
-		return value >= min - HOVER_FACE_EPSILON && value <= max + HOVER_FACE_EPSILON;
-	}
-
-	private static void renderHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, Direction direction, int color) {
-		renderOutlineFaceLines(pose, consumer, pos, camera, box, direction, HOVER_SURFACE_BIAS, color, FacetConfig.hoverWidth());
-	}
-
-	private static void renderOutlineFaceLines(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, Direction direction,
-			double surfaceBias, int color, float width) {
-		double biasX = direction.getStepX() * surfaceBias;
-		double biasY = direction.getStepY() * surfaceBias;
-		double biasZ = direction.getStepZ() * surfaceBias;
-
-		switch (direction) {
-			case DOWN -> renderHorizontalHoverFace(pose, consumer, pos, camera, box, box.minY + biasY, biasX, 0.0, biasZ, color, width);
-			case UP -> renderHorizontalHoverFace(pose, consumer, pos, camera, box, box.maxY + biasY, biasX, 0.0, biasZ, color, width);
-			case NORTH -> renderZHoverFace(pose, consumer, pos, camera, box, box.minZ + biasZ, biasX, biasY, 0.0, color, width);
-			case SOUTH -> renderZHoverFace(pose, consumer, pos, camera, box, box.maxZ + biasZ, biasX, biasY, 0.0, color, width);
-			case WEST -> renderXHoverFace(pose, consumer, pos, camera, box, box.minX + biasX, 0.0, biasY, biasZ, color, width);
-			case EAST -> renderXHoverFace(pose, consumer, pos, camera, box, box.maxX + biasX, 0.0, biasY, biasZ, color, width);
-		}
-	}
-
-	private static void renderHorizontalHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, double y, double biasX, double biasY, double biasZ, int color, float width) {
-		double minX = box.minX + biasX;
-		double maxX = box.maxX + biasX;
-		double minZ = box.minZ + biasZ;
-		double maxZ = box.maxZ + biasZ;
-
-		emitOutlineLine(pose, consumer, pos, camera, minX, y + biasY, minZ, maxX, y + biasY, minZ, 0, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, y + biasY, minZ, maxX, y + biasY, maxZ, 1, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, y + biasY, maxZ, minX, y + biasY, maxZ, 2, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, minX, y + biasY, maxZ, minX, y + biasY, minZ, 3, color, width);
-	}
-
-	private static void renderZHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, double z, double biasX, double biasY, double biasZ, int color, float width) {
-		double minX = box.minX + biasX;
-		double maxX = box.maxX + biasX;
-		double minY = box.minY + biasY;
-		double maxY = box.maxY + biasY;
-
-		emitOutlineLine(pose, consumer, pos, camera, minX, minY, z + biasZ, maxX, minY, z + biasZ, 0, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, minY, z + biasZ, maxX, maxY, z + biasZ, 1, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, maxY, z + biasZ, minX, maxY, z + biasZ, 2, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, minX, maxY, z + biasZ, minX, minY, z + biasZ, 3, color, width);
-	}
-
-	private static void renderXHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, double x, double biasX, double biasY, double biasZ, int color, float width) {
-		double minY = box.minY + biasY;
-		double maxY = box.maxY + biasY;
-		double minZ = box.minZ + biasZ;
-		double maxZ = box.maxZ + biasZ;
-
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, minY, minZ, x + biasX, minY, maxZ, 0, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, minY, maxZ, x + biasX, maxY, maxZ, 1, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, maxY, maxZ, x + biasX, maxY, minZ, 2, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, maxY, minZ, x + biasX, minY, minZ, 3, color, width);
+		FacetShapeEdges.forEachEdge(shape, (x1, y1, z1, x2, y2, z2) ->
+				emitOutlineLine(pose, consumer, pos, camera, x1, y1, z1, x2, y2, z2,
+						colorIndex[0]++, color, FacetConfig.hoverWidth()));
 	}
 
 	private static void emitOutlineLine(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera,
