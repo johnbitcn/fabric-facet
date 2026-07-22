@@ -52,13 +52,4 @@ enum GraffitiType {
 		return null;
 	}
 
-	static GraffitiType byNumber(int number) {
-		for (GraffitiType type : values()) {
-			if (type.number == number) {
-				return type;
-			}
-		}
-
-		return null;
-	}
 }

@@ -1,12 +1,18 @@
 package com.facet.client;
 
+import java.util.function.Consumer;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
+
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 
 final class FacetMcBridge {
 	private FacetMcBridge() {
@@ -14,6 +20,10 @@ final class FacetMcBridge {
 
 	static InputConstants.Type keyboardType() {
 		return InputConstants.Type.KEYBOARD;
+	}
+
+	static void applyShade(QuadEmitter emitter, boolean shade) {
+		emitter.shadeDirectionOverride(shade ? null : Direction.UP);
 	}
 
 	static Camera mainCamera(Minecraft minecraft) {
@@ -49,6 +59,11 @@ final class FacetMcBridge {
 		int sectionY = SectionPos.blockToSectionCoord(pos.getY());
 		int sectionZ = SectionPos.blockToSectionCoord(pos.getZ());
 		minecraft.level.setSectionRangeDirty(sectionX, sectionY, sectionZ, sectionX, sectionY, sectionZ);
+	}
+
+	static void renderAfterTranslucentTerrain(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
+		renderer.accept((poseStack, renderType, geometry) ->
+				context.submitNodeCollector().submitCustomGeometry(poseStack, renderType, geometry::render));
 	}
 
 	static String worldScope(Minecraft minecraft, ClientLevel level) {

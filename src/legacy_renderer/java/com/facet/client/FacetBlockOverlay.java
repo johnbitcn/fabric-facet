@@ -183,9 +183,9 @@ final class FacetBlockOverlay {
 					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
 					.nominalFace(face)
 					.chunkLayer(ChunkSectionLayer.TRANSLUCENT)
-					.emissive(false)
-					.diffuseShade(true)
-					.ambientOcclusion(TriState.FALSE)
+					.emissive(false);
+			FacetMcBridge.applyShade(emitter, true);
+			emitter.ambientOcclusion(TriState.FALSE)
 					.shadeMode(ShadeMode.VANILLA)
 					.tintIndex(-1)
 					.emit();
@@ -270,9 +270,9 @@ final class FacetBlockOverlay {
 					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
 					.nominalFace(face)
 					.chunkLayer(ChunkSectionLayer.TRANSLUCENT)
-					.emissive(true)
-					.diffuseShade(false)
-					.ambientOcclusion(TriState.FALSE)
+					.emissive(true);
+			FacetMcBridge.applyShade(emitter, false);
+			emitter.ambientOcclusion(TriState.FALSE)
 					.shadeMode(ShadeMode.VANILLA)
 					.tintIndex(-1)
 					.emit();

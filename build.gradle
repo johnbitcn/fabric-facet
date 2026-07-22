@@ -28,8 +28,8 @@ def versionConfigs = [
 				fabricApiVersion: findProperty("fabric_api_version_26_3"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_3"),
 				modMenuDependency: findProperty("modmenu_dependency_26_3"),
-				minecraftDependency: "26.3-alpha.4",
-				legacyRenderer: false,
+				minecraftDependency: "26.3-alpha.5",
+				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
 ]
@@ -42,9 +42,16 @@ allprojects {
 			name = "Fabric"
 			url = "https://maven.fabricmc.net/"
 		}
-		maven {
-			name = "Terraformers"
-			url = "https://maven.terraformersmc.com/"
+		exclusiveContent {
+			forRepository {
+				maven {
+					name = "Terraformers"
+					url = "https://maven.terraformersmc.com/"
+				}
+			}
+			filter {
+				includeGroup "com.terraformersmc"
+			}
 		}
 		exclusiveContent {
 			forRepository {

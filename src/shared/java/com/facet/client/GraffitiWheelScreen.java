@@ -136,8 +136,16 @@ final class GraffitiWheelScreen extends Screen {
 
 		int key = event.key();
 
-		if (key >= InputConstants.KEY_1 && key <= InputConstants.KEY_4) {
-			apply(GraffitiType.byNumber(key - InputConstants.KEY_0));
+		GraffitiType keyedType = switch (key) {
+			case InputConstants.KEY_1 -> GraffitiType.SQUARE;
+			case InputConstants.KEY_2 -> GraffitiType.CIRCLE;
+			case InputConstants.KEY_3 -> GraffitiType.CROSS;
+			case InputConstants.KEY_4 -> GraffitiType.TRIANGLE;
+			default -> null;
+		};
+
+		if (keyedType != null) {
+			apply(keyedType);
 			return true;
 		}
 

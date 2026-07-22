@@ -4,8 +4,7 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "BlockItemInvoker",
-    "ClientLevelMixin",
-    "ModelBlockRendererMixin"
+    "ClientLevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

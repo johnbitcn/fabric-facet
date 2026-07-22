@@ -72,9 +72,8 @@ public final class FacetClient implements ClientModInitializer {
 		GraffitiStore.load();
 		registerKeyMappings();
 		FacetBlockOverlay.initialize();
-		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderHoverOutline);
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
-		LevelRenderEvents.COLLECT_SUBMITS.register(PlacementPreview::render);
+		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetClient::renderSurfaceEffectsAfterTerrain);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) ->
 				GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, level), level.dimension().identifier()));
@@ -393,7 +392,14 @@ public final class FacetClient implements ClientModInitializer {
 		});
 	}
 
-	private static void renderHoverOutline(LevelRenderContext context) {
+	private static void renderSurfaceEffectsAfterTerrain(LevelRenderContext context) {
+		FacetMcBridge.renderAfterTranslucentTerrain(context, sink -> {
+			renderHoverOutline(context, sink);
+			PlacementPreview.render(context, sink);
+		});
+	}
+
+	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink) {
 		if (!FacetConfig.hoverEnabled()) {
 			return;
 		}
@@ -422,10 +428,11 @@ public final class FacetClient implements ClientModInitializer {
 			color = outOfReachHoverColor();
 		}
 
-		renderHoverOutline(context, level, hitResult, color);
+		renderHoverOutline(context, sink, level, hitResult, color);
 	}
 
-	private static void renderHoverOutline(LevelRenderContext context, ClientLevel level, BlockHitResult hitResult, int color) {
+	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink,
+			ClientLevel level, BlockHitResult hitResult, int color) {
 		BlockPos pos = hitResult.getBlockPos();
 
 		if (!level.isLoaded(pos)) {
@@ -455,7 +462,7 @@ public final class FacetClient implements ClientModInitializer {
 		}
 
 		AABB faceBox = box;
-		context.submitNodeCollector().submitCustomGeometry(context.poseStack(), RenderTypes.lines(),
+		sink.submit(context.poseStack(), RenderTypes.lines(),
 				(pose, consumer) -> renderHoverFace(pose, consumer, pos, camera.pos, faceBox, direction, color));
 	}
 

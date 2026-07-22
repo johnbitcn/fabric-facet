@@ -67,7 +67,7 @@ final class PlacementPreview {
 	private PlacementPreview() {
 	}
 
-	static void render(LevelRenderContext context) {
+	static void render(LevelRenderContext context, FacetRenderSink sink) {
 		if (!FacetConfig.placementPreviewEnabled()) {
 			return;
 		}
@@ -104,7 +104,7 @@ final class PlacementPreview {
 
 		prediction.blocks().stream()
 				.sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera.pos)).reversed())
-				.forEach(block -> renderBlock(context, minecraft, level, camera.pos, block,
+				.forEach(block -> renderBlock(context, sink, minecraft, level, camera.pos, block,
 						frame, screenRightX, screenRightZ));
 	}
 
@@ -188,7 +188,8 @@ final class PlacementPreview {
 		return state.setValue(BlockStateProperties.WATERLOGGED, level.isWaterAt(pos));
 	}
 
-	private static void renderBlock(LevelRenderContext context, Minecraft minecraft, ClientLevel level,
+	private static void renderBlock(LevelRenderContext context, FacetRenderSink sink,
+			Minecraft minecraft, ClientLevel level,
 			Vec3 camera, PreviewBlock preview, HologramFrame frame, float screenRightX, float screenRightZ) {
 		BlockState state = preview.state();
 
@@ -219,7 +220,7 @@ final class PlacementPreview {
 		}
 
 		int[] colors = hologramColors(tints, frame.alpha());
-		context.submitNodeCollector().submitCustomGeometry(
+		sink.submit(
 				poseStack,
 				RenderTypes.translucentMovingBlock(),
 				(pose, consumer) -> renderModelParts(pose, consumer, parts, colors, frame,
@@ -229,7 +230,7 @@ final class PlacementPreview {
 
 		if (!shape.isEmpty()) {
 			int edgeColor = hologramColor(-1, Math.min(0.92f, frame.alpha() * EDGE_ALPHA_SCALE));
-			context.submitNodeCollector().submitCustomGeometry(
+			sink.submit(
 					poseStack,
 					RenderTypes.linesTranslucent(),
 					(pose, consumer) -> renderEdges(pose, consumer, shape, edgeColor, frame,
