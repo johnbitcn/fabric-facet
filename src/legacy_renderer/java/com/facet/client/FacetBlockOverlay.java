@@ -62,7 +62,6 @@ final class FacetBlockOverlay {
 				graffitiMaterials.put(type, modifierContext.baker().materials().get(texture, debugName));
 			}
 
-			FacetConfig.setTextureResolution(outlineMaterial.sprite().contents().width());
 			return new OutlineBlockStateModel(model, outlineMaterial, graffitiMaterials);
 		});
 	}

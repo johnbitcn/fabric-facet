@@ -17,14 +17,14 @@ public final class FacetConfig {
 	public static final boolean DEFAULT_DISTANCE_PATH_VISIBLE = true;
 	public static final boolean DEFAULT_PLACEMENT_PREVIEW_ENABLED = true;
 	public static final float DEFAULT_OPACITY = 0.75f;
+	public static final double EDGE_WIDTH_UNIT = 1.0 / 64.0;
 	public static final double DEFAULT_EDGE_WIDTH = 1.0 / 32.0;
 	public static final float DEFAULT_HOVER_OPACITY = 1.0f;
 	public static final float DEFAULT_HOVER_WIDTH = 3.0f;
 	public static final float MIN_HOVER_WIDTH = 1.0f;
 	public static final float MAX_HOVER_WIDTH = 8.0f;
 	public static final float HOVER_WIDTH_STEP = 0.25f;
-	public static final double MAX_EDGE_WIDTH = 0.30;
-	private static final double STORED_MIN_EDGE_WIDTH = 1.0 / 128.0;
+	public static final double MAX_EDGE_WIDTH = 20.0 * EDGE_WIDTH_UNIT;
 	private static final float OLD_DEFAULT_OPACITY = 0.8f;
 	private static final double OLD_DEFAULT_EDGE_WIDTH = 1.0 / 16.0;
 
@@ -37,7 +37,6 @@ public final class FacetConfig {
 	private static double edgeWidth = DEFAULT_EDGE_WIDTH;
 	private static float hoverOpacity = DEFAULT_HOVER_OPACITY;
 	private static float hoverWidth = DEFAULT_HOVER_WIDTH;
-	private static int textureResolution = 16;
 
 	private FacetConfig() {
 	}
@@ -59,7 +58,7 @@ public final class FacetConfig {
 				"placementPreviewEnabled",
 				Boolean.toString(DEFAULT_PLACEMENT_PREVIEW_ENABLED)));
 		opacity = clampFloat(parseFloat(properties.getProperty("opacity", Float.toString(DEFAULT_OPACITY)), DEFAULT_OPACITY), 0.0f, 1.0f);
-		edgeWidth = clampDouble(parseDouble(properties.getProperty("edgeWidth", Double.toString(DEFAULT_EDGE_WIDTH)), DEFAULT_EDGE_WIDTH), STORED_MIN_EDGE_WIDTH, MAX_EDGE_WIDTH);
+		edgeWidth = snapEdgeWidth(parseDouble(properties.getProperty("edgeWidth", Double.toString(DEFAULT_EDGE_WIDTH)), DEFAULT_EDGE_WIDTH));
 		hoverOpacity = clampFloat(parseFloat(properties.getProperty("hoverOpacity", Float.toString(DEFAULT_HOVER_OPACITY)), DEFAULT_HOVER_OPACITY), 0.0f, 1.0f);
 		hoverWidth = snapHoverWidth(parseFloat(properties.getProperty("hoverWidth", Float.toString(DEFAULT_HOVER_WIDTH)), DEFAULT_HOVER_WIDTH));
 
@@ -111,29 +110,11 @@ public final class FacetConfig {
 	}
 
 	public static double minEdgeWidth() {
-		return 0.5 / textureResolution;
+		return EDGE_WIDTH_UNIT;
 	}
 
 	public static double maxEdgeWidth() {
 		return Math.max(minEdgeWidth(), MAX_EDGE_WIDTH);
-	}
-
-	public static int textureResolution() {
-		return textureResolution;
-	}
-
-	public static void setTextureResolution(int value) {
-		if (value <= 0 || textureResolution == value) {
-			return;
-		}
-
-		textureResolution = value;
-		double clampedEdgeWidth = clampEdgeWidth(edgeWidth);
-
-		if (Double.compare(edgeWidth, clampedEdgeWidth) != 0) {
-			edgeWidth = clampedEdgeWidth;
-			save();
-		}
 	}
 
 	public static void setEnabled(boolean value) {
@@ -166,7 +147,7 @@ public final class FacetConfig {
 	}
 
 	public static void setEdgeWidth(double value) {
-		edgeWidth = clampEdgeWidth(value);
+		edgeWidth = snapEdgeWidth(value);
 		saveAndRebuildChunks();
 	}
 
@@ -260,6 +241,12 @@ public final class FacetConfig {
 
 	private static double clampEdgeWidth(double value) {
 		return clampDouble(value, minEdgeWidth(), maxEdgeWidth());
+	}
+
+	private static double snapEdgeWidth(double value) {
+		double clamped = clampEdgeWidth(value);
+		double snapped = Math.round(clamped / EDGE_WIDTH_UNIT) * EDGE_WIDTH_UNIT;
+		return clampEdgeWidth(snapped);
 	}
 
 	private static float snapHoverWidth(double value) {

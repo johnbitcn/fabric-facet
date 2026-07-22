@@ -302,22 +302,11 @@ public final class FacetConfigScreen extends Screen {
 	}
 
 	private static double edgeWidthSetting() {
-		double min = FacetConfig.minEdgeWidth();
-		double max = FacetConfig.maxEdgeWidth();
-
-		if (Double.compare(min, max) == 0) {
-			return EDGE_WIDTH_SETTING_MIN;
-		}
-
-		double normalized = (FacetConfig.effectiveEdgeWidth() - min) / (max - min);
-		return EDGE_WIDTH_SETTING_MIN + normalized * (EDGE_WIDTH_SETTING_MAX - EDGE_WIDTH_SETTING_MIN);
+		return FacetConfig.effectiveEdgeWidth() / FacetConfig.EDGE_WIDTH_UNIT;
 	}
 
 	private static double edgeWidthFromSetting(double value) {
-		double normalized = (value - EDGE_WIDTH_SETTING_MIN) / (EDGE_WIDTH_SETTING_MAX - EDGE_WIDTH_SETTING_MIN);
-		double min = FacetConfig.minEdgeWidth();
-		double max = FacetConfig.maxEdgeWidth();
-		return min + normalized * (max - min);
+		return value * FacetConfig.EDGE_WIDTH_UNIT;
 	}
 
 	private interface ValueFormatter {
