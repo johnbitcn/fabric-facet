@@ -25,9 +25,19 @@ final class FacetMcBridge {
 	}
 
 	static void rebuildChunks(Minecraft minecraft) {
-		if (minecraft.level != null) {
-			minecraft.levelRenderer.allChanged();
+		if (minecraft.level == null) {
+			return;
 		}
+
+		SectionPos cameraSection = SectionPos.of(mainCamera(minecraft).position());
+		int renderDistance = minecraft.options.getEffectiveRenderDistance();
+		minecraft.level.setSectionRangeDirty(
+				cameraSection.x() - renderDistance,
+				minecraft.level.getMinSectionY(),
+				cameraSection.z() - renderDistance,
+				cameraSection.x() + renderDistance,
+				minecraft.level.getMaxSectionY(),
+				cameraSection.z() + renderDistance);
 	}
 
 	static void rebuildBlockSection(Minecraft minecraft, BlockPos pos) {
