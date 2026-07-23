@@ -18,9 +18,10 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ### Unreleased
 
-- Block outlines now adapt their MapColor-derived hue, saturation, and lightness for clearer warm, cool, white, dark, and neutral borders
-- Targeted blocks within interaction range use a fluorescent-green full outline while the hit face rotates through one synchronized hue; farther targets use a cyan full outline without face animation
-- Outline opacity controls have been removed; targeted outlines are fully opaque, and both outline width controls now default to 2 with integer steps
+- Reworked outline rendering for better performance and more natural visuals
+- Updated how targeted-block outlines are expressed
+- Fixed holographic placement preview rendering
+- Compatible with Minecraft 26.3-alpha.5 (snapshot-5)
 
 ### v1.2.1 — Holographic Placement Preview (2026-07-21)
 
