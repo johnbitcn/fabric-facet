@@ -84,6 +84,10 @@ public final class GraffitiStore {
 	}
 
 	static Change set(BlockPos pos, Direction direction, BlockState state, GraffitiType type) {
+		if (type == null) {
+			return Change.UNCHANGED;
+		}
+
 		GraffitiKey key = currentKey(pos, direction);
 		GraffitiData previous = GRAFFITI.get(key);
 

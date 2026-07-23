@@ -1,5 +1,7 @@
 package com.facet.client;
 
+import java.util.function.Consumer;
+
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -8,12 +10,19 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
+
 final class FacetMcBridge {
 	private FacetMcBridge() {
 	}
 
 	static InputConstants.Type keyboardType() {
 		return InputConstants.Type.KEYSYM;
+	}
+
+	static void applyShade(QuadEmitter emitter, boolean shade) {
+		emitter.diffuseShade(shade);
 	}
 
 	static Camera mainCamera(Minecraft minecraft) {
@@ -25,9 +34,19 @@ final class FacetMcBridge {
 	}
 
 	static void rebuildChunks(Minecraft minecraft) {
-		if (minecraft.level != null) {
-			minecraft.levelRenderer.allChanged();
+		if (minecraft.level == null) {
+			return;
 		}
+
+		SectionPos cameraSection = SectionPos.of(mainCamera(minecraft).position());
+		int renderDistance = minecraft.options.getEffectiveRenderDistance();
+		minecraft.level.setSectionRangeDirty(
+				cameraSection.x() - renderDistance,
+				minecraft.level.getMinSectionY(),
+				cameraSection.z() - renderDistance,
+				cameraSection.x() + renderDistance,
+				minecraft.level.getMaxSectionY(),
+				cameraSection.z() + renderDistance);
 	}
 
 	static void rebuildBlockSection(Minecraft minecraft, BlockPos pos) {
@@ -39,6 +58,13 @@ final class FacetMcBridge {
 		int sectionY = SectionPos.blockToSectionCoord(pos.getY());
 		int sectionZ = SectionPos.blockToSectionCoord(pos.getZ());
 		minecraft.level.setSectionRangeDirty(sectionX, sectionY, sectionZ, sectionX, sectionY, sectionZ);
+	}
+
+	static void renderAfterTranslucentTerrain(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
+		renderer.accept((poseStack, renderType, geometry) -> {
+			geometry.render(poseStack.last(), context.bufferSource().getBuffer(renderType));
+			context.bufferSource().endBatch(renderType);
+		});
 	}
 
 	static String worldScope(Minecraft minecraft, ClientLevel level) {

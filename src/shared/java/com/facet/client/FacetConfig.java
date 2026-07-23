@@ -16,16 +16,13 @@ public final class FacetConfig {
 	public static final boolean DEFAULT_HOVER_ENABLED = true;
 	public static final boolean DEFAULT_DISTANCE_PATH_VISIBLE = true;
 	public static final boolean DEFAULT_PLACEMENT_PREVIEW_ENABLED = true;
-	public static final float DEFAULT_OPACITY = 0.75f;
-	public static final double DEFAULT_EDGE_WIDTH = 1.0 / 32.0;
-	public static final float DEFAULT_HOVER_OPACITY = 1.0f;
-	public static final float DEFAULT_HOVER_WIDTH = 3.0f;
+	public static final double EDGE_WIDTH_UNIT = 1.0 / 64.0;
+	public static final double DEFAULT_EDGE_WIDTH = 2.0 * EDGE_WIDTH_UNIT;
+	public static final float DEFAULT_HOVER_WIDTH = 2.0f;
 	public static final float MIN_HOVER_WIDTH = 1.0f;
 	public static final float MAX_HOVER_WIDTH = 8.0f;
-	public static final float HOVER_WIDTH_STEP = 0.25f;
-	public static final double MAX_EDGE_WIDTH = 0.30;
-	private static final double STORED_MIN_EDGE_WIDTH = 1.0 / 128.0;
-	private static final float OLD_DEFAULT_OPACITY = 0.8f;
+	public static final float HOVER_WIDTH_STEP = 1.0f;
+	public static final double MAX_EDGE_WIDTH = 20.0 * EDGE_WIDTH_UNIT;
 	private static final double OLD_DEFAULT_EDGE_WIDTH = 1.0 / 16.0;
 
 	private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("facet.properties");
@@ -33,11 +30,8 @@ public final class FacetConfig {
 	private static boolean hoverEnabled = DEFAULT_HOVER_ENABLED;
 	private static boolean distancePathVisible = DEFAULT_DISTANCE_PATH_VISIBLE;
 	private static boolean placementPreviewEnabled = DEFAULT_PLACEMENT_PREVIEW_ENABLED;
-	private static float opacity = DEFAULT_OPACITY;
 	private static double edgeWidth = DEFAULT_EDGE_WIDTH;
-	private static float hoverOpacity = DEFAULT_HOVER_OPACITY;
 	private static float hoverWidth = DEFAULT_HOVER_WIDTH;
-	private static int textureResolution = 16;
 
 	private FacetConfig() {
 	}
@@ -58,14 +52,8 @@ public final class FacetConfig {
 		placementPreviewEnabled = Boolean.parseBoolean(properties.getProperty(
 				"placementPreviewEnabled",
 				Boolean.toString(DEFAULT_PLACEMENT_PREVIEW_ENABLED)));
-		opacity = clampFloat(parseFloat(properties.getProperty("opacity", Float.toString(DEFAULT_OPACITY)), DEFAULT_OPACITY), 0.0f, 1.0f);
-		edgeWidth = clampDouble(parseDouble(properties.getProperty("edgeWidth", Double.toString(DEFAULT_EDGE_WIDTH)), DEFAULT_EDGE_WIDTH), STORED_MIN_EDGE_WIDTH, MAX_EDGE_WIDTH);
-		hoverOpacity = clampFloat(parseFloat(properties.getProperty("hoverOpacity", Float.toString(DEFAULT_HOVER_OPACITY)), DEFAULT_HOVER_OPACITY), 0.0f, 1.0f);
+		edgeWidth = snapEdgeWidth(parseDouble(properties.getProperty("edgeWidth", Double.toString(DEFAULT_EDGE_WIDTH)), DEFAULT_EDGE_WIDTH));
 		hoverWidth = snapHoverWidth(parseFloat(properties.getProperty("hoverWidth", Float.toString(DEFAULT_HOVER_WIDTH)), DEFAULT_HOVER_WIDTH));
-
-		if (Float.compare(opacity, OLD_DEFAULT_OPACITY) == 0) {
-			opacity = DEFAULT_OPACITY;
-		}
 
 		if (Double.compare(edgeWidth, OLD_DEFAULT_EDGE_WIDTH) == 0) {
 			edgeWidth = DEFAULT_EDGE_WIDTH;
@@ -90,16 +78,8 @@ public final class FacetConfig {
 		return placementPreviewEnabled;
 	}
 
-	public static float opacity() {
-		return opacity;
-	}
-
 	public static double edgeWidth() {
 		return edgeWidth;
-	}
-
-	public static float hoverOpacity() {
-		return hoverOpacity;
 	}
 
 	public static float hoverWidth() {
@@ -111,29 +91,11 @@ public final class FacetConfig {
 	}
 
 	public static double minEdgeWidth() {
-		return 0.5 / textureResolution;
+		return EDGE_WIDTH_UNIT;
 	}
 
 	public static double maxEdgeWidth() {
 		return Math.max(minEdgeWidth(), MAX_EDGE_WIDTH);
-	}
-
-	public static int textureResolution() {
-		return textureResolution;
-	}
-
-	public static void setTextureResolution(int value) {
-		if (value <= 0 || textureResolution == value) {
-			return;
-		}
-
-		textureResolution = value;
-		double clampedEdgeWidth = clampEdgeWidth(edgeWidth);
-
-		if (Double.compare(edgeWidth, clampedEdgeWidth) != 0) {
-			edgeWidth = clampedEdgeWidth;
-			save();
-		}
 	}
 
 	public static void setEnabled(boolean value) {
@@ -156,31 +118,13 @@ public final class FacetConfig {
 		save();
 	}
 
-	public static void setOpacity(float value) {
-		opacity = clampFloat(value, 0.0f, 1.0f);
-		saveAndRebuildChunks();
-	}
-
-	public static void resetOpacity() {
-		setOpacity(DEFAULT_OPACITY);
-	}
-
 	public static void setEdgeWidth(double value) {
-		edgeWidth = clampEdgeWidth(value);
+		edgeWidth = snapEdgeWidth(value);
 		saveAndRebuildChunks();
 	}
 
 	public static void resetEdgeWidth() {
 		setEdgeWidth(DEFAULT_EDGE_WIDTH);
-	}
-
-	public static void setHoverOpacity(float value) {
-		hoverOpacity = clampFloat(value, 0.0f, 1.0f);
-		save();
-	}
-
-	public static void resetHoverOpacity() {
-		setHoverOpacity(DEFAULT_HOVER_OPACITY);
 	}
 
 	public static void setHoverWidth(double value) {
@@ -203,9 +147,7 @@ public final class FacetConfig {
 		properties.setProperty("hoverEnabled", Boolean.toString(hoverEnabled));
 		properties.setProperty("distancePathVisible", Boolean.toString(distancePathVisible));
 		properties.setProperty("placementPreviewEnabled", Boolean.toString(placementPreviewEnabled));
-		properties.setProperty("opacity", Float.toString(opacity));
 		properties.setProperty("edgeWidth", Double.toString(edgeWidth));
-		properties.setProperty("hoverOpacity", Float.toString(hoverOpacity));
 		properties.setProperty("hoverWidth", Float.toString(hoverWidth));
 
 		try {
@@ -250,16 +192,18 @@ public final class FacetConfig {
 		}
 	}
 
-	private static float clampFloat(float value, float min, float max) {
-		return Math.max(min, Math.min(max, value));
-	}
-
 	private static double clampDouble(double value, double min, double max) {
 		return Math.max(min, Math.min(max, value));
 	}
 
 	private static double clampEdgeWidth(double value) {
 		return clampDouble(value, minEdgeWidth(), maxEdgeWidth());
+	}
+
+	private static double snapEdgeWidth(double value) {
+		double clamped = clampEdgeWidth(value);
+		double snapped = Math.round(clamped / EDGE_WIDTH_UNIT) * EDGE_WIDTH_UNIT;
+		return clampEdgeWidth(snapped);
 	}
 
 	private static float snapHoverWidth(double value) {

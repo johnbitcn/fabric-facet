@@ -27,10 +27,8 @@
 	"config.facet.hover_outline": "Hover Outline: %s",
 	"config.facet.distance_path": "Manhattan Path: %s",
 	"config.facet.placement_preview": "Placement Preview: %s",
-	"config.facet.opacity": "Opacity",
-	"config.facet.width": "Width",
-	"config.facet.hover_opacity": "Hover Opacity",
-	"config.facet.hover_width": "Hover Width",
+  "config.facet.width": "Width",
+  "config.facet.hover_width": "Hover Width",
 	"config.facet.reset": "Reset",
 	"config.facet.slider": "%s: %s"
 }

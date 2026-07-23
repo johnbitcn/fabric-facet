@@ -48,9 +48,7 @@ public final class FacetConfigScreen extends Screen {
 	private static final int SECTION_TITLE_COLOR = 0xFF95FBFF;
 
 	private final Screen parent;
-	private ValueSlider opacitySlider;
 	private ValueSlider edgeWidthSlider;
-	private ValueSlider hoverOpacitySlider;
 	private ValueSlider hoverWidthSlider;
 	private int panelX;
 	private int panelY;
@@ -76,8 +74,8 @@ public final class FacetConfigScreen extends Screen {
 		int sectionGap = compact ? COMPACT_SECTION_GAP : SECTION_GAP;
 		int doneGap = compact ? COMPACT_DONE_GAP : DONE_GAP;
 		int generalSectionHeight = sectionHeight(4);
-		int blockSectionHeight = sectionHeight(2);
-		int hoverSectionHeight = sectionHeight(2);
+		int blockSectionHeight = sectionHeight(1);
+		int hoverSectionHeight = sectionHeight(1);
 
 		panelWidth = Math.max(MIN_PANEL_WIDTH, Math.min(DEFAULT_PANEL_WIDTH, this.width - SCREEN_MARGIN * 2));
 		contentWidth = panelWidth - PANEL_PADDING_X * 2;
@@ -134,24 +132,6 @@ public final class FacetConfigScreen extends Screen {
 		}).bounds(x, rowY, controlWidth, ROW_HEIGHT).build());
 		rowY = firstRowY(blockSectionY);
 
-		opacitySlider = new ValueSlider(
-				x,
-				rowY,
-				sliderWidth,
-				ROW_HEIGHT,
-				"config.facet.opacity",
-				0.0,
-				1.0,
-				FacetConfig.opacity(),
-				value -> FacetConfig.setOpacity((float) value),
-				value -> String.format(Locale.ROOT, "%.2f", value));
-		addRenderableWidget(opacitySlider);
-		addRenderableWidget(Button.builder(Component.translatable("config.facet.reset"), button -> {
-			FacetConfig.resetOpacity();
-			opacitySlider.setActualValue(FacetConfig.opacity());
-		}).bounds(resetX, rowY, RESET_WIDTH, ROW_HEIGHT).build());
-		rowY += ROW_HEIGHT + ROW_GAP;
-
 		edgeWidthSlider = new ValueSlider(
 				x,
 				rowY,
@@ -170,24 +150,6 @@ public final class FacetConfigScreen extends Screen {
 			edgeWidthSlider.setActualValue(edgeWidthSetting());
 		}).bounds(resetX, rowY, RESET_WIDTH, ROW_HEIGHT).build());
 		rowY = firstRowY(hoverSectionY);
-
-		hoverOpacitySlider = new ValueSlider(
-				x,
-				rowY,
-				sliderWidth,
-				ROW_HEIGHT,
-				"config.facet.hover_opacity",
-				0.0,
-				1.0,
-				FacetConfig.hoverOpacity(),
-				value -> FacetConfig.setHoverOpacity((float) value),
-				value -> String.format(Locale.ROOT, "%.2f", value));
-		addRenderableWidget(hoverOpacitySlider);
-		addRenderableWidget(Button.builder(Component.translatable("config.facet.reset"), button -> {
-			FacetConfig.resetHoverOpacity();
-			hoverOpacitySlider.setActualValue(FacetConfig.hoverOpacity());
-		}).bounds(resetX, rowY, RESET_WIDTH, ROW_HEIGHT).build());
-		rowY += ROW_HEIGHT + ROW_GAP;
 
 		hoverWidthSlider = new ValueSlider(
 				x,
@@ -214,8 +176,8 @@ public final class FacetConfigScreen extends Screen {
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
 		drawPanel(graphics);
 		drawSection(graphics, generalSectionY, sectionHeight(4), Component.translatable("config.facet.section.general"));
-		drawSection(graphics, blockSectionY, sectionHeight(2), Component.translatable("config.facet.section.block_outline"));
-		drawSection(graphics, hoverSectionY, sectionHeight(2), Component.translatable("config.facet.section.hover_outline"));
+		drawSection(graphics, blockSectionY, sectionHeight(1), Component.translatable("config.facet.section.block_outline"));
+		drawSection(graphics, hoverSectionY, sectionHeight(1), Component.translatable("config.facet.section.hover_outline"));
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 	}
 
@@ -298,26 +260,15 @@ public final class FacetConfigScreen extends Screen {
 	}
 
 	private static String formatHoverWidth(double value) {
-		return String.format(Locale.ROOT, "%.2f px", value);
+		return String.format(Locale.ROOT, "%.0f px", value);
 	}
 
 	private static double edgeWidthSetting() {
-		double min = FacetConfig.minEdgeWidth();
-		double max = FacetConfig.maxEdgeWidth();
-
-		if (Double.compare(min, max) == 0) {
-			return EDGE_WIDTH_SETTING_MIN;
-		}
-
-		double normalized = (FacetConfig.effectiveEdgeWidth() - min) / (max - min);
-		return EDGE_WIDTH_SETTING_MIN + normalized * (EDGE_WIDTH_SETTING_MAX - EDGE_WIDTH_SETTING_MIN);
+		return FacetConfig.effectiveEdgeWidth() / FacetConfig.EDGE_WIDTH_UNIT;
 	}
 
 	private static double edgeWidthFromSetting(double value) {
-		double normalized = (value - EDGE_WIDTH_SETTING_MIN) / (EDGE_WIDTH_SETTING_MAX - EDGE_WIDTH_SETTING_MIN);
-		double min = FacetConfig.minEdgeWidth();
-		double max = FacetConfig.maxEdgeWidth();
-		return min + normalized * (max - min);
+		return value * FacetConfig.EDGE_WIDTH_UNIT;
 	}
 
 	private interface ValueFormatter {

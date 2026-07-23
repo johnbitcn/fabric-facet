@@ -31,6 +31,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -45,19 +46,19 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 
 public final class FacetClient implements ClientModInitializer {
-	private static final double EDGE_EPSILON = 1.0e-6;
-	private static final double HOVER_SURFACE_BIAS = 1.0 / 256.0;
-	private static final double HOVER_FACE_EPSILON = 1.0e-3;
 	private static final float OUTLINE_ALPHA_MARKER_MAX = 254.0f / 255.0f;
-	private static final float DARK_LUMINANCE_MAX = 0.25f;
-	private static final float DARK_CONTRAST_ADJUSTMENT = -0.25f;
-	private static final float DEFAULT_BRIGHTNESS_ADJUSTMENT = -0.60f;
+	private static final int HIGH_LIGHTNESS_MIN = 85;
+	private static final int LOW_LIGHTNESS_MAX = 15;
+	private static final int NEUTRAL_SATURATION_MAX = 15;
 	private static final double DISTANCE_PATH_SURFACE_BIAS = 1.0 / 64.0;
 	private static final int DISTANCE_X_COLOR = 0xFFFF6F8F;
 	private static final int DISTANCE_Z_COLOR = 0xFFFFFF20;
 	private static final int DISTANCE_Y_COLOR = 0xFF39FF14;
 	private static final int DISTANCE_HUD_FONT_SIZE_INCREASE = 2;
-	private static final int OUT_OF_REACH_HOVER_COLOR = 0xFF36F6FF;
+	private static final int IN_RANGE_HOVER_OUTLINE_COLOR = 0xFF39FF14;
+	private static final int OUT_OF_RANGE_HOVER_OUTLINE_COLOR = 0xFF36F6FF;
+	private static final long HOVER_HUE_CYCLE_NANOS = 1_200_000_000L;
+	private static final double HOVER_FACE_PLANE_EPSILON = 1.0e-5;
 	private static final Identifier DISTANCE_HUD_ID = Identifier.fromNamespaceAndPath("facet", "distance_hud");
 	private static KeyMapping toggleOutlineKeyMapping;
 	private static KeyMapping toggleHoverOutlineKeyMapping;
@@ -72,9 +73,8 @@ public final class FacetClient implements ClientModInitializer {
 		GraffitiStore.load();
 		registerKeyMappings();
 		FacetBlockOverlay.initialize();
-		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderHoverOutline);
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
-		LevelRenderEvents.COLLECT_SUBMITS.register(PlacementPreview::render);
+		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetClient::renderSurfaceEffectsAfterTerrain);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) ->
 				GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, level), level.dimension().identifier()));
@@ -309,50 +309,129 @@ public final class FacetClient implements ClientModInitializer {
 	}
 
 	static int outlineColor(BlockAndTintGetter level, BlockPos pos, BlockState state) {
-		int rgb = state.getMapColor(level, pos).col;
-		float red = ((rgb >> 16) & 0xFF) / 255.0f;
-		float green = ((rgb >> 8) & 0xFF) / 255.0f;
-		float blue = (rgb & 0xFF) / 255.0f;
-		float luminance = red * 0.2126f + green * 0.7152f + blue * 0.0722f;
+		return mapColorBorder(state.getMapColor(level, pos).col, outlineAlpha());
+	}
 
-		if (luminance <= DARK_LUMINANCE_MAX) {
-			red = adjustContrast(red, DARK_CONTRAST_ADJUSTMENT);
-			green = adjustContrast(green, DARK_CONTRAST_ADJUSTMENT);
-			blue = adjustContrast(blue, DARK_CONTRAST_ADJUSTMENT);
+	static int mapColorBorder(int rgb, float alpha) {
+		int[] hsl = rgbToHsl(rgb);
+		int hue;
+		int saturation;
+		int lightness;
+
+		if (hsl[2] > HIGH_LIGHTNESS_MIN) {
+			hue = 215;
+			saturation = 15;
+			lightness = 65;
+		} else if (hsl[2] < LOW_LIGHTNESS_MAX) {
+			hue = 235;
+			saturation = 25;
+			lightness = 30;
+		} else if (hsl[1] <= NEUTRAL_SATURATION_MAX) {
+			hue = 220;
+			saturation = 12;
+			lightness = Math.max(10, (int) (hsl[2] * 0.70f));
 		} else {
-			red = adjustBrightness(red, DEFAULT_BRIGHTNESS_ADJUSTMENT);
-			green = adjustBrightness(green, DEFAULT_BRIGHTNESS_ADJUSTMENT);
-			blue = adjustBrightness(blue, DEFAULT_BRIGHTNESS_ADJUSTMENT);
+			if (hsl[0] < 60) {
+				hue = wrapHue(hsl[0] - 12);
+			} else if (hsl[0] < 260) {
+				hue = wrapHue(hsl[0] + 14);
+			} else {
+				hue = wrapHue(hsl[0] - 10);
+			}
+
+			saturation = clamp((int) (hsl[1] * 1.15f + 10.0f), 0, 100);
+			lightness = clamp((int) (hsl[2] * 0.65f), 12, 100);
 		}
 
-		return ARGB.colorFromFloat(outlineAlpha(), red, green, blue);
+		float[] borderRgb = hslToRgb(hue, saturation, lightness);
+		return ARGB.colorFromFloat(alpha, borderRgb[0], borderRgb[1], borderRgb[2]);
 	}
 
-	private static float adjustBrightness(float value, float adjustment) {
-		return clamp01(value * (1.0f + adjustment));
+	private static int[] rgbToHsl(int rgb) {
+		float red = ARGB.red(rgb) / 255.0f;
+		float green = ARGB.green(rgb) / 255.0f;
+		float blue = ARGB.blue(rgb) / 255.0f;
+		float max = Math.max(red, Math.max(green, blue));
+		float min = Math.min(red, Math.min(green, blue));
+		float delta = max - min;
+		float lightness = (max + min) * 0.5f;
+		float hue = 0.0f;
+		float saturation = 0.0f;
+
+		if (delta > 0.0f) {
+			saturation = delta / (1.0f - Math.abs(2.0f * lightness - 1.0f));
+
+			if (max == red) {
+				hue = ((green - blue) / delta) % 6.0f;
+			} else if (max == green) {
+				hue = (blue - red) / delta + 2.0f;
+			} else {
+				hue = (red - green) / delta + 4.0f;
+			}
+
+			hue *= 60.0f;
+			if (hue < 0.0f) {
+				hue += 360.0f;
+			}
+		}
+
+		return new int[] {
+				Math.round(hue),
+				Math.round(saturation * 100.0f),
+				Math.round(lightness * 100.0f)
+		};
 	}
 
-	private static float adjustContrast(float value, float adjustment) {
-		return clamp01((value - 0.5f) * (1.0f + adjustment) + 0.5f);
+	private static float[] hslToRgb(int hue, int saturation, int lightness) {
+		float normalizedSaturation = saturation / 100.0f;
+		float normalizedLightness = lightness / 100.0f;
+		float chroma = (1.0f - Math.abs(2.0f * normalizedLightness - 1.0f)) * normalizedSaturation;
+		float section = hue / 60.0f;
+		float intermediate = chroma * (1.0f - Math.abs(section % 2.0f - 1.0f));
+		float red;
+		float green;
+		float blue;
+
+		if (section < 1.0f) {
+			red = chroma;
+			green = intermediate;
+			blue = 0.0f;
+		} else if (section < 2.0f) {
+			red = intermediate;
+			green = chroma;
+			blue = 0.0f;
+		} else if (section < 3.0f) {
+			red = 0.0f;
+			green = chroma;
+			blue = intermediate;
+		} else if (section < 4.0f) {
+			red = 0.0f;
+			green = intermediate;
+			blue = chroma;
+		} else if (section < 5.0f) {
+			red = intermediate;
+			green = 0.0f;
+			blue = chroma;
+		} else {
+			red = chroma;
+			green = 0.0f;
+			blue = intermediate;
+		}
+
+		float match = normalizedLightness - chroma * 0.5f;
+		return new float[] {red + match, green + match, blue + match};
 	}
 
-	private static float clamp01(float value) {
-		return Math.max(0.0f, Math.min(1.0f, value));
+	private static int wrapHue(int hue) {
+		return (hue % 360 + 360) % 360;
+	}
+
+	private static int clamp(int value, int min, int max) {
+		return Math.max(min, Math.min(max, value));
 	}
 
 	private static float outlineAlpha() {
-		return Math.min(FacetConfig.opacity(), OUTLINE_ALPHA_MARKER_MAX);
-	}
-
-	static boolean touchesExteriorFace(AABB box, AABB bounds, Direction direction) {
-		return switch (direction) {
-			case DOWN -> Math.abs(box.minY - bounds.minY) <= EDGE_EPSILON;
-			case UP -> Math.abs(box.maxY - bounds.maxY) <= EDGE_EPSILON;
-			case NORTH -> Math.abs(box.minZ - bounds.minZ) <= EDGE_EPSILON;
-			case SOUTH -> Math.abs(box.maxZ - bounds.maxZ) <= EDGE_EPSILON;
-			case WEST -> Math.abs(box.minX - bounds.minX) <= EDGE_EPSILON;
-			case EAST -> Math.abs(box.maxX - bounds.maxX) <= EDGE_EPSILON;
-		};
+		return OUTLINE_ALPHA_MARKER_MAX;
 	}
 
 	private static void renderDistancePath(LevelRenderContext context) {
@@ -393,7 +472,14 @@ public final class FacetClient implements ClientModInitializer {
 		});
 	}
 
-	private static void renderHoverOutline(LevelRenderContext context) {
+	private static void renderSurfaceEffectsAfterTerrain(LevelRenderContext context) {
+		FacetMcBridge.renderAfterTranslucentTerrain(context, sink -> {
+			renderHoverOutline(context, sink);
+			PlacementPreview.render(context, sink);
+		});
+	}
+
+	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink) {
 		if (!FacetConfig.hoverEnabled()) {
 			return;
 		}
@@ -407,11 +493,11 @@ public final class FacetClient implements ClientModInitializer {
 		}
 
 		BlockHitResult hitResult;
-		int color;
+		boolean inRange;
 
 		if (minecraft.hitResult instanceof BlockHitResult nearHitResult && nearHitResult.getType() == HitResult.Type.BLOCK) {
 			hitResult = nearHitResult;
-			color = -1;
+			inRange = true;
 		} else {
 			hitResult = findViewedBlock(minecraft, FacetMcBridge.mainCamera(minecraft));
 
@@ -419,13 +505,14 @@ public final class FacetClient implements ClientModInitializer {
 				return;
 			}
 
-			color = outOfReachHoverColor();
+			inRange = false;
 		}
 
-		renderHoverOutline(context, level, hitResult, color);
+		renderHoverOutline(context, sink, level, hitResult, inRange);
 	}
 
-	private static void renderHoverOutline(LevelRenderContext context, ClientLevel level, BlockHitResult hitResult, int color) {
+	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink,
+			ClientLevel level, BlockHitResult hitResult, boolean inRange) {
 		BlockPos pos = hitResult.getBlockPos();
 
 		if (!level.isLoaded(pos)) {
@@ -438,15 +525,8 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		Direction direction = hitResult.getDirection();
-		Vec3 hitLocation = hitResult.getLocation();
-		Vec3 localHit = new Vec3(hitLocation.x - pos.getX(), hitLocation.y - pos.getY(), hitLocation.z - pos.getZ());
 		VoxelShape shape = state.getShape(level, pos);
-		AABB box = shape.isEmpty() ? null : hoverFaceBox(shape, direction, localHit);
-
-		if (box == null) {
-			box = new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-		}
+		VoxelShape outlineShape = shape.isEmpty() ? Shapes.block() : shape;
 
 		CameraRenderState camera = context.levelState().cameraRenderState;
 
@@ -454,109 +534,32 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		AABB faceBox = box;
-		context.submitNodeCollector().submitCustomGeometry(context.poseStack(), RenderTypes.lines(),
-				(pose, consumer) -> renderHoverFace(pose, consumer, pos, camera.pos, faceBox, direction, color));
+		double facePlane = hitFacePlane(hitResult, pos);
+		int outlineColor = hoverOutlineColor(inRange
+				? IN_RANGE_HOVER_OUTLINE_COLOR
+				: OUT_OF_RANGE_HOVER_OUTLINE_COLOR);
+		int faceColor = inRange ? hoverFaceColor() : outlineColor;
+		sink.submit(context.poseStack(), RenderTypes.lines(),
+				(pose, consumer) -> renderHoverShape(pose, consumer, pos, camera.pos, outlineShape,
+						hitResult.getDirection(), facePlane, inRange, outlineColor, faceColor));
 	}
 
-	private static AABB hoverFaceBox(VoxelShape shape, Direction direction, Vec3 localHit) {
-		AABB[] bestBox = new AABB[1];
-		double[] bestDistance = {Double.MAX_VALUE};
-
-		shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
-			AABB box = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-			double distance = faceDistance(box, direction, localHit);
-
-			if (distance <= HOVER_FACE_EPSILON && distance < bestDistance[0]) {
-				bestBox[0] = box;
-				bestDistance[0] = distance;
-			}
+	private static void renderHoverShape(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera,
+			VoxelShape shape, Direction hitFace, double facePlane, boolean highlightHitFace,
+			int outlineColor, int faceColor) {
+		FacetShapeEdges.forEachEdge(shape, (x1, y1, z1, x2, y2, z2) -> {
+			int color = highlightHitFace && edgeOnHitFace(hitFace, facePlane, x1, y1, z1, x2, y2, z2)
+					? faceColor
+					: outlineColor;
+			emitOutlineLine(pose, consumer, pos, camera, x1, y1, z1, x2, y2, z2,
+					color, FacetConfig.hoverWidth());
 		});
-
-		return bestBox[0];
-	}
-
-	private static double faceDistance(AABB box, Direction direction, Vec3 localHit) {
-		return switch (direction) {
-			case DOWN -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.z, box.minZ, box.maxZ)
-					? Math.abs(localHit.y - box.minY) : Double.MAX_VALUE;
-			case UP -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.z, box.minZ, box.maxZ)
-					? Math.abs(localHit.y - box.maxY) : Double.MAX_VALUE;
-			case NORTH -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.z - box.minZ) : Double.MAX_VALUE;
-			case SOUTH -> contains(localHit.x, box.minX, box.maxX) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.z - box.maxZ) : Double.MAX_VALUE;
-			case WEST -> contains(localHit.z, box.minZ, box.maxZ) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.x - box.minX) : Double.MAX_VALUE;
-			case EAST -> contains(localHit.z, box.minZ, box.maxZ) && contains(localHit.y, box.minY, box.maxY)
-					? Math.abs(localHit.x - box.maxX) : Double.MAX_VALUE;
-		};
-	}
-
-	private static boolean contains(double value, double min, double max) {
-		return value >= min - HOVER_FACE_EPSILON && value <= max + HOVER_FACE_EPSILON;
-	}
-
-	private static void renderHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, Direction direction, int color) {
-		renderOutlineFaceLines(pose, consumer, pos, camera, box, direction, HOVER_SURFACE_BIAS, color, FacetConfig.hoverWidth());
-	}
-
-	private static void renderOutlineFaceLines(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, Direction direction,
-			double surfaceBias, int color, float width) {
-		double biasX = direction.getStepX() * surfaceBias;
-		double biasY = direction.getStepY() * surfaceBias;
-		double biasZ = direction.getStepZ() * surfaceBias;
-
-		switch (direction) {
-			case DOWN -> renderHorizontalHoverFace(pose, consumer, pos, camera, box, box.minY + biasY, biasX, 0.0, biasZ, color, width);
-			case UP -> renderHorizontalHoverFace(pose, consumer, pos, camera, box, box.maxY + biasY, biasX, 0.0, biasZ, color, width);
-			case NORTH -> renderZHoverFace(pose, consumer, pos, camera, box, box.minZ + biasZ, biasX, biasY, 0.0, color, width);
-			case SOUTH -> renderZHoverFace(pose, consumer, pos, camera, box, box.maxZ + biasZ, biasX, biasY, 0.0, color, width);
-			case WEST -> renderXHoverFace(pose, consumer, pos, camera, box, box.minX + biasX, 0.0, biasY, biasZ, color, width);
-			case EAST -> renderXHoverFace(pose, consumer, pos, camera, box, box.maxX + biasX, 0.0, biasY, biasZ, color, width);
-		}
-	}
-
-	private static void renderHorizontalHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, double y, double biasX, double biasY, double biasZ, int color, float width) {
-		double minX = box.minX + biasX;
-		double maxX = box.maxX + biasX;
-		double minZ = box.minZ + biasZ;
-		double maxZ = box.maxZ + biasZ;
-
-		emitOutlineLine(pose, consumer, pos, camera, minX, y + biasY, minZ, maxX, y + biasY, minZ, 0, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, y + biasY, minZ, maxX, y + biasY, maxZ, 1, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, y + biasY, maxZ, minX, y + biasY, maxZ, 2, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, minX, y + biasY, maxZ, minX, y + biasY, minZ, 3, color, width);
-	}
-
-	private static void renderZHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, double z, double biasX, double biasY, double biasZ, int color, float width) {
-		double minX = box.minX + biasX;
-		double maxX = box.maxX + biasX;
-		double minY = box.minY + biasY;
-		double maxY = box.maxY + biasY;
-
-		emitOutlineLine(pose, consumer, pos, camera, minX, minY, z + biasZ, maxX, minY, z + biasZ, 0, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, minY, z + biasZ, maxX, maxY, z + biasZ, 1, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, maxX, maxY, z + biasZ, minX, maxY, z + biasZ, 2, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, minX, maxY, z + biasZ, minX, minY, z + biasZ, 3, color, width);
-	}
-
-	private static void renderXHoverFace(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera, AABB box, double x, double biasX, double biasY, double biasZ, int color, float width) {
-		double minY = box.minY + biasY;
-		double maxY = box.maxY + biasY;
-		double minZ = box.minZ + biasZ;
-		double maxZ = box.maxZ + biasZ;
-
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, minY, minZ, x + biasX, minY, maxZ, 0, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, minY, maxZ, x + biasX, maxY, maxZ, 1, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, maxY, maxZ, x + biasX, maxY, minZ, 2, color, width);
-		emitOutlineLine(pose, consumer, pos, camera, x + biasX, maxY, minZ, x + biasX, minY, minZ, 3, color, width);
 	}
 
 	private static void emitOutlineLine(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera,
 			double x1, double y1, double z1,
 			double x2, double y2, double z2,
-			int colorIndex, int color, float width) {
+			int color, float width) {
 		float startX = (float) (pos.getX() + x1 - camera.x);
 		float startY = (float) (pos.getY() + y1 - camera.y);
 		float startZ = (float) (pos.getZ() + z1 - camera.z);
@@ -572,15 +575,13 @@ public final class FacetClient implements ClientModInitializer {
 		}
 
 		Vector3f normal = new Vector3f(deltaX, deltaY, deltaZ).normalize();
-		int startColor = color == -1 ? hoverColor(colorIndex) : color;
-		int endColor = color == -1 ? hoverColor(colorIndex + 1) : color;
 
 		consumer.addVertex(pose, startX, startY, startZ)
-				.setColor(startColor)
+				.setColor(color)
 				.setNormal(pose, normal)
 				.setLineWidth(width);
 		consumer.addVertex(pose, endX, endY, endZ)
-				.setColor(endColor)
+				.setColor(color)
 				.setNormal(pose, normal)
 				.setLineWidth(width);
 	}
@@ -648,15 +649,35 @@ public final class FacetClient implements ClientModInitializer {
 				.setNormal(pose, normalX, normalY, normalZ);
 	}
 
-	private static int hoverColor(int offset) {
-		float hue = (float) ((System.nanoTime() % 4_000_000_000L) / 4_000_000_000.0);
-		int alpha = Math.round(FacetConfig.hoverOpacity() * 255.0f);
-		return Mth.hsvToArgb(Mth.positiveModulo(hue + offset * 0.16f, 1.0f), 1.0f, 1.0f, alpha);
+	private static double hitFacePlane(BlockHitResult hitResult, BlockPos pos) {
+		return switch (hitResult.getDirection().getAxis()) {
+			case X -> hitResult.getLocation().x - pos.getX();
+			case Y -> hitResult.getLocation().y - pos.getY();
+			case Z -> hitResult.getLocation().z - pos.getZ();
+		};
 	}
 
-	private static int outOfReachHoverColor() {
-		int alpha = Math.round(FacetConfig.hoverOpacity() * 255.0f);
-		return ARGB.color(alpha, ARGB.red(OUT_OF_REACH_HOVER_COLOR), ARGB.green(OUT_OF_REACH_HOVER_COLOR), ARGB.blue(OUT_OF_REACH_HOVER_COLOR));
+	static boolean edgeOnHitFace(Direction face, double plane,
+			double x1, double y1, double z1,
+			double x2, double y2, double z2) {
+		return switch (face.getAxis()) {
+			case X -> approximatelyEqual(x1, plane) && approximatelyEqual(x2, plane);
+			case Y -> approximatelyEqual(y1, plane) && approximatelyEqual(y2, plane);
+			case Z -> approximatelyEqual(z1, plane) && approximatelyEqual(z2, plane);
+		};
+	}
+
+	private static boolean approximatelyEqual(double first, double second) {
+		return Math.abs(first - second) <= HOVER_FACE_PLANE_EPSILON;
+	}
+
+	private static int hoverOutlineColor(int rgb) {
+		return ARGB.color(255, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
+	}
+
+	private static int hoverFaceColor() {
+		float hue = (float) ((System.nanoTime() % HOVER_HUE_CYCLE_NANOS) / (double) HOVER_HUE_CYCLE_NANOS);
+		return Mth.hsvToArgb(hue, 1.0f, 1.0f, 255);
 	}
 
 	private static int distancePathBrightnessOverlayColor(int red, int green, int blue) {
