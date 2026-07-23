@@ -55,7 +55,10 @@ public final class FacetClient implements ClientModInitializer {
 	private static final int DISTANCE_Z_COLOR = 0xFFFFFF20;
 	private static final int DISTANCE_Y_COLOR = 0xFF39FF14;
 	private static final int DISTANCE_HUD_FONT_SIZE_INCREASE = 2;
-	private static final int OUT_OF_REACH_HOVER_COLOR = 0xFF36F6FF;
+	private static final int IN_RANGE_HOVER_OUTLINE_COLOR = 0xFF39FF14;
+	private static final int OUT_OF_RANGE_HOVER_OUTLINE_COLOR = 0xFF36F6FF;
+	private static final long HOVER_HUE_CYCLE_NANOS = 1_200_000_000L;
+	private static final double HOVER_FACE_PLANE_EPSILON = 1.0e-5;
 	private static final Identifier DISTANCE_HUD_ID = Identifier.fromNamespaceAndPath("facet", "distance_hud");
 	private static KeyMapping toggleOutlineKeyMapping;
 	private static KeyMapping toggleHoverOutlineKeyMapping;
@@ -428,7 +431,7 @@ public final class FacetClient implements ClientModInitializer {
 	}
 
 	private static float outlineAlpha() {
-		return Math.min(FacetConfig.opacity(), OUTLINE_ALPHA_MARKER_MAX);
+		return OUTLINE_ALPHA_MARKER_MAX;
 	}
 
 	private static void renderDistancePath(LevelRenderContext context) {
@@ -490,11 +493,11 @@ public final class FacetClient implements ClientModInitializer {
 		}
 
 		BlockHitResult hitResult;
-		int color;
+		boolean inRange;
 
 		if (minecraft.hitResult instanceof BlockHitResult nearHitResult && nearHitResult.getType() == HitResult.Type.BLOCK) {
 			hitResult = nearHitResult;
-			color = -1;
+			inRange = true;
 		} else {
 			hitResult = findViewedBlock(minecraft, FacetMcBridge.mainCamera(minecraft));
 
@@ -502,14 +505,14 @@ public final class FacetClient implements ClientModInitializer {
 				return;
 			}
 
-			color = outOfReachHoverColor();
+			inRange = false;
 		}
 
-		renderHoverOutline(context, sink, level, hitResult, color);
+		renderHoverOutline(context, sink, level, hitResult, inRange);
 	}
 
 	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink,
-			ClientLevel level, BlockHitResult hitResult, int color) {
+			ClientLevel level, BlockHitResult hitResult, boolean inRange) {
 		BlockPos pos = hitResult.getBlockPos();
 
 		if (!level.isLoaded(pos)) {
@@ -531,23 +534,32 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
+		double facePlane = hitFacePlane(hitResult, pos);
+		int outlineColor = hoverOutlineColor(inRange
+				? IN_RANGE_HOVER_OUTLINE_COLOR
+				: OUT_OF_RANGE_HOVER_OUTLINE_COLOR);
+		int faceColor = inRange ? hoverFaceColor() : outlineColor;
 		sink.submit(context.poseStack(), RenderTypes.lines(),
-				(pose, consumer) -> renderHoverShape(pose, consumer, pos, camera.pos, outlineShape, color));
+				(pose, consumer) -> renderHoverShape(pose, consumer, pos, camera.pos, outlineShape,
+						hitResult.getDirection(), facePlane, inRange, outlineColor, faceColor));
 	}
 
 	private static void renderHoverShape(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera,
-			VoxelShape shape, int color) {
-		int[] colorIndex = {0};
-
-		FacetShapeEdges.forEachEdge(shape, (x1, y1, z1, x2, y2, z2) ->
-				emitOutlineLine(pose, consumer, pos, camera, x1, y1, z1, x2, y2, z2,
-						colorIndex[0]++, color, FacetConfig.hoverWidth()));
+			VoxelShape shape, Direction hitFace, double facePlane, boolean highlightHitFace,
+			int outlineColor, int faceColor) {
+		FacetShapeEdges.forEachEdge(shape, (x1, y1, z1, x2, y2, z2) -> {
+			int color = highlightHitFace && edgeOnHitFace(hitFace, facePlane, x1, y1, z1, x2, y2, z2)
+					? faceColor
+					: outlineColor;
+			emitOutlineLine(pose, consumer, pos, camera, x1, y1, z1, x2, y2, z2,
+					color, FacetConfig.hoverWidth());
+		});
 	}
 
 	private static void emitOutlineLine(PoseStack.Pose pose, VertexConsumer consumer, BlockPos pos, Vec3 camera,
 			double x1, double y1, double z1,
 			double x2, double y2, double z2,
-			int colorIndex, int color, float width) {
+			int color, float width) {
 		float startX = (float) (pos.getX() + x1 - camera.x);
 		float startY = (float) (pos.getY() + y1 - camera.y);
 		float startZ = (float) (pos.getZ() + z1 - camera.z);
@@ -563,15 +575,13 @@ public final class FacetClient implements ClientModInitializer {
 		}
 
 		Vector3f normal = new Vector3f(deltaX, deltaY, deltaZ).normalize();
-		int startColor = color == -1 ? hoverColor(colorIndex) : color;
-		int endColor = color == -1 ? hoverColor(colorIndex + 1) : color;
 
 		consumer.addVertex(pose, startX, startY, startZ)
-				.setColor(startColor)
+				.setColor(color)
 				.setNormal(pose, normal)
 				.setLineWidth(width);
 		consumer.addVertex(pose, endX, endY, endZ)
-				.setColor(endColor)
+				.setColor(color)
 				.setNormal(pose, normal)
 				.setLineWidth(width);
 	}
@@ -639,15 +649,35 @@ public final class FacetClient implements ClientModInitializer {
 				.setNormal(pose, normalX, normalY, normalZ);
 	}
 
-	private static int hoverColor(int offset) {
-		float hue = (float) ((System.nanoTime() % 4_000_000_000L) / 4_000_000_000.0);
-		int alpha = Math.round(FacetConfig.hoverOpacity() * 255.0f);
-		return Mth.hsvToArgb(Mth.positiveModulo(hue + offset * 0.16f, 1.0f), 1.0f, 1.0f, alpha);
+	private static double hitFacePlane(BlockHitResult hitResult, BlockPos pos) {
+		return switch (hitResult.getDirection().getAxis()) {
+			case X -> hitResult.getLocation().x - pos.getX();
+			case Y -> hitResult.getLocation().y - pos.getY();
+			case Z -> hitResult.getLocation().z - pos.getZ();
+		};
 	}
 
-	private static int outOfReachHoverColor() {
-		int alpha = Math.round(FacetConfig.hoverOpacity() * 255.0f);
-		return ARGB.color(alpha, ARGB.red(OUT_OF_REACH_HOVER_COLOR), ARGB.green(OUT_OF_REACH_HOVER_COLOR), ARGB.blue(OUT_OF_REACH_HOVER_COLOR));
+	static boolean edgeOnHitFace(Direction face, double plane,
+			double x1, double y1, double z1,
+			double x2, double y2, double z2) {
+		return switch (face.getAxis()) {
+			case X -> approximatelyEqual(x1, plane) && approximatelyEqual(x2, plane);
+			case Y -> approximatelyEqual(y1, plane) && approximatelyEqual(y2, plane);
+			case Z -> approximatelyEqual(z1, plane) && approximatelyEqual(z2, plane);
+		};
+	}
+
+	private static boolean approximatelyEqual(double first, double second) {
+		return Math.abs(first - second) <= HOVER_FACE_PLANE_EPSILON;
+	}
+
+	private static int hoverOutlineColor(int rgb) {
+		return ARGB.color(255, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
+	}
+
+	private static int hoverFaceColor() {
+		float hue = (float) ((System.nanoTime() % HOVER_HUE_CYCLE_NANOS) / (double) HOVER_HUE_CYCLE_NANOS);
+		return Mth.hsvToArgb(hue, 1.0f, 1.0f, 255);
 	}
 
 	private static int distancePathBrightnessOverlayColor(int red, int green, int blue) {

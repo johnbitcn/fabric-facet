@@ -27,10 +27,8 @@
 	"config.facet.hover_outline": "懸停描邊：%s",
 	"config.facet.distance_path": "曼哈頓路徑：%s",
 	"config.facet.placement_preview": "放置預覽：%s",
-	"config.facet.opacity": "不透明度",
-	"config.facet.width": "寬度",
-	"config.facet.hover_opacity": "懸停不透明度",
-	"config.facet.hover_width": "懸停寬度",
+  "config.facet.width": "寬度",
+  "config.facet.hover_width": "懸停寬度",
 	"config.facet.reset": "重置",
 	"config.facet.slider": "%s：%s"
 }
