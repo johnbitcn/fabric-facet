@@ -16,7 +16,7 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ## Feature Updates
 
-### Unreleased
+### v1.2.9 — Major Rendering Logic Refactor
 
 - Reworked outline rendering for better performance and more natural visuals
 - Updated how targeted-block outlines are expressed
