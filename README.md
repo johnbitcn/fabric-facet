@@ -16,6 +16,10 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ## Feature Updates
 
+### Unreleased
+
+- Block outlines now adapt their MapColor-derived hue, saturation, and lightness for clearer warm, cool, white, dark, and neutral borders
+
 ### v1.2.1 — Holographic Placement Preview (2026-07-21)
 
 - Added a real-time holographic placement preview to help players place blocks more accurately
