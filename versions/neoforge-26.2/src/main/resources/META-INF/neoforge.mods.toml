@@ -1,0 +1,27 @@
+license="MIT"
+
+[[mods]]
+modId="facet"
+version="${version}"
+displayName="Facet NeoForge"
+authors="ByteWave"
+description='''
+Client-side block outlines, hover outlines, distance tools, graffiti, placement preview, and settings for Minecraft 26.2.
+'''
+
+[[mixins]]
+config="facet.neoforge.mixins.json"
+
+[[dependencies.facet]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.facet]]
+modId="minecraft"
+type="required"
+versionRange="[26.2]"
+ordering="NONE"
+side="CLIENT"

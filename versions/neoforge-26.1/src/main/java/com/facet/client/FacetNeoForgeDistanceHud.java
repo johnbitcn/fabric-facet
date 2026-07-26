@@ -40,7 +40,7 @@ final class FacetNeoForgeDistanceHud {
 			return;
 		}
 
-		BlockHitResult hit = findViewedBlock(minecraft, minecraft.gameRenderer.getMainCamera());
+		BlockHitResult hit = findViewedBlock(minecraft, FacetNeoForgePlatform.mainCamera(minecraft));
 		if (hit.getType() != HitResult.Type.BLOCK) {
 			return;
 		}
@@ -96,7 +96,7 @@ final class FacetNeoForgeDistanceHud {
 			return;
 		}
 
-		BlockHitResult hit = findViewedBlock(minecraft, minecraft.gameRenderer.getMainCamera());
+		BlockHitResult hit = findViewedBlock(minecraft, FacetNeoForgePlatform.mainCamera(minecraft));
 		if (hit.getType() != HitResult.Type.BLOCK) {
 			return;
 		}
@@ -106,11 +106,11 @@ final class FacetNeoForgeDistanceHud {
 		BlockPos xCorner = new BlockPos(target.getX(), start.getY(), start.getZ());
 		BlockPos zCorner = new BlockPos(target.getX(), start.getY(), target.getZ());
 		Vec3 camera = event.getLevelRenderState().cameraRenderState.pos;
-		VertexConsumer consumer = minecraft.renderBuffers().bufferSource().getBuffer(RenderTypes.debugFilledBox());
-		renderSegment(event.getPoseStack(), consumer, camera, start, xCorner, pulseColor(255, 32, 96));
-		renderSegment(event.getPoseStack(), consumer, camera, xCorner, zCorner, pulseColor(255, 255, 32));
-		renderSegment(event.getPoseStack(), consumer, camera, zCorner, target, pulseColor(57, 255, 20));
-		minecraft.renderBuffers().bufferSource().endBatch(RenderTypes.debugFilledBox());
+		FacetNeoForgePlatform.render(event, RenderTypes.debugFilledBox(), (pose, consumer) -> {
+			renderSegment(pose, consumer, camera, start, xCorner, pulseColor(255, 32, 96));
+			renderSegment(pose, consumer, camera, xCorner, zCorner, pulseColor(255, 255, 32));
+			renderSegment(pose, consumer, camera, zCorner, target, pulseColor(57, 255, 20));
+		});
 	}
 
 	private static BlockHitResult findViewedBlock(Minecraft minecraft, Camera camera) {

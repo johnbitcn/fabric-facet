@@ -155,7 +155,7 @@ final class FacetNeoForgeConfigScreen extends Screen {
 
 	@Override
 	public void onClose() {
-		this.minecraft.setScreen(parent);
+		FacetNeoForgePlatform.showScreen(this.minecraft, parent);
 	}
 
 	private static Component enabledMessage() {

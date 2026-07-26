@@ -26,6 +26,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.level.ChunkEvent;
@@ -66,7 +67,7 @@ public final class FacetNeoForgeOutline {
 	private static final GraffitiClientAccess GRAFFITI_CLIENT_ACCESS = new GraffitiClientAccess() {
 		@Override
 		public void showScreen(Minecraft minecraft, Screen screen) {
-			minecraft.setScreen(screen);
+			FacetNeoForgePlatform.showScreen(minecraft, screen);
 		}
 
 		@Override
@@ -94,6 +95,8 @@ public final class FacetNeoForgeOutline {
 
 	public FacetNeoForgeOutline(IEventBus modBus, ModContainer modContainer) {
 		modContainer.registerConfig(ModConfig.Type.CLIENT, FacetNeoForgeOutlineConfig.SPEC, "facet-neoforge-client.toml");
+		modContainer.registerExtensionPoint(IConfigScreenFactory.class,
+				(IConfigScreenFactory) (container, modListScreen) -> new FacetNeoForgeConfigScreen(modListScreen));
 		GraffitiStore.initialize(FMLPaths.CONFIGDIR.get());
 		GraffitiStore.load();
 		modBus.addListener(FacetNeoForgeOutlineRenderer::modifyBakingResult);
@@ -150,7 +153,7 @@ public final class FacetNeoForgeOutline {
 		}
 
 		while (OPEN_SETTINGS_KEY.consumeClick()) {
-			minecraft.setScreen(new FacetNeoForgeConfigScreen(null));
+			FacetNeoForgePlatform.showScreen(minecraft, new FacetNeoForgeConfigScreen(null));
 		}
 
 		GraffitiStore.flush();
@@ -224,9 +227,6 @@ public final class FacetNeoForgeOutline {
 	}
 
 	private static void rebuildOutlineChunks() {
-		Minecraft minecraft = Minecraft.getInstance();
-		if (minecraft.level != null) {
-			minecraft.levelRenderer.allChanged();
-		}
+		FacetNeoForgePlatform.rebuildChunks(Minecraft.getInstance());
 	}
 }

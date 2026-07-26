@@ -84,16 +84,12 @@ final class FacetNeoForgePlacementPreview {
 
 		Vec3 camera = event.getLevelRenderState().cameraRenderState.pos;
 		HologramFrame frame = HologramFrame.create(System.nanoTime());
-		Vector3fc left = minecraft.gameRenderer.getMainCamera().leftVector();
+		Vector3fc left = FacetNeoForgePlatform.mainCamera(minecraft).leftVector();
 		float screenRightX = -left.x();
 		float screenRightZ = -left.z();
-		VertexConsumer modelConsumer = minecraft.renderBuffers().bufferSource().getBuffer(RenderTypes.translucentMovingBlock());
-		VertexConsumer edgeConsumer = minecraft.renderBuffers().bufferSource().getBuffer(RenderTypes.linesTranslucent());
-		blocks.stream().sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera)).reversed())
-				.forEach(block -> renderBlock(event.getPoseStack(), modelConsumer, edgeConsumer, minecraft, level, camera, block,
-						frame, screenRightX, screenRightZ));
-		minecraft.renderBuffers().bufferSource().endBatch(RenderTypes.translucentMovingBlock());
-		minecraft.renderBuffers().bufferSource().endBatch(RenderTypes.linesTranslucent());
+		FacetNeoForgePlatform.render(event, RenderTypes.translucentMovingBlock(), RenderTypes.linesTranslucent(), (pose, modelConsumer, edgeConsumer) ->
+			blocks.stream().sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera)).reversed())
+					.forEach(block -> renderBlock(pose, modelConsumer, edgeConsumer, minecraft, level, camera, block, frame, screenRightX, screenRightZ)));
 	}
 
 	private static List<PreviewBlock> predict(Minecraft minecraft, ClientLevel level, BlockHitResult hit) {
