@@ -14,6 +14,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -75,6 +76,7 @@ public final class FacetClient implements ClientModInitializer {
 		FacetBlockOverlay.initialize();
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
 		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetClient::renderSurfaceEffectsAfterTerrain);
+		LevelRenderEvents.BEFORE_BLOCK_OUTLINE.register(FacetClient::beforeBlockOutline);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) ->
 				GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, level), level.dimension().identifier()));
@@ -477,6 +479,11 @@ public final class FacetClient implements ClientModInitializer {
 			renderHoverOutline(context, sink);
 			PlacementPreview.render(context, sink);
 		});
+	}
+
+
+	private static boolean beforeBlockOutline(LevelRenderContext context, BlockOutlineRenderState state) {
+		return !FacetConfig.hoverEnabled();
 	}
 
 	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink) {
