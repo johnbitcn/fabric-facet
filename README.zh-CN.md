@@ -6,10 +6,17 @@
 
 Facet 是一个轻量级 Minecraft Fabric 与 NeoForge 客户端 Mod，专为建筑、铺地、圈地、路线规划和大型工程中的方块计数与标记而设计。它通过可随时切换的方块描边、目标方块高亮、距离 HUD、曼哈顿路径指示器和涂鸦标记，让你在不替换材质包的前提下快速看清每个方块的位置和数量。
 
+## 全息放置预览
+![Facet 全息投影实时放置预览](https://github.com/user-attachments/assets/6ea970c8-b516-489e-8054-4757b45e99bf)
+
+## 游戏截图
+
+![Facet Minecraft 方块计数与描边辅助 Mod 截图](https://github.com/user-attachments/assets/90140d40-e72a-4002-8a0c-4284ece73deb)
+
 ## 支持的构建
 
 - Fabric：Minecraft 26.1、26.2、26.3-snapshot-5
-- NeoForge：Minecraft 26.1，NeoForge 26.1.0.19-beta
+- NeoForge：Minecraft 26.1（NeoForge 26.1.0.19-beta）、26.1.2（NeoForge 26.1.2.47-beta）、26.2（NeoForge 26.2.0.32-beta）
 
 Loader 与游戏版本的构建目录、命令和产物命名见 [BUILDING.md](./BUILDING.md)。
 
@@ -23,6 +30,12 @@ Facet 的开发初衷很简单：让数方块更清楚，同时不牺牲玩家�
 
 ## 功能更新
 
+### v1.2.11 — NeoForge 支持与设置入口
+
+- 新增 Minecraft 26.1、26.1.2、26.2 的完整 NeoForge 构建
+- 在 NeoForge 上提供方块描边、悬停描边、距离 HUD 与路径、客户端本地涂鸦和全息放置预览
+- 新增默认未绑定的“打开 Facet 设置”快捷键，并可从 NeoForge 原生模组列表打开设置
+
 ### v1.2.9 — 重构主要渲染逻辑
 
 - 修改描边渲染逻辑，速度更快视觉效果更合理
@@ -33,7 +46,6 @@ Facet 的开发初衷很简单：让数方块更清楚，同时不牺牲玩家�
 ### v1.2.1 — 全息放置预览（2026-07-21）
 
 - 新增全息投影实时放置预览，帮助玩家更准确地放置方块
-![Facet 全息投影实时放置预览](https://github.com/user-attachments/assets/6ea970c8-b516-489e-8054-4757b45e99bf)
 
 ### v1.1.2 — 客户端涂鸦（2026-07-19）
 
@@ -51,15 +63,13 @@ Facet 的开发初衷很简单：让数方块更清楚，同时不牺牲玩家�
 - 新增按颜色区分路径段的曼哈顿路径指示器
 - 新增描边透明度、宽度和目标方块描边样式等客户端设置
 
-## 截图
-
-![Facet Minecraft 方块计数与描边辅助 Mod 截图](https://github.com/user-attachments/assets/90140d40-e72a-4002-8a0c-4284ece73deb)
 
 ## 按键绑定
 
 - 全体方块描边开关
 - 目标方块描边开关
 - 方块距离计数 HUD 与曼哈顿路径显示开关
+- 打开 Facet 设置（默认未绑定；NeoForge 也可从模组列表打开）
 - 打开涂鸦轮盘（默认为 `G`；使用 `1`–`4` 或鼠标选择标记）
 
 ## 许可证

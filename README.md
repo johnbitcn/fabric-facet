@@ -6,10 +6,18 @@ Official project pages: [Modrinth](https://modrinth.com/project/lW1ulmxe) | [Cur
 
 Facet is a lightweight client-side Fabric and NeoForge mod for Minecraft block counting, block outlines, distance probing, Manhattan-path measurement, and graffiti marking. It helps builders count and mark blocks for structures, flooring, borders, paths, and large projects without replacing their favorite resource pack textures.
 
+## Holographic Placement Preview
+
+![Facet holographic placement preview](https://github.com/user-attachments/assets/6ea970c8-b516-489e-8054-4757b45e99bf)
+
+## Screenshots
+
+![Facet Minecraft block counting and outline mod screenshot](https://github.com/user-attachments/assets/90140d40-e72a-4002-8a0c-4284ece73deb)
+
 ## Supported Builds
 
 - Fabric: Minecraft 26.1, 26.2, and 26.3-snapshot-5
-- NeoForge: Minecraft 26.1 with NeoForge 26.1.0.19-beta
+- NeoForge: Minecraft 26.1 (NeoForge 26.1.0.19-beta), 26.1.2 (NeoForge 26.1.2.47-beta), and 26.2 (NeoForge 26.2.0.32-beta)
 
 See [BUILDING.md](./BUILDING.md) for the Loader-and-game-version build layout and artifact names.
 
@@ -23,6 +31,12 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 ## Feature Updates
 
+### v1.2.11 — NeoForge Support and Settings Access
+
+- Added full NeoForge builds for Minecraft 26.1, 26.1.2, and 26.2
+- Made block outlines, hover outlines, distance HUD and path tools, client-side graffiti, and holographic placement preview available on NeoForge
+- Added an Open Facet Settings key binding (unbound by default) and a native NeoForge mod-list settings entry
+
 ### v1.2.9 — Major Rendering Logic Refactor
 
 - Reworked outline rendering for better performance and more natural visuals
@@ -33,7 +47,6 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 ### v1.2.1 — Holographic Placement Preview (2026-07-21)
 
 - Added a real-time holographic placement preview to help players place blocks more accurately
-![Facet holographic placement preview](https://github.com/user-attachments/assets/6ea970c8-b516-489e-8054-4757b45e99bf)
 
 ### v1.1.2 — Graffiti Marking (2026-07-19)
 
@@ -51,15 +64,12 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 - Added a color-coded Manhattan path indicator
 - Added client-side settings for outline opacity, width, and targeted-block outline style
 
-## Screenshot
-
-![Facet Minecraft block counting and outline mod screenshot](https://github.com/user-attachments/assets/90140d40-e72a-4002-8a0c-4284ece73deb)
-
 ## Key Bindings
 
 - Toggle all block outlines
 - Toggle targeted-block outline
 - Toggle block distance HUD and Manhattan path display
+- Open Facet settings (unbound by default; also available from the NeoForge mod list)
 - Open the graffiti wheel (`G` by default; use `1`–`4` or the mouse to choose a marker)
 
 ## License
