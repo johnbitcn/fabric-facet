@@ -2,6 +2,7 @@
 .gradle/
 build/
 run/
+versions/**/bin/
 *.log
 AGENTS.md
 memory.md

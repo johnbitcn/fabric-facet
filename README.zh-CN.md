@@ -4,7 +4,14 @@
 
 官方项目页面：[Modrinth](https://modrinth.com/project/lW1ulmxe) | [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/facet)
 
-Facet 是一个轻量级 Minecraft Fabric 客户端 Mod，专为建筑、铺地、圈地、路线规划和大型工程中的方块计数与标记而设计。它通过可随时切换的方块描边、目标方块高亮、距离 HUD、曼哈顿路径指示器和涂鸦标记，让你在不替换材质包的前提下快速看清每个方块的位置和数量。
+Facet 是一个轻量级 Minecraft Fabric 与 NeoForge 客户端 Mod，专为建筑、铺地、圈地、路线规划和大型工程中的方块计数与标记而设计。它通过可随时切换的方块描边、目标方块高亮、距离 HUD、曼哈顿路径指示器和涂鸦标记，让你在不替换材质包的前提下快速看清每个方块的位置和数量。
+
+## 支持的构建
+
+- Fabric：Minecraft 26.1、26.2、26.3-snapshot-5
+- NeoForge：Minecraft 26.1，NeoForge 26.1.0.19-beta
+
+Loader 与游戏版本的构建目录、命令和产物命名见 [BUILDING.md](./BUILDING.md)。
 
 ## 理念与初衷
 
@@ -21,7 +28,7 @@ Facet 的开发初衷很简单：让数方块更清楚，同时不牺牲玩家�
 - 修改描边渲染逻辑，速度更快视觉效果更合理
 - 修改目标方块描边的表达逻辑
 - 修正全息投影渲染效果
-- 兼容 Minecraft 26.3-alpha.5 (snapshot-5)
+- 当前 Loader 与游戏版本支持见上方列表
 
 ### v1.2.1 — 全息放置预览（2026-07-21）
 

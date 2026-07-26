@@ -4,7 +4,14 @@
 
 Official project pages: [Modrinth](https://modrinth.com/project/lW1ulmxe) | [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/facet)
 
-Facet is a lightweight client-side Fabric mod for Minecraft block counting, block outlines, distance probing, Manhattan-path measurement, and graffiti marking. It helps builders count and mark blocks for structures, flooring, borders, paths, and large projects without replacing their favorite resource pack textures.
+Facet is a lightweight client-side Fabric and NeoForge mod for Minecraft block counting, block outlines, distance probing, Manhattan-path measurement, and graffiti marking. It helps builders count and mark blocks for structures, flooring, borders, paths, and large projects without replacing their favorite resource pack textures.
+
+## Supported Builds
+
+- Fabric: Minecraft 26.1, 26.2, and 26.3-snapshot-5
+- NeoForge: Minecraft 26.1 with NeoForge 26.1.0.19-beta
+
+See [BUILDING.md](./BUILDING.md) for the Loader-and-game-version build layout and artifact names.
 
 ## Purpose and Philosophy
 
@@ -21,7 +28,7 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 - Reworked outline rendering for better performance and more natural visuals
 - Updated how targeted-block outlines are expressed
 - Fixed holographic placement preview rendering
-- Compatible with Minecraft 26.3-alpha.5 (snapshot-5)
+- Current Loader and game-version support is listed above
 
 ### v1.2.1 — Holographic Placement Preview (2026-07-21)
 

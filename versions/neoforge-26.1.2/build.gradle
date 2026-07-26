@@ -1,0 +1,78 @@
+plugins {
+	id 'java-library'
+	id 'net.neoforged.moddev'
+}
+
+version = rootProject.mod_version
+
+base {
+	archivesName = 'Facet-NeoForge'
+}
+
+java {
+	toolchain.languageVersion = JavaLanguageVersion.of(25)
+	withSourcesJar()
+}
+
+neoForge {
+	version = rootProject.neo_version_26_1_2
+
+	runs {
+		client {
+			client()
+			gameDirectory = project.file('run')
+			logLevel = org.slf4j.event.Level.DEBUG
+		}
+	}
+
+	mods {
+		facet {
+			sourceSet(sourceSets.main)
+		}
+	}
+}
+
+dependencies {
+	testImplementation platform('org.junit:junit-bom:5.12.1')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+sourceSets {
+	main {
+		java.srcDir(rootProject.file('src/outline_core/java'))
+		java.srcDir(rootProject.file('versions/neoforge-26.1/src/main/java'))
+		resources.srcDir(rootProject.file('src/outline_core/resources'))
+		resources.srcDir(rootProject.file('src/shared/resources'))
+		resources.exclude('fabric.mod.json', 'facet.client.mixins.json')
+	}
+
+	test {
+		java.srcDir(rootProject.file('versions/neoforge-26.1/src/test/java'))
+		compileClasspath += sourceSets.main.compileClasspath
+		runtimeClasspath += sourceSets.main.runtimeClasspath
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+tasks.withType(ProcessResources).configureEach {
+	inputs.property 'version', rootProject.mod_version
+	inputs.property 'neo_version', rootProject.neo_version_26_1_2
+	filesMatching('META-INF/neoforge.mods.toml') {
+		expand(version: rootProject.mod_version, neo_version: rootProject.neo_version_26_1_2)
+	}
+}
+
+tasks.withType(Jar).configureEach {
+	archiveVersion.set("${rootProject.mod_version}-26.1.2")
+	from(rootProject.file('LICENSE')) {
+		into('META-INF')
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

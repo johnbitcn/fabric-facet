@@ -2,10 +2,12 @@ plugins {
 	id 'base'
 	id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
 	id 'com.modrinth.minotaur' version "${minotaur_version}" apply false
+	id 'net.neoforged.moddev' version "${moddev_version}" apply false
 }
 
 def versionConfigs = [
-		":versions:v26_1": [
+		":versions:fabric-26.1": [
+				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_1"),
 				fabricApiVersion: findProperty("fabric_api_version_26_1"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_1"),
@@ -14,7 +16,8 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: true,
 		],
-		":versions:v26_2": [
+		":versions:fabric-26.2": [
+				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_2"),
 				fabricApiVersion: findProperty("fabric_api_version_26_2"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_2"),
@@ -23,7 +26,8 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: true,
 		],
-		":versions:v26_3": [
+		":versions:fabric-26.3-snapshot-5": [
+				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_3"),
 				fabricApiVersion: findProperty("fabric_api_version_26_3"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_3"),
@@ -82,7 +86,7 @@ versionConfigs.each { projectPath, cfg ->
 		version = rootProject.mod_version
 
 		base {
-			archivesName = rootProject.archives_base_name
+			archivesName = cfg.archivesName
 		}
 
 		loom {
@@ -97,8 +101,8 @@ versionConfigs.each { projectPath, cfg ->
 
 		sourceSets {
 			client {
-				def javaDirs = [rootProject.file("src/shared/java"), file("src/client/java")]
-				def resourceDirs = [file("src/client/resources"), rootProject.file("src/shared/resources")]
+				def javaDirs = [rootProject.file("src/outline_core/java"), rootProject.file("src/shared/java"), file("src/client/java")]
+				def resourceDirs = [rootProject.file("src/outline_core/resources"), file("src/client/resources"), rootProject.file("src/shared/resources")]
 
 				if (cfg.legacyRenderer) {
 					javaDirs.add(rootProject.file("src/legacy_renderer/java"))
@@ -171,7 +175,7 @@ versionConfigs.each { projectPath, cfg ->
 			modrinth {
 				token = System.getenv("MODRINTH_TOKEN") ?: (modrinthDebugMode ? "debug-token" : null)
 				projectId = findProperty("modrinth_project_id") ?: System.getenv("MODRINTH_PROJECT_ID")
-				versionName = "${rootProject.archives_base_name} ${rootProject.mod_version} for Minecraft ${cfg.minecraftVersion}"
+				versionName = "${cfg.archivesName} ${rootProject.mod_version} for Minecraft ${cfg.minecraftVersion}"
 				versionNumber = "${rootProject.mod_version}+mc${cfg.minecraftVersion}"
 				versionType = findProperty("modrinth_version_type") ?: "release"
 				uploadFile = tasks.named("jar").get()
