@@ -5,6 +5,12 @@ on:
     tags:
       - v1.2.11
   workflow_dispatch:
+    inputs:
+      publish_fabric:
+        description: Publish Fabric 26.1 and 26.2 (leave disabled when retrying NeoForge only)
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -28,7 +34,6 @@ jobs:
           ./gradlew
           :versions:fabric-26.1:build
           :versions:fabric-26.2:build
-          :versions:fabric-26.3-snapshot-5:build
           :versions:neoforge-26.1:build
           :versions:neoforge-26.1.2:build
           :versions:neoforge-26.2:build
@@ -36,6 +41,7 @@ jobs:
           --console=plain
 
       - name: Publish Fabric 26.1
+        if: github.event_name == 'push' || inputs.publish_fabric
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
@@ -54,6 +60,7 @@ jobs:
           curseforge-changelog: Facet 1.2.11 for Minecraft 26.1 through 26.1.2.
 
       - name: Publish Fabric 26.2
+        if: github.event_name == 'push' || inputs.publish_fabric
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
@@ -67,21 +74,6 @@ jobs:
           curseforge-game-versions: 26.2
           curseforge-game-version-filter: none
           curseforge-changelog: Facet 1.2.11 for Minecraft 26.2.
-
-      - name: Publish Fabric 26.3 Snapshot 5
-        uses: Kira-NT/mc-publish@v3
-        with:
-          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
-          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          curseforge-files: versions/fabric-26.3-snapshot-5/build/libs/Facet-Fabric-1.2.11-26.3-snapshot-5.jar
-          curseforge-name: Facet 1.2.11 for Minecraft 26.3 Snapshot 5
-          curseforge-version: 1.2.11+mc26.3-snapshot-5
-          curseforge-version-type: beta
-          curseforge-loaders: fabric
-          curseforge-environment: client
-          curseforge-game-versions: 26.3-snapshot-5
-          curseforge-game-version-filter: none
-          curseforge-changelog: Facet 1.2.11 for Minecraft 26.3 Snapshot 5.
 
       - name: Publish NeoForge 26.1
         uses: Kira-NT/mc-publish@v3
