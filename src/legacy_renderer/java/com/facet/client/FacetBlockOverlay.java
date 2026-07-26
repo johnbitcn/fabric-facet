@@ -26,7 +26,6 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.ShadeMode;
 import net.fabricmc.fabric.api.util.TriState;
 
 final class FacetBlockOverlay {
-	private static final double SURFACE_BIAS = 1.0 / 1024.0;
 	private static final double GRAFFITI_SURFACE_BIAS = 1.0 / 512.0;
 	private static final double GRAFFITI_FACE_SIZE = 0.785;
 	private static final double GRAFFITI_FACE_INSET = (1.0 - GRAFFITI_FACE_SIZE) / 2.0;
@@ -90,7 +89,7 @@ final class FacetBlockOverlay {
 		private void emitOutlineQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, Predicate<Direction> cullTest) {
 			if (FacetClient.usesExperimentalLineOutlines()
 					|| !FacetConfig.enabled()
-					|| !FacetClient.shouldRenderOutline(level, pos, state)) {
+					|| !FacetOutlineRules.shouldRender(level, pos, state)) {
 				return;
 			}
 
@@ -100,13 +99,13 @@ final class FacetBlockOverlay {
 				return;
 			}
 
-			int color = FacetClient.outlineColor(level, pos, state);
+			int color = FacetOutlineRules.outlineColor(level, pos, state);
 			boolean isCarpet = state.getBlock() instanceof CarpetBlock;
 
 			FacetShapeEdges.forEachSurfaceStrip(shape, FacetConfig.effectiveEdgeWidth(),
 					(direction, minX, minY, minZ, maxX, maxY, maxZ) -> {
 				if ((isCarpet && direction != Direction.UP)
-						|| (touchesBlockBoundary(direction, minX, minY, minZ, maxX, maxY, maxZ)
+						|| (FacetOutlineRules.touchesBlockBoundary(direction, minX, minY, minZ, maxX, maxY, maxZ)
 						&& cullTest.test(direction))) {
 					return;
 				}
@@ -123,7 +122,7 @@ final class FacetBlockOverlay {
 			}
 
 			for (Direction direction : Direction.values()) {
-				GraffitiType type = GraffitiStore.getType(pos, direction);
+				GraffitiType type = GraffitiStore.getType(pos, direction, state);
 
 				if (type == null || cullTest.test(direction)
 						|| GraffitiEligibility.evaluate(level, pos, state, direction) != GraffitiEligibility.Result.ALLOWED) {
@@ -182,23 +181,10 @@ final class FacetBlockOverlay {
 					.emit();
 		}
 
-		private boolean touchesBlockBoundary(Direction direction,
-				double minX, double minY, double minZ,
-				double maxX, double maxY, double maxZ) {
-			return switch (direction) {
-				case DOWN -> Math.abs(minY) <= FacetShapeEdges.AXIS_EPSILON;
-				case UP -> Math.abs(maxY - 1.0) <= FacetShapeEdges.AXIS_EPSILON;
-				case NORTH -> Math.abs(minZ) <= FacetShapeEdges.AXIS_EPSILON;
-				case SOUTH -> Math.abs(maxZ - 1.0) <= FacetShapeEdges.AXIS_EPSILON;
-				case WEST -> Math.abs(minX) <= FacetShapeEdges.AXIS_EPSILON;
-				case EAST -> Math.abs(maxX - 1.0) <= FacetShapeEdges.AXIS_EPSILON;
-			};
-		}
-
 		private void emitSurfaceStrip(QuadEmitter emitter, Direction face, int color,
 				double minX, double minY, double minZ,
 				double maxX, double maxY, double maxZ) {
-			double bias = SURFACE_BIAS * face.getAxisDirection().getStep();
+			double bias = FacetOutlineRules.SURFACE_BIAS * face.getAxisDirection().getStep();
 
 			switch (face) {
 				case DOWN, UP -> emitQuad(emitter, face, color,

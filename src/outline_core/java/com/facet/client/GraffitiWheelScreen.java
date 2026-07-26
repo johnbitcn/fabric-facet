@@ -41,6 +41,7 @@ final class GraffitiWheelScreen extends Screen {
 	private final BlockPos pos;
 	private final Direction direction;
 	private final Identifier blockId;
+	private final GraffitiClientAccess clientAccess;
 	private int originX;
 	private int originY;
 	private long animationStartNanos;
@@ -50,13 +51,15 @@ final class GraffitiWheelScreen extends Screen {
 	private boolean exiting;
 	private boolean closeScheduled;
 
-	GraffitiWheelScreen(String world, Identifier dimension, BlockPos pos, Direction direction, Identifier blockId) {
+	GraffitiWheelScreen(String world, Identifier dimension, BlockPos pos, Direction direction, Identifier blockId,
+			GraffitiClientAccess clientAccess) {
 		super(Component.translatable("screen.facet.graffiti.title"));
 		this.world = world;
 		this.dimension = dimension;
 		this.pos = pos;
 		this.direction = direction;
 		this.blockId = blockId;
+		this.clientAccess = clientAccess;
 	}
 
 	@Override
@@ -216,7 +219,7 @@ final class GraffitiWheelScreen extends Screen {
 		GraffitiStore.Change change = GraffitiStore.set(pos, direction, state, type);
 
 		if (change != GraffitiStore.Change.UNCHANGED) {
-			FacetMcBridge.rebuildBlockSection(this.minecraft, pos);
+			clientAccess.rebuildBlockSection(this.minecraft, pos);
 			playSpraySound();
 			this.minecraft.player.sendOverlayMessage(Component.translatable(
 					change == GraffitiStore.Change.ADDED
@@ -243,7 +246,7 @@ final class GraffitiWheelScreen extends Screen {
 		}
 
 		if (GraffitiStore.clear(pos, direction)) {
-			FacetMcBridge.rebuildBlockSection(this.minecraft, pos);
+			clientAccess.rebuildBlockSection(this.minecraft, pos);
 			this.minecraft.player.sendOverlayMessage(Component.translatable("message.facet.graffiti.removed"));
 		}
 
@@ -264,7 +267,7 @@ final class GraffitiWheelScreen extends Screen {
 			return false;
 		}
 
-		if (!world.equals(FacetMcBridge.worldScope(this.minecraft, this.minecraft.level))
+		if (!world.equals(clientAccess.worldScope(this.minecraft, this.minecraft.level))
 				|| !dimension.equals(this.minecraft.level.dimension().identifier())) {
 			return false;
 		}
@@ -340,7 +343,7 @@ final class GraffitiWheelScreen extends Screen {
 		}
 
 		closeScheduled = true;
-		this.minecraft.execute(() -> FacetMcBridge.showScreen(this.minecraft, null));
+		this.minecraft.execute(() -> clientAccess.showScreen(this.minecraft, null));
 	}
 
 	private static double cubicBezierEase(double progress) {

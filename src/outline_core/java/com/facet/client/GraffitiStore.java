@@ -22,10 +22,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 
-import net.fabricmc.loader.api.FabricLoader;
-
 public final class GraffitiStore {
-	private static final Path STORE_PATH = FabricLoader.getInstance().getConfigDir().resolve("facet-graffiti.properties");
+	private static Path storePath;
 	private static final Map<GraffitiKey, GraffitiData> GRAFFITI = new HashMap<>();
 	private static final Map<GraffitiChunkKey, Set<BlockPos>> POSITIONS_BY_CHUNK = new HashMap<>();
 	private static String activeWorld = "";
@@ -35,17 +33,21 @@ public final class GraffitiStore {
 	private GraffitiStore() {
 	}
 
+	static void initialize(Path configDirectory) {
+		storePath = configDirectory.resolve("facet-graffiti.properties");
+	}
+
 	static void load() {
 		GRAFFITI.clear();
 		POSITIONS_BY_CHUNK.clear();
 		dirty = false;
 		Properties properties = new Properties();
 
-		if (!Files.isRegularFile(STORE_PATH)) {
+		if (storePath == null || !Files.isRegularFile(storePath)) {
 			return;
 		}
 
-		try (InputStream input = Files.newInputStream(STORE_PATH)) {
+		try (InputStream input = Files.newInputStream(storePath)) {
 			properties.load(input);
 		} catch (IOException ignored) {
 			return;
@@ -83,6 +85,11 @@ public final class GraffitiStore {
 		return data == null ? null : data.type();
 	}
 
+	static GraffitiType getType(BlockPos pos, Direction direction, BlockState state) {
+		GraffitiData data = activeDimension == null ? null : GRAFFITI.get(currentKey(pos, direction));
+		return data == null || (data.blockId() != null && !data.blockId().equals(blockId(state))) ? null : data.type();
+	}
+
 	static Change set(BlockPos pos, Direction direction, BlockState state, GraffitiType type) {
 		if (type == null) {
 			return Change.UNCHANGED;
@@ -118,20 +125,19 @@ public final class GraffitiStore {
 		return true;
 	}
 
-	public static void reconcileConfirmedBlock(ClientLevel level, BlockPos pos, BlockState confirmedState) {
+	public static boolean reconcileConfirmedBlock(ClientLevel level, BlockPos pos, BlockState confirmedState) {
 		if (activeDimension == null || !hasAny(activeWorld, activeDimension, pos)) {
-			return;
+			return false;
 		}
 
 		Identifier confirmedBlockId = blockId(confirmedState);
 
 		if (confirmedState.isAir() || !confirmedState.getFluidState().isEmpty()
 				|| hasDifferentStoredBlock(activeWorld, activeDimension, pos, confirmedBlockId)) {
-			removeAll(pos);
-			return;
+			return removeAll(pos);
 		}
 
-		bindLegacyEntries(level, pos, confirmedState, confirmedBlockId);
+		return bindLegacyEntries(level, pos, confirmedState, confirmedBlockId);
 	}
 
 	static void reconcileChunk(ClientLevel level, ChunkPos chunkPos) {
@@ -160,7 +166,7 @@ public final class GraffitiStore {
 		save();
 	}
 
-	private static void bindLegacyEntries(ClientLevel level, BlockPos pos, BlockState state, Identifier blockId) {
+	private static boolean bindLegacyEntries(ClientLevel level, BlockPos pos, BlockState state, Identifier blockId) {
 		boolean changed = false;
 
 		for (Direction direction : Direction.values()) {
@@ -185,6 +191,8 @@ public final class GraffitiStore {
 			removePositionFromIndexIfEmpty(activeWorld, activeDimension, pos);
 			dirty = true;
 		}
+
+		return changed;
 	}
 
 	private static boolean removeAll(BlockPos pos) {
@@ -307,10 +315,14 @@ public final class GraffitiStore {
 			properties.setProperty(encode(entry.getKey()), storedValue);
 		}
 
-		try {
-			Files.createDirectories(STORE_PATH.getParent());
+		if (storePath == null) {
+			return;
+		}
 
-			try (OutputStream output = Files.newOutputStream(STORE_PATH)) {
+		try {
+			Files.createDirectories(storePath.getParent());
+
+			try (OutputStream output = Files.newOutputStream(storePath)) {
 				properties.store(output, "Facet client-side graffiti");
 			}
 		} catch (IOException ignored) {

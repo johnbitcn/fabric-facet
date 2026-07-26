@@ -2,6 +2,7 @@ plugins {
 	id 'base'
 	id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
 	id 'com.modrinth.minotaur' version "${minotaur_version}" apply false
+	id 'net.neoforged.moddev' version "${moddev_version}" apply false
 }
 
 def versionConfigs = [
@@ -97,8 +98,8 @@ versionConfigs.each { projectPath, cfg ->
 
 		sourceSets {
 			client {
-				def javaDirs = [rootProject.file("src/shared/java"), file("src/client/java")]
-				def resourceDirs = [file("src/client/resources"), rootProject.file("src/shared/resources")]
+				def javaDirs = [rootProject.file("src/outline_core/java"), rootProject.file("src/shared/java"), file("src/client/java")]
+				def resourceDirs = [rootProject.file("src/outline_core/resources"), file("src/client/resources"), rootProject.file("src/shared/resources")]
 
 				if (cfg.legacyRenderer) {
 					javaDirs.add(rootProject.file("src/legacy_renderer/java"))
