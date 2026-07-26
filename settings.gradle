@@ -11,7 +11,7 @@ pluginManagement {
 
 rootProject.name = 'facet'
 
-include 'versions:v26_1'
-include 'versions:v26_2'
-include 'versions:v26_3'
-include 'versions:v26_1-neoforge'
+include 'versions:fabric-26.1'
+include 'versions:fabric-26.2'
+include 'versions:fabric-26.3-snapshot-5'
+include 'versions:neoforge-26.1'
