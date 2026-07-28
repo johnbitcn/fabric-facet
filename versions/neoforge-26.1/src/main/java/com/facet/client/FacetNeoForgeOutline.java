@@ -136,6 +136,8 @@ public final class FacetNeoForgeOutline {
 		event.register(TOGGLE_PLACEMENT_PREVIEW_KEY);
 		event.register(OPEN_SETTINGS_KEY);
 		event.register(FLIP_PLACEMENT_FACING_KEY);
+		FacetKeyConflictNotifier.register(FacetNeoForgePlatform::showScreen, TOGGLE_OUTLINE_KEY, GRAFFITI_KEY, TOGGLE_HOVER_OUTLINE_KEY,
+				TOGGLE_DISTANCE_HUD_KEY, TOGGLE_PLACEMENT_PREVIEW_KEY, OPEN_SETTINGS_KEY, FLIP_PLACEMENT_FACING_KEY);
 	}
 
 	private static void registerGuiLayers(RegisterGuiLayersEvent event) {
@@ -145,6 +147,7 @@ public final class FacetNeoForgeOutline {
 
 	private static void handleClientTick(ClientTickEvent.Post event) {
 		Minecraft minecraft = Minecraft.getInstance();
+		FacetKeyConflictNotifier.tick(minecraft);
 		if (minecraft.level != null) {
 			GraffitiStore.setContext(GRAFFITI_CLIENT_ACCESS.worldScope(minecraft, minecraft.level), minecraft.level.dimension().identifier());
 		}

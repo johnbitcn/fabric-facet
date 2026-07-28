@@ -127,9 +127,13 @@ public final class FacetClient implements ClientModInitializer {
 					InputConstants.KEY_R,
 					category));
 		}
+		FacetKeyConflictNotifier.register(FacetMcBridge::showScreen, toggleOutlineKeyMapping, toggleHoverOutlineKeyMapping,
+				toggleDistanceHudKeyMapping, togglePlacementPreviewKeyMapping, graffitiKeyMapping,
+				openSettingsKeyMapping, flipPlacementFacingKeyMapping);
 	}
 
 	private static void handleKeyMappings(Minecraft minecraft) {
+		FacetKeyConflictNotifier.tick(minecraft);
 		while (toggleOutlineKeyMapping.consumeClick()) {
 			FacetConfig.setEnabled(!FacetConfig.enabled());
 		}
