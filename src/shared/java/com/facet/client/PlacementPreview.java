@@ -70,7 +70,13 @@ final class PlacementPreview {
 
 	static void render(LevelRenderContext context, FacetRenderSink sink) {
 		if (!FacetConfig.placementPreviewEnabled()) {
+			HologramBootAnimation.reset();
 			PlacementRotationController.reset();
+			return;
+		}
+		long timeNanos = System.nanoTime();
+		HologramBootAnimation.Frame bootFrame = HologramBootAnimation.frame(timeNanos);
+		if (!bootFrame.visible()) {
 			return;
 		}
 
@@ -99,7 +105,8 @@ final class PlacementPreview {
 			return;
 		}
 
-		HologramFrame frame = HologramFrame.create(System.nanoTime(), !prediction.visual().active());
+		HologramFrame frame = HologramFrame.create(timeNanos,
+				!prediction.visual().active() && !bootFrame.active(), bootFrame.alphaScale());
 		Vector3fc left = FacetMcBridge.mainCamera(minecraft).leftVector();
 		float screenRightX = -left.x();
 		float screenRightZ = -left.z();
@@ -107,7 +114,7 @@ final class PlacementPreview {
 		prediction.blocks().stream()
 				.sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera.pos)).reversed())
 				.forEach(block -> renderBlock(context, sink, minecraft, level, camera.pos, block,
-						prediction.anchor(), prediction.visual(), frame, screenRightX, screenRightZ));
+						prediction.anchor(), prediction.visual(), bootFrame, frame, screenRightX, screenRightZ));
 	}
 
 	static void flipFacing(Minecraft minecraft) {
@@ -220,7 +227,8 @@ final class PlacementPreview {
 			Minecraft minecraft, ClientLevel level,
 			Vec3 camera, PreviewBlock preview, BlockPos anchor,
 			PlacementRotationController.RotationVisual visual,
-			HologramFrame frame, float screenRightX, float screenRightZ) {
+			HologramBootAnimation.Frame bootFrame, HologramFrame frame,
+			float screenRightX, float screenRightZ) {
 		BlockState state = preview.state();
 
 		if (state.getRenderShape() != RenderShape.MODEL) {
@@ -239,6 +247,8 @@ final class PlacementPreview {
 		PoseStack poseStack = context.poseStack();
 		poseStack.pushPose();
 		applyPlacementTransform(poseStack, camera, preview.pos(), anchor, visual);
+		poseStack.translate(screenRightX * bootFrame.horizontalOffset(), bootFrame.verticalOffset(),
+				screenRightZ * bootFrame.horizontalOffset());
 
 		if (!level.getBlockState(preview.pos()).isAir()) {
 			poseStack.translate(0.5, 0.5, 0.5);
@@ -535,10 +545,11 @@ final class PlacementPreview {
 	}
 
 	private record HologramFrame(float alpha, GlitchSlice slice) {
-		private static HologramFrame create(long timeNanos, boolean allowGlitch) {
+		private static HologramFrame create(long timeNanos, boolean allowGlitch, float alphaScale) {
 			long frame = timeNanos / FLICKER_INTERVAL_NANOS;
 			long random = mix(frame);
-			float alpha = BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE;
+			float alpha = Math.min(1.0f,
+					(BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE) * alphaScale);
 
 			if ((random & 0x1FL) == 0L) {
 				alpha *= 0.58f;

@@ -67,7 +67,13 @@ final class FacetNeoForgePlacementPreview {
 
 	static void render(RenderLevelStageEvent.AfterTranslucentBlocks event) {
 		if (!FacetNeoForgeOutlineConfig.placementPreviewEnabled()) {
+			HologramBootAnimation.reset();
 			NeoForgePlacementRotationController.reset();
+			return;
+		}
+		long timeNanos = System.nanoTime();
+		HologramBootAnimation.Frame bootFrame = HologramBootAnimation.frame(timeNanos);
+		if (!bootFrame.visible()) {
 			return;
 		}
 
@@ -85,14 +91,15 @@ final class FacetNeoForgePlacementPreview {
 		}
 
 		Vec3 camera = event.getLevelRenderState().cameraRenderState.pos;
-		HologramFrame frame = HologramFrame.create(System.nanoTime(), !prediction.visual().active());
+		HologramFrame frame = HologramFrame.create(timeNanos,
+				!prediction.visual().active() && !bootFrame.active(), bootFrame.alphaScale());
 		Vector3fc left = FacetNeoForgePlatform.mainCamera(minecraft).leftVector();
 		float screenRightX = -left.x();
 		float screenRightZ = -left.z();
 		FacetNeoForgePlatform.render(event, RenderTypes.translucentMovingBlock(), RenderTypes.linesTranslucent(), (pose, modelConsumer, edgeConsumer) ->
 			prediction.blocks().stream().sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera)).reversed())
 					.forEach(block -> renderBlock(pose, modelConsumer, edgeConsumer, minecraft, level, camera, block,
-							prediction.anchor(), prediction.visual(), frame, screenRightX, screenRightZ)));
+							prediction.anchor(), prediction.visual(), bootFrame, frame, screenRightX, screenRightZ)));
 	}
 
 	static void flipFacing(Minecraft minecraft) {
@@ -164,7 +171,8 @@ final class FacetNeoForgePlacementPreview {
 
 	private static void renderBlock(PoseStack poseStack, VertexConsumer modelConsumer, VertexConsumer edgeConsumer,
 			Minecraft minecraft, ClientLevel level, Vec3 camera, PreviewBlock preview, BlockPos anchor,
-			NeoForgePlacementRotationController.RotationVisual visual, HologramFrame frame,
+			NeoForgePlacementRotationController.RotationVisual visual, HologramBootAnimation.Frame bootFrame,
+			HologramFrame frame,
 			float screenRightX, float screenRightZ) {
 		BlockState state = preview.state();
 		if (state.getRenderShape() != RenderShape.MODEL) {
@@ -181,6 +189,8 @@ final class FacetNeoForgePlacementPreview {
 		poseStack.pushPose();
 		try {
 			applyPlacementTransform(poseStack, camera, preview.pos(), anchor, visual);
+			poseStack.translate(screenRightX * bootFrame.horizontalOffset(), bootFrame.verticalOffset(),
+					screenRightZ * bootFrame.horizontalOffset());
 			if (!level.getBlockState(preview.pos()).isAir()) {
 				poseStack.translate(0.5, 0.5, 0.5);
 				poseStack.scale(OVERLAP_SCALE, OVERLAP_SCALE, OVERLAP_SCALE);
@@ -387,10 +397,11 @@ final class FacetNeoForgePlacementPreview {
 	}
 
 	private record HologramFrame(float alpha, GlitchSlice slice) {
-		private static HologramFrame create(long timeNanos, boolean allowGlitch) {
+		private static HologramFrame create(long timeNanos, boolean allowGlitch, float alphaScale) {
 			long frame = timeNanos / FLICKER_INTERVAL_NANOS;
 			long random = mix(frame);
-			float alpha = BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE;
+			float alpha = Math.min(1.0f,
+					(BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE) * alphaScale);
 			if ((random & 0x1FL) == 0L) alpha *= 0.58f;
 			long glitchRandom = mix(random ^ 0xD1B54A32D192ED03L);
 			if (!allowGlitch || unitFloat(glitchRandom) >= GLITCH_CHANCE) return new HologramFrame(alpha, null);

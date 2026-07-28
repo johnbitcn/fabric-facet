@@ -11,6 +11,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -20,6 +21,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ClipContext;
@@ -55,9 +57,12 @@ public final class FacetClient implements ClientModInitializer {
 	private static final long HOVER_HUE_CYCLE_NANOS = 1_200_000_000L;
 	private static final double HOVER_FACE_PLANE_EPSILON = 1.0e-5;
 	private static final Identifier DISTANCE_HUD_ID = Identifier.fromNamespaceAndPath("facet", "distance_hud");
+	private static final SoundEvent PLACEMENT_PREVIEW_TOGGLE_SOUND = SoundEvent.createVariableRangeEvent(
+			Identifier.fromNamespaceAndPath("facet", "placement_preview_toggle"));
 	private static KeyMapping toggleOutlineKeyMapping;
 	private static KeyMapping toggleHoverOutlineKeyMapping;
 	private static KeyMapping toggleDistanceHudKeyMapping;
+	private static KeyMapping togglePlacementPreviewKeyMapping;
 	private static KeyMapping graffitiKeyMapping;
 	private static KeyMapping openSettingsKeyMapping;
 	private static KeyMapping flipPlacementFacingKeyMapping;
@@ -100,6 +105,11 @@ public final class FacetClient implements ClientModInitializer {
 				FacetMcBridge.keyboardType(),
 				InputConstants.UNKNOWN.getValue(),
 				category));
+		togglePlacementPreviewKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.facet.toggle_placement_preview",
+				FacetMcBridge.keyboardType(),
+				InputConstants.UNKNOWN.getValue(),
+				category));
 		graffitiKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key.facet.graffiti",
 				FacetMcBridge.keyboardType(),
@@ -132,6 +142,15 @@ public final class FacetClient implements ClientModInitializer {
 			distanceHudVisible = !distanceHudVisible;
 		}
 
+		while (togglePlacementPreviewKeyMapping.consumeClick()) {
+			boolean enabled = !FacetConfig.placementPreviewEnabled();
+			FacetConfig.setPlacementPreviewEnabled(enabled);
+			if (enabled) {
+				HologramBootAnimation.start();
+				playPlacementPreviewToggleSound(minecraft);
+			}
+		}
+
 		while (graffitiKeyMapping.consumeClick()) {
 			openGraffitiWheel(minecraft);
 		}
@@ -147,6 +166,10 @@ public final class FacetClient implements ClientModInitializer {
 		}
 
 		GraffitiStore.flush();
+	}
+
+	private static void playPlacementPreviewToggleSound(Minecraft minecraft) {
+		minecraft.getSoundManager().play(SimpleSoundInstance.forUI(PLACEMENT_PREVIEW_TOGGLE_SOUND, 1.0F));
 	}
 
 	private static void openGraffitiWheel(Minecraft minecraft) {
