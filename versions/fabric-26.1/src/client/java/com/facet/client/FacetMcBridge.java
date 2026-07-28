@@ -22,7 +22,7 @@ final class FacetMcBridge {
 	}
 
 	static boolean placementRotationPrototypeEnabled() {
-		return false;
+		return true;
 	}
 
 	static void applyShade(QuadEmitter emitter, boolean shade) {
