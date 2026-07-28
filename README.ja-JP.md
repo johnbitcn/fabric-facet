@@ -22,7 +22,7 @@
 
 ## サバイバルモードで向きを変更できるホログラム配置プレビュー
 
-![Facet のリアルタイム・ホログラム配置プレビュー](https://github.com/user-attachments/assets/f2e2a50a-1d9f-42d6-a125-1155083cbaff)
+![Facet のリアルタイム・ホログラム配置プレビュー](https://github.com/user-attachments/assets/00d00559-bd56-49c9-a846-14532b872402)
 
 ## スクリーンショット
 
