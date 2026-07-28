@@ -129,7 +129,7 @@ jobs:
 
       - name: Verify local release manifest before third-party publishing
         if: github.event_name == 'push' || inputs.publish_curseforge || inputs.publish_modrinth
-        run: sha256sum --check release/SHA256SUMS.txt
+        run: (cd release && sha256sum --check SHA256SUMS.txt)
 
       - name: Publish Fabric 26.1 to CurseForge
         if: github.event_name == 'push' || inputs.publish_curseforge
