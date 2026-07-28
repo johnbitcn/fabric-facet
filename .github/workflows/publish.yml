@@ -111,7 +111,7 @@ jobs:
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" release/* --clobber
           else
-            gh release create "$RELEASE_TAG" release/* --title "Facet ${RELEASE_VERSION}" --generate-notes
+            gh release create "$RELEASE_TAG" release/* --title "Facet v${RELEASE_VERSION}" --generate-notes
           fi
 
       - name: Verify GitHub Release asset checksums
