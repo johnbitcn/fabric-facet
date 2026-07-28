@@ -124,6 +124,20 @@ versionConfigs.each { projectPath, cfg ->
 			} else {
 				compileOnly cfg.modMenuDependency
 			}
+			if (projectPath == ":versions:fabric-26.2") {
+				testImplementation platform("org.junit:junit-bom:5.12.1")
+				testImplementation "org.junit.jupiter:junit-jupiter"
+				testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+			}
+		}
+
+		if (projectPath == ":versions:fabric-26.2") {
+			sourceSets.test.compileClasspath += sourceSets.client.output + configurations.clientCompileClasspath
+			sourceSets.test.runtimeClasspath += sourceSets.client.output + configurations.clientRuntimeClasspath
+			tasks.named("test") {
+				dependsOn tasks.named("compileClientJava")
+				useJUnitPlatform()
+			}
 		}
 
 		tasks.withType(ProcessResources).configureEach {

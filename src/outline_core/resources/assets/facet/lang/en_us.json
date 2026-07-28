@@ -5,6 +5,7 @@
 	"key.facet.toggle_distance_hud": "Toggle Distance Probe",
   "key.facet.graffiti": "Open Graffiti Wheel",
   "key.facet.open_settings": "Open Facet Settings",
+  "key.facet.flip_placement_facing": "Flip Placement Facing",
   "message.facet.graffiti.added": "Graffiti added",
   "message.facet.graffiti.replaced": "Graffiti replaced",
   "message.facet.graffiti.removed": "Graffiti removed",

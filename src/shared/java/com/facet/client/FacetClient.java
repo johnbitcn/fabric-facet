@@ -60,6 +60,7 @@ public final class FacetClient implements ClientModInitializer {
 	private static KeyMapping toggleDistanceHudKeyMapping;
 	private static KeyMapping graffitiKeyMapping;
 	private static KeyMapping openSettingsKeyMapping;
+	private static KeyMapping flipPlacementFacingKeyMapping;
 	private static boolean distanceHudVisible;
 
 	@Override
@@ -73,8 +74,10 @@ public final class FacetClient implements ClientModInitializer {
 		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetClient::renderSurfaceEffectsAfterTerrain);
 		LevelRenderEvents.BEFORE_BLOCK_OUTLINE.register(FacetClient::beforeBlockOutline);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
-		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) ->
-				GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, level), level.dimension().identifier()));
+		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) -> {
+			PlacementRotationController.reset();
+			GraffitiStore.setContext(FacetMcBridge.worldScope(minecraft, level), level.dimension().identifier());
+		});
 		ClientChunkEvents.CHUNK_LOAD.register((level, chunk) -> GraffitiStore.reconcileChunk(level, chunk.getPos()));
 		ClientLifecycleEvents.CLIENT_STOPPING.register(minecraft -> GraffitiStore.flush());
 		ClientTickEvents.END_CLIENT_TICK.register(FacetClient::handleKeyMappings);
@@ -107,6 +110,13 @@ public final class FacetClient implements ClientModInitializer {
 				FacetMcBridge.keyboardType(),
 				InputConstants.UNKNOWN.getValue(),
 				category));
+		if (FacetMcBridge.placementRotationPrototypeEnabled()) {
+			flipPlacementFacingKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+					"key.facet.flip_placement_facing",
+					FacetMcBridge.keyboardType(),
+					InputConstants.KEY_R,
+					category));
+		}
 	}
 
 	private static void handleKeyMappings(Minecraft minecraft) {
@@ -128,6 +138,12 @@ public final class FacetClient implements ClientModInitializer {
 
 		while (openSettingsKeyMapping.consumeClick()) {
 			FacetMcBridge.showScreen(minecraft, new FacetConfigScreen(null));
+		}
+
+		if (flipPlacementFacingKeyMapping != null) {
+			while (flipPlacementFacingKeyMapping.consumeClick()) {
+				PlacementPreview.flipFacing(minecraft);
+			}
 		}
 
 		GraffitiStore.flush();

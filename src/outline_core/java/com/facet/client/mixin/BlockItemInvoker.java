@@ -10,4 +10,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface BlockItemInvoker {
 	@Invoker("getPlacementState")
 	BlockState facet$getPlacementState(BlockPlaceContext context);
+
+	@Invoker("canPlace")
+	boolean facet$canPlace(BlockPlaceContext context, BlockState state);
 }

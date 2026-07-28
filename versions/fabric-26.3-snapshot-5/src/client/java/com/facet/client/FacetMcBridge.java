@@ -22,6 +22,10 @@ final class FacetMcBridge {
 		return InputConstants.Type.KEYBOARD;
 	}
 
+	static boolean placementRotationPrototypeEnabled() {
+		return false;
+	}
+
 	static void applyShade(QuadEmitter emitter, boolean shade) {
 		emitter.shadeDirectionOverride(shade ? null : Direction.UP);
 	}
