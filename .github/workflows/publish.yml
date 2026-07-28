@@ -11,6 +11,11 @@ on:
         required: false
         type: boolean
         default: false
+      publish_modrinth:
+        description: Publish all v1.2.11 artifacts to Modrinth (leave disabled because they are already published)
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -119,3 +124,102 @@ jobs:
           curseforge-game-versions: 26.2
           curseforge-game-version-filter: none
           curseforge-changelog: Facet 1.2.11 for Minecraft 26.2 on NeoForge.
+
+      - name: Publish Modrinth Fabric 26.1
+        if: inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: versions/fabric-26.1/build/libs/Facet-Fabric-1.2.11-26.1.jar
+          modrinth-name: Facet 1.2.11 for Minecraft 26.1
+          modrinth-version: 1.2.11
+          modrinth-version-type: release
+          modrinth-loaders: fabric
+          modrinth-environment: client
+          modrinth-game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          modrinth-game-version-filter: none
+          modrinth-changelog: Facet 1.2.11 for Minecraft 26.1 through 26.1.2.
+
+      - name: Publish Modrinth Fabric 26.2
+        if: inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: versions/fabric-26.2/build/libs/Facet-Fabric-1.2.11-26.2.jar
+          modrinth-name: Facet 1.2.11 for Minecraft 26.2
+          modrinth-version: 1.2.11
+          modrinth-version-type: release
+          modrinth-loaders: fabric
+          modrinth-environment: client
+          modrinth-game-versions: 26.2
+          modrinth-game-version-filter: none
+          modrinth-changelog: Facet 1.2.11 for Minecraft 26.2.
+
+      - name: Publish Modrinth Fabric 26.3 Snapshot 5
+        if: inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: versions/fabric-26.3-snapshot-5/build/libs/Facet-Fabric-1.2.11-26.3-snapshot-5.jar
+          modrinth-name: Facet 1.2.11 for Minecraft 26.3 Snapshot 5
+          modrinth-version: 1.2.11
+          modrinth-version-type: beta
+          modrinth-loaders: fabric
+          modrinth-environment: client
+          modrinth-game-versions: 26.3-snapshot-5
+          modrinth-game-version-filter: none
+          modrinth-changelog: Facet 1.2.11 for Minecraft 26.3 Snapshot 5.
+
+      - name: Publish Modrinth NeoForge 26.1
+        if: inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: versions/neoforge-26.1/build/libs/Facet-NeoForge-1.2.11-26.1.jar
+          modrinth-name: Facet 1.2.11 for Minecraft 26.1 (NeoForge)
+          modrinth-version: 1.2.11
+          modrinth-version-type: release
+          modrinth-loaders: neoforge
+          modrinth-environment: client
+          modrinth-game-versions: 26.1
+          modrinth-game-version-filter: none
+          modrinth-changelog: Facet 1.2.11 for Minecraft 26.1 on NeoForge.
+
+      - name: Publish Modrinth NeoForge 26.1.2
+        if: inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: versions/neoforge-26.1.2/build/libs/Facet-NeoForge-1.2.11-26.1.2.jar
+          modrinth-name: Facet 1.2.11 for Minecraft 26.1.2 (NeoForge)
+          modrinth-version: 1.2.11
+          modrinth-version-type: release
+          modrinth-loaders: neoforge
+          modrinth-environment: client
+          modrinth-game-versions: 26.1.2
+          modrinth-game-version-filter: none
+          modrinth-changelog: Facet 1.2.11 for Minecraft 26.1.2 on NeoForge.
+
+      - name: Publish Modrinth NeoForge 26.2
+        if: inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: versions/neoforge-26.2/build/libs/Facet-NeoForge-1.2.11-26.2.jar
+          modrinth-name: Facet 1.2.11 for Minecraft 26.2 (NeoForge)
+          modrinth-version: 1.2.11
+          modrinth-version-type: release
+          modrinth-loaders: neoforge
+          modrinth-environment: client
+          modrinth-game-versions: 26.2
+          modrinth-game-version-filter: none
+          modrinth-changelog: Facet 1.2.11 for Minecraft 26.2 on NeoForge.
