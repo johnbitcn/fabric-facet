@@ -64,6 +64,11 @@ public final class FacetNeoForgeOutline {
 			InputConstants.Type.KEYSYM,
 			InputConstants.UNKNOWN.getValue(),
 			KEY_CATEGORY);
+	private static final KeyMapping FLIP_PLACEMENT_FACING_KEY = new KeyMapping(
+			"key.facet.flip_placement_facing",
+			InputConstants.Type.KEYSYM,
+			InputConstants.KEY_R,
+			KEY_CATEGORY);
 	private static final GraffitiClientAccess GRAFFITI_CLIENT_ACCESS = new GraffitiClientAccess() {
 		@Override
 		public void showScreen(Minecraft minecraft, Screen screen) {
@@ -120,6 +125,7 @@ public final class FacetNeoForgeOutline {
 		event.register(TOGGLE_HOVER_OUTLINE_KEY);
 		event.register(TOGGLE_DISTANCE_HUD_KEY);
 		event.register(OPEN_SETTINGS_KEY);
+		event.register(FLIP_PLACEMENT_FACING_KEY);
 	}
 
 	private static void registerGuiLayers(RegisterGuiLayersEvent event) {
@@ -156,6 +162,10 @@ public final class FacetNeoForgeOutline {
 			FacetNeoForgePlatform.showScreen(minecraft, new FacetNeoForgeConfigScreen(null));
 		}
 
+		while (FLIP_PLACEMENT_FACING_KEY.consumeClick()) {
+			FacetNeoForgePlacementPreview.flipFacing(minecraft);
+		}
+
 		GraffitiStore.flush();
 	}
 
@@ -175,6 +185,7 @@ public final class FacetNeoForgeOutline {
 	}
 
 	private static void handleClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+		NeoForgePlacementRotationController.reset();
 		GraffitiStore.flush();
 	}
 

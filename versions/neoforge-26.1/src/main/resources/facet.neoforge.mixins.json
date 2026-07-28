@@ -4,6 +4,8 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "BlockItemInvoker",
+    "BlockItemPlacementMixin",
+    "MultiPlayerGameModeMixin",
     "ClientLevelMixin"
   ],
   "injectors": {
