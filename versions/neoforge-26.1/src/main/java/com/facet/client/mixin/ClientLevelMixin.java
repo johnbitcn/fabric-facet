@@ -1,6 +1,7 @@
 package com.facet.client.mixin;
 
 import com.facet.client.FacetNeoForgeOutline;
+import com.facet.client.NeoForgePlacementRotationController;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,5 +15,6 @@ abstract class ClientLevelMixin {
 	@Inject(method = "setServerVerifiedBlockState", at = @At("TAIL"))
 	private void facet$reconcileGraffiti(BlockPos pos, BlockState state, int flags, CallbackInfo callbackInfo) {
 		FacetNeoForgeOutline.reconcileGraffitiBlock((ClientLevel) (Object) this, pos, state);
+		NeoForgePlacementRotationController.reconcileConfirmed((ClientLevel) (Object) this, pos, state);
 	}
 }

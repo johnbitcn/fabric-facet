@@ -31,6 +31,10 @@ final class FacetMcBridge {
 		return InputConstants.Type.KEYSYM;
 	}
 
+	static boolean placementRotationPrototypeEnabled() {
+		return true;
+	}
+
 	static void applyShade(QuadEmitter emitter, boolean shade) {
 		emitter.diffuseShade(shade);
 	}

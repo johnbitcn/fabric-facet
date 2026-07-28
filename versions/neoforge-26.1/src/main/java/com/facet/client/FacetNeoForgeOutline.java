@@ -5,12 +5,14 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -39,6 +41,8 @@ public final class FacetNeoForgeOutline {
 	static final Logger LOGGER = LoggerFactory.getLogger("Facet NeoForge Outline");
 	private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
 			Identifier.fromNamespaceAndPath(MOD_ID, "keybinds"));
+	private static final SoundEvent PLACEMENT_PREVIEW_TOGGLE_SOUND = SoundEvent.createVariableRangeEvent(
+			Identifier.fromNamespaceAndPath(MOD_ID, "placement_preview_toggle"));
 	private static final KeyMapping TOGGLE_OUTLINE_KEY = new KeyMapping(
 			"key.facet.toggle_outline",
 			InputConstants.Type.KEYSYM,
@@ -59,10 +63,20 @@ public final class FacetNeoForgeOutline {
 			InputConstants.Type.KEYSYM,
 			InputConstants.UNKNOWN.getValue(),
 			KEY_CATEGORY);
+	private static final KeyMapping TOGGLE_PLACEMENT_PREVIEW_KEY = new KeyMapping(
+			"key.facet.toggle_placement_preview",
+			InputConstants.Type.KEYSYM,
+			InputConstants.UNKNOWN.getValue(),
+			KEY_CATEGORY);
 	private static final KeyMapping OPEN_SETTINGS_KEY = new KeyMapping(
 			"key.facet.open_settings",
 			InputConstants.Type.KEYSYM,
 			InputConstants.UNKNOWN.getValue(),
+			KEY_CATEGORY);
+	private static final KeyMapping FLIP_PLACEMENT_FACING_KEY = new KeyMapping(
+			"key.facet.flip_placement_facing",
+			InputConstants.Type.KEYSYM,
+			InputConstants.KEY_R,
 			KEY_CATEGORY);
 	private static final GraffitiClientAccess GRAFFITI_CLIENT_ACCESS = new GraffitiClientAccess() {
 		@Override
@@ -119,7 +133,9 @@ public final class FacetNeoForgeOutline {
 		event.register(GRAFFITI_KEY);
 		event.register(TOGGLE_HOVER_OUTLINE_KEY);
 		event.register(TOGGLE_DISTANCE_HUD_KEY);
+		event.register(TOGGLE_PLACEMENT_PREVIEW_KEY);
 		event.register(OPEN_SETTINGS_KEY);
+		event.register(FLIP_PLACEMENT_FACING_KEY);
 	}
 
 	private static void registerGuiLayers(RegisterGuiLayersEvent event) {
@@ -152,11 +168,28 @@ public final class FacetNeoForgeOutline {
 			FacetNeoForgeDistanceHud.toggle();
 		}
 
+		while (TOGGLE_PLACEMENT_PREVIEW_KEY.consumeClick()) {
+			boolean enabled = !FacetNeoForgeOutlineConfig.placementPreviewEnabled();
+			FacetNeoForgeOutlineConfig.setPlacementPreviewEnabled(enabled);
+			if (enabled) {
+				HologramBootAnimation.start();
+				playPlacementPreviewToggleSound(minecraft);
+			}
+		}
+
 		while (OPEN_SETTINGS_KEY.consumeClick()) {
 			FacetNeoForgePlatform.showScreen(minecraft, new FacetNeoForgeConfigScreen(null));
 		}
 
+		while (FLIP_PLACEMENT_FACING_KEY.consumeClick()) {
+			FacetNeoForgePlacementPreview.flipFacing(minecraft);
+		}
+
 		GraffitiStore.flush();
+	}
+
+	private static void playPlacementPreviewToggleSound(Minecraft minecraft) {
+		minecraft.getSoundManager().play(SimpleSoundInstance.forUI(PLACEMENT_PREVIEW_TOGGLE_SOUND, 1.0F));
 	}
 
 	private static void handleChunkLoad(ChunkEvent.Load event) {
@@ -175,6 +208,7 @@ public final class FacetNeoForgeOutline {
 	}
 
 	private static void handleClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+		NeoForgePlacementRotationController.reset();
 		GraffitiStore.flush();
 	}
 

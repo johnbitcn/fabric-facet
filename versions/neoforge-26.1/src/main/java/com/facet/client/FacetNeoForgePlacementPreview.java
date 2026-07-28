@@ -8,6 +8,7 @@ import com.facet.client.mixin.BlockItemInvoker;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -66,6 +67,13 @@ final class FacetNeoForgePlacementPreview {
 
 	static void render(RenderLevelStageEvent.AfterTranslucentBlocks event) {
 		if (!FacetNeoForgeOutlineConfig.placementPreviewEnabled()) {
+			HologramBootAnimation.reset();
+			NeoForgePlacementRotationController.reset();
+			return;
+		}
+		long timeNanos = System.nanoTime();
+		HologramBootAnimation.Frame bootFrame = HologramBootAnimation.frame(timeNanos);
+		if (!bootFrame.visible()) {
 			return;
 		}
 
@@ -77,22 +85,34 @@ final class FacetNeoForgePlacementPreview {
 			return;
 		}
 
-		List<PreviewBlock> blocks = predict(minecraft, level, hit);
-		if (blocks == null) {
+		Prediction prediction = predict(minecraft, level, hit, false);
+		if (prediction == null) {
 			return;
 		}
 
 		Vec3 camera = event.getLevelRenderState().cameraRenderState.pos;
-		HologramFrame frame = HologramFrame.create(System.nanoTime());
+		HologramFrame frame = HologramFrame.create(timeNanos,
+				!prediction.visual().active() && !bootFrame.active(), bootFrame.alphaScale());
 		Vector3fc left = FacetNeoForgePlatform.mainCamera(minecraft).leftVector();
 		float screenRightX = -left.x();
 		float screenRightZ = -left.z();
 		FacetNeoForgePlatform.render(event, RenderTypes.translucentMovingBlock(), RenderTypes.linesTranslucent(), (pose, modelConsumer, edgeConsumer) ->
-			blocks.stream().sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera)).reversed())
-					.forEach(block -> renderBlock(pose, modelConsumer, edgeConsumer, minecraft, level, camera, block, frame, screenRightX, screenRightZ)));
+			prediction.blocks().stream().sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera)).reversed())
+					.forEach(block -> renderBlock(pose, modelConsumer, edgeConsumer, minecraft, level, camera, block,
+							prediction.anchor(), prediction.visual(), bootFrame, frame, screenRightX, screenRightZ)));
 	}
 
-	private static List<PreviewBlock> predict(Minecraft minecraft, ClientLevel level, BlockHitResult hit) {
+	static void flipFacing(Minecraft minecraft) {
+		if (!FacetNeoForgeOutlineConfig.placementPreviewEnabled() || minecraft.level == null || minecraft.player == null
+				|| minecraft.player.isSpectator() || !(minecraft.hitResult instanceof BlockHitResult hit)
+				|| hit.getType() != HitResult.Type.BLOCK) {
+			NeoForgePlacementRotationController.clearCurrent();
+			return;
+		}
+		predict(minecraft, minecraft.level, hit, true);
+	}
+
+	private static Prediction predict(Minecraft minecraft, ClientLevel level, BlockHitResult hit, boolean flip) {
 		for (InteractionHand hand : InteractionHand.values()) {
 			ItemStack stack = minecraft.player.getItemInHand(hand);
 			if (!(stack.getItem() instanceof BlockItem blockItem) || minecraft.player.getCooldowns().isOnCooldown(stack)) {
@@ -108,16 +128,22 @@ final class FacetNeoForgePlacementPreview {
 				return null;
 			}
 
-			BlockState state = ((BlockItemInvoker) blockItem).facet$getPlacementState(context);
+			BlockPlaceContext placementContext = context;
+			BlockState state = ((BlockItemInvoker) blockItem).facet$getPlacementState(placementContext);
 			if (state == null) {
 				return null;
 			}
+			NeoForgePlacementRotationController.Resolution rotation = NeoForgePlacementRotationController.resolve(
+					minecraft, blockItem, hand, hit, placementContext, state,
+					candidate -> ((BlockItemInvoker) blockItem).facet$canPlace(placementContext, candidate), flip);
+			state = rotation.state();
 			state = stack.getOrDefault(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY).apply(state);
-			List<PreviewBlock> blocks = expandBlocks(level, context.getClickedPos(), state);
+			List<PreviewBlock> blocks = expandBlocks(level, placementContext.getClickedPos(), state);
 			return blocks.stream().anyMatch(block -> level.isOutsideBuildHeight(block.pos()) || !level.getWorldBorder().isWithinBounds(block.pos()))
-					? null : blocks;
+					? null : new Prediction(List.copyOf(blocks), placementContext.getClickedPos().immutable(), rotation.visual());
 		}
 
+		NeoForgePlacementRotationController.clearCurrent();
 		return null;
 	}
 
@@ -144,7 +170,9 @@ final class FacetNeoForgePlacementPreview {
 	}
 
 	private static void renderBlock(PoseStack poseStack, VertexConsumer modelConsumer, VertexConsumer edgeConsumer,
-			Minecraft minecraft, ClientLevel level, Vec3 camera, PreviewBlock preview, HologramFrame frame,
+			Minecraft minecraft, ClientLevel level, Vec3 camera, PreviewBlock preview, BlockPos anchor,
+			NeoForgePlacementRotationController.RotationVisual visual, HologramBootAnimation.Frame bootFrame,
+			HologramFrame frame,
 			float screenRightX, float screenRightZ) {
 		BlockState state = preview.state();
 		if (state.getRenderShape() != RenderShape.MODEL) {
@@ -160,7 +188,9 @@ final class FacetNeoForgePlacementPreview {
 
 		poseStack.pushPose();
 		try {
-			poseStack.translate(preview.pos().getX() - camera.x, preview.pos().getY() - camera.y, preview.pos().getZ() - camera.z);
+			applyPlacementTransform(poseStack, camera, preview.pos(), anchor, visual);
+			poseStack.translate(screenRightX * bootFrame.horizontalOffset(), bootFrame.verticalOffset(),
+					screenRightZ * bootFrame.horizontalOffset());
 			if (!level.getBlockState(preview.pos()).isAir()) {
 				poseStack.translate(0.5, 0.5, 0.5);
 				poseStack.scale(OVERLAP_SCALE, OVERLAP_SCALE, OVERLAP_SCALE);
@@ -174,6 +204,26 @@ final class FacetNeoForgePlacementPreview {
 		} finally {
 			poseStack.popPose();
 		}
+	}
+
+	private static void applyPlacementTransform(PoseStack poseStack, Vec3 camera, BlockPos pos, BlockPos anchor,
+			NeoForgePlacementRotationController.RotationVisual visual) {
+		if (!visual.active()) {
+			poseStack.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
+			return;
+		}
+		double anchorX = anchor.getX() + 0.5;
+		double anchorY = anchor.getY() + 0.5;
+		double anchorZ = anchor.getZ() + 0.5;
+		poseStack.translate(anchorX - camera.x, anchorY - camera.y, anchorZ - camera.z);
+		float radians = (float) Math.toRadians(visual.residualDegrees());
+		Quaternionf rotation = switch (visual.axis()) {
+			case X -> new Quaternionf().rotationX(radians);
+			case Y -> new Quaternionf().rotationY(radians);
+			case Z -> new Quaternionf().rotationZ(radians);
+		};
+		poseStack.mulPose(rotation);
+		poseStack.translate(pos.getX() - anchorX, pos.getY() - anchorY, pos.getZ() - anchorZ);
 	}
 
 	private static void renderModel(PoseStack.Pose pose, VertexConsumer consumer, List<BlockStateModelPart> parts, int[] tints,
@@ -329,6 +379,10 @@ final class FacetNeoForgePlacementPreview {
 		return (float) ((value >>> 40) * 0x1.0p-24);
 	}
 
+	private record Prediction(List<PreviewBlock> blocks, BlockPos anchor,
+			NeoForgePlacementRotationController.RotationVisual visual) {
+	}
+
 	private record PreviewBlock(BlockPos pos, BlockState state) {
 	}
 
@@ -343,13 +397,14 @@ final class FacetNeoForgePlacementPreview {
 	}
 
 	private record HologramFrame(float alpha, GlitchSlice slice) {
-		private static HologramFrame create(long timeNanos) {
+		private static HologramFrame create(long timeNanos, boolean allowGlitch, float alphaScale) {
 			long frame = timeNanos / FLICKER_INTERVAL_NANOS;
 			long random = mix(frame);
-			float alpha = BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE;
+			float alpha = Math.min(1.0f,
+					(BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE) * alphaScale);
 			if ((random & 0x1FL) == 0L) alpha *= 0.58f;
 			long glitchRandom = mix(random ^ 0xD1B54A32D192ED03L);
-			if (unitFloat(glitchRandom) >= GLITCH_CHANCE) return new HologramFrame(alpha, null);
+			if (!allowGlitch || unitFloat(glitchRandom) >= GLITCH_CHANCE) return new HologramFrame(alpha, null);
 			float height = MIN_SLICE_HEIGHT + unitFloat(mix(glitchRandom + 1L)) * (MAX_SLICE_HEIGHT - MIN_SLICE_HEIGHT);
 			float minY = 0.08f + unitFloat(mix(glitchRandom + 2L)) * (0.84f - height);
 			float offset = MIN_SLICE_OFFSET + unitFloat(mix(glitchRandom + 3L)) * (MAX_SLICE_OFFSET - MIN_SLICE_OFFSET);

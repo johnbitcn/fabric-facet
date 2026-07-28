@@ -7,6 +7,7 @@ import java.util.List;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -69,6 +70,13 @@ final class PlacementPreview {
 
 	static void render(LevelRenderContext context, FacetRenderSink sink) {
 		if (!FacetConfig.placementPreviewEnabled()) {
+			HologramBootAnimation.reset();
+			PlacementRotationController.reset();
+			return;
+		}
+		long timeNanos = System.nanoTime();
+		HologramBootAnimation.Frame bootFrame = HologramBootAnimation.frame(timeNanos);
+		if (!bootFrame.visible()) {
 			return;
 		}
 
@@ -81,7 +89,7 @@ final class PlacementPreview {
 			return;
 		}
 
-		Prediction prediction = predict(minecraft, level, hitResult);
+		Prediction prediction = predict(minecraft, level, hitResult, false);
 
 		if (prediction == null) {
 			return;
@@ -97,7 +105,8 @@ final class PlacementPreview {
 			return;
 		}
 
-		HologramFrame frame = HologramFrame.create(System.nanoTime());
+		HologramFrame frame = HologramFrame.create(timeNanos,
+				!prediction.visual().active() && !bootFrame.active(), bootFrame.alphaScale());
 		Vector3fc left = FacetMcBridge.mainCamera(minecraft).leftVector();
 		float screenRightX = -left.x();
 		float screenRightZ = -left.z();
@@ -105,10 +114,23 @@ final class PlacementPreview {
 		prediction.blocks().stream()
 				.sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera.pos)).reversed())
 				.forEach(block -> renderBlock(context, sink, minecraft, level, camera.pos, block,
-						frame, screenRightX, screenRightZ));
+						prediction.anchor(), prediction.visual(), bootFrame, frame, screenRightX, screenRightZ));
 	}
 
-	private static Prediction predict(Minecraft minecraft, ClientLevel level, BlockHitResult hitResult) {
+	static void flipFacing(Minecraft minecraft) {
+		if (!FacetConfig.placementPreviewEnabled()
+				|| minecraft.level == null || minecraft.player == null || minecraft.player.isSpectator()
+				|| !(minecraft.hitResult instanceof BlockHitResult hitResult)
+				|| hitResult.getType() != HitResult.Type.BLOCK) {
+			PlacementRotationController.clearCurrent();
+			return;
+		}
+
+		predict(minecraft, minecraft.level, hitResult, true);
+	}
+
+	private static Prediction predict(Minecraft minecraft, ClientLevel level,
+			BlockHitResult hitResult, boolean rotate) {
 		for (InteractionHand hand : InteractionHand.values()) {
 			ItemStack stack = minecraft.player.getItemInHand(hand);
 
@@ -129,28 +151,41 @@ final class PlacementPreview {
 			if (context == null) {
 				return Prediction.invalid();
 			}
+			BlockPlaceContext placementContext = context;
 
-			BlockState state = ((BlockItemInvoker) blockItem).facet$getPlacementState(context);
+			BlockState state = ((BlockItemInvoker) blockItem).facet$getPlacementState(placementContext);
 
 			if (state == null) {
 				return Prediction.invalid();
 			}
+
+			PlacementRotationController.Resolution rotation = PlacementRotationController.resolve(
+					minecraft,
+					blockItem,
+					hand,
+					hitResult,
+					placementContext,
+					state,
+					candidate -> ((BlockItemInvoker) blockItem).facet$canPlace(placementContext, candidate),
+					rotate);
+			state = rotation.state();
 
 			BlockItemStateProperties properties = stack.getOrDefault(
 					DataComponents.BLOCK_STATE,
 					BlockItemStateProperties.EMPTY);
 			state = properties.apply(state);
 
-			List<PreviewBlock> blocks = expandBlocks(level, context.getClickedPos(), state);
+			List<PreviewBlock> blocks = expandBlocks(level, placementContext.getClickedPos(), state);
 
 			if (blocks.stream().anyMatch(block -> level.isOutsideBuildHeight(block.pos())
 					|| !level.getWorldBorder().isWithinBounds(block.pos()))) {
 				return Prediction.invalid();
 			}
 
-			return Prediction.valid(blocks);
+			return Prediction.valid(blocks, placementContext.getClickedPos(), rotation.visual());
 		}
 
+		PlacementRotationController.clearCurrent();
 		return null;
 	}
 
@@ -190,7 +225,10 @@ final class PlacementPreview {
 
 	private static void renderBlock(LevelRenderContext context, FacetRenderSink sink,
 			Minecraft minecraft, ClientLevel level,
-			Vec3 camera, PreviewBlock preview, HologramFrame frame, float screenRightX, float screenRightZ) {
+			Vec3 camera, PreviewBlock preview, BlockPos anchor,
+			PlacementRotationController.RotationVisual visual,
+			HologramBootAnimation.Frame bootFrame, HologramFrame frame,
+			float screenRightX, float screenRightZ) {
 		BlockState state = preview.state();
 
 		if (state.getRenderShape() != RenderShape.MODEL) {
@@ -208,10 +246,9 @@ final class PlacementPreview {
 		int[] tints = blockTints(minecraft, level, preview);
 		PoseStack poseStack = context.poseStack();
 		poseStack.pushPose();
-		poseStack.translate(
-				preview.pos().getX() - camera.x,
-				preview.pos().getY() - camera.y,
-				preview.pos().getZ() - camera.z);
+		applyPlacementTransform(poseStack, camera, preview.pos(), anchor, visual);
+		poseStack.translate(screenRightX * bootFrame.horizontalOffset(), bootFrame.verticalOffset(),
+				screenRightZ * bootFrame.horizontalOffset());
 
 		if (!level.getBlockState(preview.pos()).isAir()) {
 			poseStack.translate(0.5, 0.5, 0.5);
@@ -237,6 +274,27 @@ final class PlacementPreview {
 							screenRightX, screenRightZ));
 		}
 		poseStack.popPose();
+	}
+
+	private static void applyPlacementTransform(PoseStack poseStack, Vec3 camera,
+			BlockPos pos, BlockPos anchor, PlacementRotationController.RotationVisual visual) {
+		if (!visual.active()) {
+			poseStack.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
+			return;
+		}
+
+		double anchorX = anchor.getX() + 0.5;
+		double anchorY = anchor.getY() + 0.5;
+		double anchorZ = anchor.getZ() + 0.5;
+		poseStack.translate(anchorX - camera.x, anchorY - camera.y, anchorZ - camera.z);
+		float radians = (float) Math.toRadians(visual.residualDegrees());
+		Quaternionf rotation = switch (visual.axis()) {
+			case X -> new Quaternionf().rotationX(radians);
+			case Y -> new Quaternionf().rotationY(radians);
+			case Z -> new Quaternionf().rotationZ(radians);
+		};
+		poseStack.mulPose(rotation);
+		poseStack.translate(pos.getX() - anchorX, pos.getY() - anchorY, pos.getZ() - anchorZ);
 	}
 
 	private static void renderModelParts(PoseStack.Pose pose, VertexConsumer consumer,
@@ -487,10 +545,11 @@ final class PlacementPreview {
 	}
 
 	private record HologramFrame(float alpha, GlitchSlice slice) {
-		private static HologramFrame create(long timeNanos) {
+		private static HologramFrame create(long timeNanos, boolean allowGlitch, float alphaScale) {
 			long frame = timeNanos / FLICKER_INTERVAL_NANOS;
 			long random = mix(frame);
-			float alpha = BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE;
+			float alpha = Math.min(1.0f,
+					(BASE_ALPHA + unitFloat(random) * FLICKER_ALPHA_RANGE) * alphaScale);
 
 			if ((random & 0x1FL) == 0L) {
 				alpha *= 0.58f;
@@ -498,7 +557,7 @@ final class PlacementPreview {
 
 			long glitchRandom = mix(random ^ 0xD1B54A32D192ED03L);
 
-			if (unitFloat(glitchRandom) >= GLITCH_CHANCE) {
+			if (!allowGlitch || unitFloat(glitchRandom) >= GLITCH_CHANCE) {
 				return new HologramFrame(alpha, null);
 			}
 
@@ -516,13 +575,16 @@ final class PlacementPreview {
 		}
 	}
 
-	private record Prediction(boolean valid, List<PreviewBlock> blocks) {
-		private static Prediction valid(List<PreviewBlock> blocks) {
-			return new Prediction(true, List.copyOf(blocks));
+	private record Prediction(boolean valid, List<PreviewBlock> blocks, BlockPos anchor,
+			PlacementRotationController.RotationVisual visual) {
+		private static Prediction valid(List<PreviewBlock> blocks, BlockPos anchor,
+				PlacementRotationController.RotationVisual visual) {
+			return new Prediction(true, List.copyOf(blocks), anchor.immutable(), visual);
 		}
 
 		private static Prediction invalid() {
-			return new Prediction(false, List.of());
+			return new Prediction(false, List.of(), BlockPos.ZERO,
+					new PlacementRotationController.RotationVisual(Direction.Axis.Y, 0.0f, false));
 		}
 	}
 }

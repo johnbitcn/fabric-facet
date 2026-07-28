@@ -1,35 +1,45 @@
-# Facet - Minecraft Block Counting and Outline Mod
+# Facet - Minecraft Block Counting and Outline Utility Mod
 
 [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
 
 Official project pages: [Modrinth](https://modrinth.com/project/lW1ulmxe) | [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/facet)
 
-Facet is a lightweight client-side Fabric and NeoForge mod for Minecraft block counting, block outlines, distance probing, Manhattan-path measurement, and graffiti marking. It helps builders count and mark blocks for structures, flooring, borders, paths, and large projects without replacing their favorite resource pack textures.
+This lightweight mod was developed to make learning architecture and redstone structures feel more intuitive for my children.
+It lets you preview and adjust the facing of functional blocks in Survival Mode.
+Yes! Setting the direction before building it feels perfectly natural, doesn't it?
+Every feature has a key binding.
+Oh, and I added the sound effects my children love. They're seriously cool!
+Now I'm sharing it. I hope you enjoy it!
 
-## Holographic Placement Preview
+## Complete Feature List
 
-![Facet holographic placement preview](https://github.com/user-attachments/assets/6ea970c8-b516-489e-8054-4757b45e99bf)
+- Holographic placement preview with startup sound
+- Adjust the facing of functional blocks (singleplayer only)
+- Targeted block counting with Manhattan path display
+- Targeted-block outline and targeted-face outline
+- Four graffiti markers (visible only to you)
+- Block outlines
+
+## Rotatable Holographic Placement Preview in Survival Mode
+
+![Facet real-time holographic placement preview](https://github.com/user-attachments/assets/6ea970c8-b516-489e-8054-4757b45e99bf)
 
 ## Screenshots
 
-![Facet Minecraft block counting and outline mod screenshot](https://github.com/user-attachments/assets/90140d40-e72a-4002-8a0c-4284ece73deb)
+![Facet Minecraft block counting and outline utility mod screenshot](https://github.com/user-attachments/assets/90140d40-e72a-4002-8a0c-4284ece73deb)
 
-## Supported Builds
+## Supported Loaders
 
-- Fabric: Minecraft 26.1, 26.2, and 26.3-snapshot-5
-- NeoForge: Minecraft 26.1 (NeoForge 26.1.0.19-beta), 26.1.2 (NeoForge 26.1.2.47-beta), and 26.2 (NeoForge 26.2.0.32-beta)
-
-See [BUILDING.md](./BUILDING.md) for the Loader-and-game-version build layout and artifact names.
-
-## Purpose and Philosophy
-
-Facet was built for a simple goal: make block counting clearer without forcing players to give up the textures they like. Many Minecraft resource packs add permanent borders directly into block textures. That can help with counting, but it also changes the look of every block all the time. Facet renders the border as a client-side overlay instead, so vanilla textures, custom resource packs, and shader-friendly textures stay untouched.
-
-When you need a counting view, use key bindings to toggle all block outlines, the targeted-block outline, or the distance HUD. When you are done, turn them off and keep playing with your normal visual style. For longer measurements, the Manhattan path indicator marks the X, Z, and Y route from the block under the player to the targeted block, while the HUD reports X, Z, Y, and total Manhattan distance so the block count is easy to verify at a glance.
-
-Graffiti gives builders a quick way to mark blocks during construction, and it can also serve as a trail marker while exploring. Aim at a supported block face and open the graffiti wheel to choose a marker. Graffiti is stored and rendered only on your client, so other players cannot see it. If the marked block is moved or destroyed, its graffiti is removed as well.
+- Fabric
+- NeoForge
 
 ## Feature Updates
+
+### v1.3.1 - Functional Block Facing Rotation (Singleplayer Only)
+
+- Rotate the facing of functional blocks in Survival Mode in singleplayer
+- Added a key binding to toggle the holographic placement preview
+- Added a startup animation and sound for the holographic placement preview
 
 ### v1.2.11 — NeoForge Support and Settings Access
 
@@ -48,7 +58,7 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 
 - Added a real-time holographic placement preview to help players place blocks more accurately
 
-### v1.1.2 — Graffiti Marking (2026-07-19)
+### v1.1.2 — Client-Side Graffiti (2026-07-19)
 
 - Added four client-side graffiti markers for construction and exploration
 - Added an animated graffiti wheel opened with `G`, with number-key and mouse selection
@@ -67,8 +77,8 @@ Graffiti gives builders a quick way to mark blocks during construction, and it c
 ## Key Bindings
 
 - Toggle all block outlines
-- Toggle targeted-block outline
-- Toggle block distance HUD and Manhattan path display
+- Toggle targeted-block outlines
+- Toggle the block-distance HUD and Manhattan path display
 - Open Facet settings (unbound by default; also available from the NeoForge mod list)
 - Open the graffiti wheel (`G` by default; use `1`–`4` or the mouse to choose a marker)
 
