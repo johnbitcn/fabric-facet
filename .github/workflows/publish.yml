@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to build and publish, for example v1.3.1
+        description: Existing release tag to build and publish, for example v1.3.5
         required: true
         type: string
       publish_github_release:
@@ -135,7 +135,7 @@ jobs:
         if: github.event_name == 'push' || inputs.publish_curseforge
         uses: Kira-NT/mc-publish@v3
         with:
-          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           curseforge-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.1.jar
           curseforge-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1
@@ -154,7 +154,7 @@ jobs:
         if: github.event_name == 'push' || inputs.publish_curseforge
         uses: Kira-NT/mc-publish@v3
         with:
-          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           curseforge-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.2.jar
           curseforge-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2
@@ -170,7 +170,7 @@ jobs:
         if: github.event_name == 'push' || inputs.publish_curseforge
         uses: Kira-NT/mc-publish@v3
         with:
-          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           curseforge-files: release/Facet-NeoForge-${{ env.RELEASE_VERSION }}-26.1.jar
           curseforge-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1 (NeoForge)
@@ -186,7 +186,7 @@ jobs:
         if: github.event_name == 'push' || inputs.publish_curseforge
         uses: Kira-NT/mc-publish@v3
         with:
-          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           curseforge-files: release/Facet-NeoForge-${{ env.RELEASE_VERSION }}-26.1.2.jar
           curseforge-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1.2 (NeoForge)
@@ -202,7 +202,7 @@ jobs:
         if: github.event_name == 'push' || inputs.publish_curseforge
         uses: Kira-NT/mc-publish@v3
         with:
-          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           curseforge-files: release/Facet-NeoForge-${{ env.RELEASE_VERSION }}-26.2.jar
           curseforge-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2 (NeoForge)
