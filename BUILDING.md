@@ -1,34 +1,107 @@
 # Building Facet
 
-Facet modules are named as `versions/<loader>-<minecraft-version>` and output
-artifacts as `Facet-<Loader>-<mod-version>-<minecraft-version>.jar`.
+Run all commands from the repository root. Use the included Gradle wrapper;
+a separate Gradle installation is not required.
 
-| Module | Loader | Minecraft | Artifact prefix |
+## Requirements
+
+- A Java 25 toolchain available to Gradle
+- Internet access for the first build so Gradle can resolve Minecraft, Fabric,
+  NeoForge, and plugin dependencies
+- On macOS, Linux, and other Unix-like systems, use `./gradlew`
+- On Windows, use `gradlew.bat` in place of `./gradlew`
+
+The project uses Gradle 9.5.0 and compiles all modules for Java 25. Verify the
+Gradle runtime and detected Java installation with:
+
+```sh
+./gradlew --version
+```
+
+## Supported Targets
+
+Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
+
+| Module | Loader | Minecraft | Main artifact |
 | --- | --- | --- | --- |
-| `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric` |
-| `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric` |
-| `versions/fabric-26.3-snapshot-5` | Fabric | 26.3-snapshot-5 | `Facet-Fabric` |
-| `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge` |
-| `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge` |
-| `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge` |
+| `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
+| `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
+| `versions/fabric-26.3-snapshot-5` | Fabric | 26.3 Snapshot 5 | `Facet-Fabric-<mod-version>-26.3-snapshot-5.jar` |
+| `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
+| `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
+| `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
 
-Build all Fabric targets:
+`<mod-version>` comes from `mod_version` in `gradle.properties`.
+
+## Build Commands
+
+### All supported targets
+
+The unqualified `build` task builds and tests all six Fabric and NeoForge
+modules:
 
 ```sh
 ./gradlew build
 ```
 
-Build the NeoForge target explicitly:
+Use a clean build when validating a release or cross-version change:
+
+```sh
+./gradlew clean build
+```
+
+### Fabric only
+
+```sh
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-snapshot-5:build
+```
+
+### NeoForge only
 
 ```sh
 ./gradlew :versions:neoforge-26.1:build :versions:neoforge-26.1.2:build :versions:neoforge-26.2:build
 ```
 
-Build all supported targets:
+### One target
+
+Use the module path followed by `:build`, for example:
 
 ```sh
-./gradlew build :versions:neoforge-26.1:build :versions:neoforge-26.1.2:build :versions:neoforge-26.2:build
+./gradlew :versions:fabric-26.2:build
 ```
 
-Fabric Modrinth publishing remains limited to the Fabric modules. NeoForge is
-not included in `publishModrinth`.
+## Build Outputs
+
+Each module writes its artifacts to `versions/<module>/build/libs/` and
+produces both a main mod JAR and a `-sources.jar`. For example:
+
+```text
+versions/fabric-26.2/build/libs/Facet-Fabric-<mod-version>-26.2.jar
+versions/fabric-26.2/build/libs/Facet-Fabric-<mod-version>-26.2-sources.jar
+```
+
+Only the main JAR is installed in Minecraft or attached as a release asset.
+
+## Development Client
+
+Launch a client for one exact target with that module's `runClient` task:
+
+```sh
+./gradlew :versions:fabric-26.2:runClient
+./gradlew :versions:neoforge-26.2:runClient
+```
+
+A successful build or main-menu startup does not replace in-world validation
+for rendering, input, placement, or Loader-specific behavior.
+
+## Modrinth Publishing
+
+`publishModrinth` publishes only the three Fabric modules configured in the
+root build. It requires a valid `MODRINTH_TOKEN` environment variable:
+
+```sh
+./gradlew publishModrinth
+```
+
+NeoForge artifacts are not included in `publishModrinth` and must not be
+assumed to have been published by that task.

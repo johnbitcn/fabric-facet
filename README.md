@@ -11,6 +11,9 @@ Every feature has a key binding.
 Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
+## Latest Update
+Reworked the overall outline logic and all the colors. It doesn't look so harsh now!
+
 ## Complete Feature List
 
 - Holographic placement preview with startup sound
@@ -35,10 +38,10 @@ Now I'm sharing it. I hope you enjoy it!
 
 ## Feature Updates
 
-### v1.3.5 - Reworked Block Outline Logic and Colors for a Softer Look
+### v1.3.5 - Reworked the overall outline logic and colors. It doesn't look so harsh now!
 
-- Reworked how block colors are sampled
-- Redesigned the colors for all blocks
+- Reworked how block colors are picked
+- Redesigned the colors for every block
 
 ### v1.3.1 - Functional Block Facing Rotation (Singleplayer Only)
 
