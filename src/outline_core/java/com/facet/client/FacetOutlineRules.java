@@ -5,24 +5,35 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.CarpetBlock;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 final class FacetOutlineRules {
 	static final double DEFAULT_EDGE_WIDTH = 1.0 / 32.0;
 	static final double SURFACE_BIAS = 1.0 / 1024.0;
-	static final float OUTLINE_ALPHA = 1.0f;
-	private static final int HIGH_LIGHTNESS_MIN = 85;
-	private static final int LOW_LIGHTNESS_MAX = 15;
-	private static final int NEUTRAL_SATURATION_MAX = 15;
+	private static final float DARK_TEXTURE_VALUE_THRESHOLD = 15.0f;
+	private static final float DARK_TEXTURE_LIGHTNESS_BOOST = 15.0f;
 
 	private FacetOutlineRules() {
 	}
 
 	static boolean shouldRender(BlockAndTintGetter level, BlockPos pos, BlockState state) {
-		if (BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath().contains("glass")) {
+		return isInScope(level, pos, state);
+	}
+
+	static boolean shouldAnalyze(BlockState state) {
+		return isInScope(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, state);
+	}
+
+	private static boolean isInScope(BlockGetter level, BlockPos pos, BlockState state) {
+		if (state.getBlock() instanceof ShulkerBoxBlock
+				|| BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath().contains("glass")) {
 			return false;
 		}
 
@@ -31,6 +42,7 @@ final class FacetOutlineRules {
 				|| state.getBlock() instanceof SlabBlock
 				|| state.getBlock() instanceof StairBlock
 				|| state.getBlock() instanceof CarpetBlock
+				|| state.getBlock() instanceof SnowLayerBlock
 				|| path.equals("dirt_path") || path.equals("soul_sand") || path.equals("farmland") || path.equals("mud");
 	}
 
@@ -46,46 +58,24 @@ final class FacetOutlineRules {
 		};
 	}
 
-	static int outlineColor(BlockAndTintGetter level, BlockPos pos, BlockState state) {
-		return mapColorBorder(state.getMapColor(level, pos).col, OUTLINE_ALPHA);
-	}
-
-	static int mapColorBorder(int rgb, float alpha) {
-		int[] hsl = rgbToHsl(rgb);
-		int hue;
-		int saturation;
-		int lightness;
-
-		if (hsl[2] > HIGH_LIGHTNESS_MIN) {
-			hue = 215;
-			saturation = 15;
-			lightness = 65;
-		} else if (hsl[2] < LOW_LIGHTNESS_MAX) {
-			hue = 235;
-			saturation = 25;
-			lightness = 30;
-		} else if (hsl[1] <= NEUTRAL_SATURATION_MAX) {
-			hue = 220;
-			saturation = 12;
-			lightness = Math.max(10, (int) (hsl[2] * 0.70f));
-		} else {
-			if (hsl[0] < 60) {
-				hue = wrapHue(hsl[0] - 12);
-			} else if (hsl[0] < 260) {
-				hue = wrapHue(hsl[0] + 14);
-			} else {
-				hue = wrapHue(hsl[0] - 10);
-			}
-
-			saturation = clamp((int) (hsl[1] * 1.15f + 10.0f), 0, 100);
-			lightness = clamp((int) (hsl[2] * 0.65f), 12, 100);
+	static int boostDarkTextureLightness(int rgb) {
+		float value = Math.max(ARGB.red(rgb), Math.max(ARGB.green(rgb), ARGB.blue(rgb)))
+				/ 255.0f * 100.0f;
+		if (value > DARK_TEXTURE_VALUE_THRESHOLD) {
+			return rgb;
 		}
 
-		float[] borderRgb = hslToRgb(hue, saturation, lightness);
-		return ARGB.colorFromFloat(alpha, borderRgb[0], borderRgb[1], borderRgb[2]);
+		float[] hsl = rgbToPreciseHsl(rgb);
+		float[] boosted = hslToRgb(hsl[0], hsl[1], Math.min(100.0f,
+				hsl[2] + DARK_TEXTURE_LIGHTNESS_BOOST));
+		return ARGB.color(
+				ARGB.alpha(rgb),
+				Math.round(clampUnit(boosted[0]) * 255.0f),
+				Math.round(clampUnit(boosted[1]) * 255.0f),
+				Math.round(clampUnit(boosted[2]) * 255.0f));
 	}
 
-	private static int[] rgbToHsl(int rgb) {
+	private static float[] rgbToPreciseHsl(int rgb) {
 		float red = ARGB.red(rgb) / 255.0f;
 		float green = ARGB.green(rgb) / 255.0f;
 		float blue = ARGB.blue(rgb) / 255.0f;
@@ -113,10 +103,10 @@ final class FacetOutlineRules {
 			}
 		}
 
-		return new int[] {Math.round(hue), Math.round(saturation * 100.0f), Math.round(lightness * 100.0f)};
+		return new float[] {hue, saturation * 100.0f, lightness * 100.0f};
 	}
 
-	private static float[] hslToRgb(int hue, int saturation, int lightness) {
+	private static float[] hslToRgb(float hue, float saturation, float lightness) {
 		float normalizedSaturation = saturation / 100.0f;
 		float normalizedLightness = lightness / 100.0f;
 		float chroma = (1.0f - Math.abs(2.0f * normalizedLightness - 1.0f)) * normalizedSaturation;
@@ -156,11 +146,7 @@ final class FacetOutlineRules {
 		return new float[] {red + match, green + match, blue + match};
 	}
 
-	private static int wrapHue(int hue) {
-		return (hue % 360 + 360) % 360;
-	}
-
-	private static int clamp(int value, int min, int max) {
-		return Math.max(min, Math.min(max, value));
+	private static float clampUnit(float value) {
+		return Math.max(0.0f, Math.min(1.0f, value));
 	}
 }
