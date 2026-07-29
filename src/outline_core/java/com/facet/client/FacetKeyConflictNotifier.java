@@ -20,7 +20,7 @@ final class FacetKeyConflictNotifier {
 	private static final long FLICKER_INTERVAL_NANOS = 70_000_000L;
 	private static final float HOLOGRAM_BASE_ALPHA = 0.29f;
 	private static final float HOLOGRAM_FLICKER_ALPHA_RANGE = 0.13f;
-	private static final float PANEL_BRIGHTNESS_MULTIPLIER = 1.3f;
+	private static final float PANEL_BRIGHTNESS_MULTIPLIER = 1.5f;
 	private static final int BACKGROUND_DIM = 0x70000000;
 	private static final int CHAMFER = 5;
 	private static List<KeyMapping> facetMappings = List.of();
@@ -154,7 +154,7 @@ final class FacetKeyConflictNotifier {
 				graphics.fill(panelX + 2, scanY, panelX + panelWidth - 2, scanY + 1, alpha(0x1836F6FF, opacity));
 			}
 			graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, panelX + 10, panelY - 16,
-					0.0f, 0.0f, 32, 32, 512, 512, 512, 512, alpha(0xFFFFFFFF, opacity));
+					0.0f, 0.0f, 32, 32, 512, 512, 512, 512, 0xFFFFFFFF);
 			graphics.text(font, title, panelX + 50, panelY + 8, alpha(0xFFB8FBFF, opacity), false);
 			int textY = panelY + 34;
 			for (net.minecraft.util.FormattedCharSequence summaryLine : summaryLines) {

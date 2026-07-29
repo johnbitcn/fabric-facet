@@ -43,12 +43,14 @@ final class FacetBlockOverlay {
 	}
 
 	private static void registerModelModifiers(ModelLoadingPlugin.Context context) {
+		FacetOutlineColor.clearCache();
 		context.modifyBlockModelAfterBake().register((model, modifierContext) -> {
 			BlockState state = modifierContext.state();
 
 			if (state.isAir() || state.getRenderShape() != RenderShape.MODEL || model instanceof OutlineBlockStateModel) {
 				return model;
 			}
+			FacetOutlineColor.analyze(state, model);
 
 			Material.Baked outlineMaterial = modifierContext.baker().materials().get(OUTLINE_TEXTURE, OUTLINE_DEBUG_NAME);
 			Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
@@ -77,6 +79,7 @@ final class FacetBlockOverlay {
 		@Override
 		public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
 			super.emitQuads(emitter, level, pos, state, random, cullTest);
+
 			emitOutlineQuads(emitter, level, pos, state, cullTest);
 			emitGraffitiQuads(emitter, level, pos, state, cullTest);
 		}
@@ -86,7 +89,8 @@ final class FacetBlockOverlay {
 			return null;
 		}
 
-		private void emitOutlineQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, Predicate<Direction> cullTest) {
+		private void emitOutlineQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos,
+				BlockState state, Predicate<Direction> cullTest) {
 			if (FacetClient.usesExperimentalLineOutlines()
 					|| !FacetConfig.enabled()
 					|| !FacetOutlineRules.shouldRender(level, pos, state)) {
@@ -99,7 +103,7 @@ final class FacetBlockOverlay {
 				return;
 			}
 
-			int color = FacetOutlineRules.outlineColor(level, pos, state);
+			FacetOutlineColor.FaceColors faceColors = FacetOutlineColor.resolve(level, pos, state);
 			boolean isCarpet = state.getBlock() instanceof CarpetBlock;
 
 			FacetShapeEdges.forEachSurfaceStrip(shape, FacetConfig.effectiveEdgeWidth(),
@@ -110,7 +114,8 @@ final class FacetBlockOverlay {
 					return;
 				}
 
-				emitSurfaceStrip(emitter, direction, color, minX, minY, minZ, maxX, maxY, maxZ);
+				emitSurfaceStrip(emitter, direction, faceColors.color(direction),
+						minX, minY, minZ, maxX, maxY, maxZ);
 			});
 		}
 

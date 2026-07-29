@@ -6,7 +6,8 @@
     "BlockItemInvoker",
     "BlockItemPlacementMixin",
     "MultiPlayerGameModeMixin",
-    "ClientLevelMixin"
+    "ClientLevelMixin",
+    "SpriteContentsAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

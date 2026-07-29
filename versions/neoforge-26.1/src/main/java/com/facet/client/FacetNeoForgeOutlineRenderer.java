@@ -40,6 +40,7 @@ final class FacetNeoForgeOutlineRenderer {
 	}
 
 	static void modifyBakingResult(ModelEvent.ModifyBakingResult event) {
+		FacetOutlineColor.clearCache();
 		TextureAtlasSprite sprite = event.getTextureGetter().apply(Identifier.withDefaultNamespace("block/white_concrete"));
 		Material.Baked material = new Material.Baked(sprite, true);
 		Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
@@ -54,6 +55,7 @@ final class FacetNeoForgeOutlineRenderer {
 			if (state.isAir() || state.getRenderShape() != RenderShape.MODEL || model instanceof OutlineModel) {
 				continue;
 			}
+			FacetOutlineColor.analyze(state, model);
 			entry.setValue(new OutlineModel(model, material, graffitiMaterials));
 			wrapped++;
 		}
@@ -94,7 +96,7 @@ final class FacetNeoForgeOutlineRenderer {
 				culled.put(direction, new ArrayList<>());
 			}
 			List<BakedQuad> unculled = new ArrayList<>();
-			int color = FacetOutlineRules.outlineColor(level, pos, state);
+			FacetOutlineColor.FaceColors faceColors = FacetOutlineColor.resolve(level, pos, state);
 			boolean carpet = state.getBlock() instanceof CarpetBlock;
 
 			FacetShapeEdges.forEachSurfaceStrip(shape, FacetNeoForgeOutlineConfig.edgeWidth(),
@@ -102,7 +104,8 @@ final class FacetNeoForgeOutlineRenderer {
 						if (carpet && face != Direction.UP) {
 							return;
 						}
-						BakedQuad quad = createOutlineQuad(face, color, minX, minY, minZ, maxX, maxY, maxZ);
+						BakedQuad quad = createOutlineQuad(face, faceColors.color(face),
+								minX, minY, minZ, maxX, maxY, maxZ);
 						if (FacetOutlineRules.touchesBlockBoundary(face, minX, minY, minZ, maxX, maxY, maxZ)) {
 							culled.get(face).add(quad);
 						} else {

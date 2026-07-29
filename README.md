@@ -35,6 +35,11 @@ Now I'm sharing it. I hope you enjoy it!
 
 ## Feature Updates
 
+### v1.3.5 - Reworked Block Outline Logic and Colors for a Softer Look
+
+- Reworked how block colors are sampled
+- Redesigned the colors for all blocks
+
 ### v1.3.1 - Functional Block Facing Rotation (Singleplayer Only)
 
 - Rotate the facing of functional blocks in Survival Mode in singleplayer
