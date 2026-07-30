@@ -64,11 +64,17 @@ final class FacetMcBridge {
 		minecraft.level.setSectionRangeDirty(sectionX, sectionY, sectionZ, sectionX, sectionY, sectionZ);
 	}
 
+	static void collectSurfaceEffects(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
+	}
+
 	static void renderAfterTranslucentTerrain(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
 		renderer.accept((poseStack, renderType, geometry) -> {
 			geometry.render(poseStack.last(), context.bufferSource().getBuffer(renderType));
 			context.bufferSource().endBatch(renderType);
 		});
+	}
+
+	static void endSurfaceEffectsFrame() {
 	}
 
 	static String worldScope(Minecraft minecraft, ClientLevel level) {

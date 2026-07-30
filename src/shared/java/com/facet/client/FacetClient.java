@@ -76,7 +76,9 @@ public final class FacetClient implements ClientModInitializer {
 		registerKeyMappings();
 		FacetBlockOverlay.initialize();
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
+		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::collectSurfaceEffects);
 		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetClient::renderSurfaceEffectsAfterTerrain);
+		LevelRenderEvents.END_MAIN.register(context -> FacetMcBridge.endSurfaceEffectsFrame());
 		LevelRenderEvents.BEFORE_BLOCK_OUTLINE.register(FacetClient::beforeBlockOutline);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) -> {
@@ -381,11 +383,17 @@ public final class FacetClient implements ClientModInitializer {
 		});
 	}
 
+	private static void collectSurfaceEffects(LevelRenderContext context) {
+		FacetMcBridge.collectSurfaceEffects(context, sink -> renderSurfaceEffects(context, sink));
+	}
+
 	private static void renderSurfaceEffectsAfterTerrain(LevelRenderContext context) {
-		FacetMcBridge.renderAfterTranslucentTerrain(context, sink -> {
-			renderHoverOutline(context, sink);
-			PlacementPreview.render(context, sink);
-		});
+		FacetMcBridge.renderAfterTranslucentTerrain(context, sink -> renderSurfaceEffects(context, sink));
+	}
+
+	private static void renderSurfaceEffects(LevelRenderContext context, FacetRenderSink sink) {
+		renderHoverOutline(context, sink);
+		PlacementPreview.render(context, sink);
 	}
 
 

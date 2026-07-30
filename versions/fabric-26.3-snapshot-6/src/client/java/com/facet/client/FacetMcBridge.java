@@ -6,6 +6,8 @@ import java.util.function.Consumer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,22 +15,24 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 
-final class FacetMcBridge {
+public final class FacetMcBridge {
 	private static final StagedVertexBuffer AFTER_TERRAIN_BUFFER =
 			new StagedVertexBuffer(() -> "Facet after translucent terrain", RenderType.TRANSIENT_BUFFER_SIZE);
+	private static RenderPass activeClassicTransparencyPass;
+	private static boolean afterTerrainBufferFramePending;
 
 	private FacetMcBridge() {
 	}
 
 	static InputConstants.Type keyboardType() {
-		return InputConstants.Type.KEYSYM;
+		return InputConstants.Type.KEYBOARD;
 	}
 
 	static boolean placementRotationPrototypeEnabled() {
@@ -36,7 +40,7 @@ final class FacetMcBridge {
 	}
 
 	static void applyShade(QuadEmitter emitter, boolean shade) {
-		emitter.diffuseShade(shade);
+		emitter.shadeDirectionOverride(shade ? null : Direction.UP);
 	}
 
 	static Camera mainCamera(Minecraft minecraft) {
@@ -75,45 +79,64 @@ final class FacetMcBridge {
 	}
 
 	static void collectSurfaceEffects(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
+		if (!Minecraft.getInstance().gameRenderer.useImprovedTransparency()) {
+			return;
+		}
+
+		renderer.accept((poseStack, renderType, geometry) ->
+				context.submitNodeCollector().submitCustomGeometry(poseStack, renderType, geometry::render));
 	}
 
 	static void renderAfterTranslucentTerrain(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
+		if (Minecraft.getInstance().gameRenderer.useImprovedTransparency()
+				|| activeClassicTransparencyPass == null) {
+			return;
+		}
+
 		List<ImmediateDraw> draws = new ArrayList<>();
 
-		try {
-			renderer.accept((poseStack, renderType, geometry) -> {
-				PreparedRenderType preparedRenderType = renderType.prepare();
-				VertexSorting sorting = renderType.sortOnUpload()
-						? RenderSystem.getProjectionType().vertexSorting()
-						: null;
-				StagedVertexBuffer.Draw draw = AFTER_TERRAIN_BUFFER.appendDraw(
-						renderType.format(),
-						renderType.primitiveTopology(),
-						sorting);
-				geometry.render(poseStack.last(), AFTER_TERRAIN_BUFFER.getVertexBuilder(draw));
-				draws.add(new ImmediateDraw(preparedRenderType, draw));
-			});
+		renderer.accept((poseStack, renderType, geometry) -> {
+			PreparedRenderType preparedRenderType = renderType.prepare();
+			VertexSorting sorting = renderType.sortOnUpload()
+					? RenderSystem.getProjectionType().vertexSorting()
+					: null;
+			StagedVertexBuffer.Draw draw = AFTER_TERRAIN_BUFFER.appendDraw(
+					renderType.format(),
+					renderType.primitiveTopology(),
+					sorting);
+			geometry.render(poseStack.last(), AFTER_TERRAIN_BUFFER.getVertexBuilder(draw));
+			draws.add(new ImmediateDraw(preparedRenderType, draw));
+		});
 
-			if (draws.isEmpty()) {
-				return;
+		if (draws.isEmpty()) {
+			return;
+		}
+
+		afterTerrainBufferFramePending = true;
+		AFTER_TERRAIN_BUFFER.upload();
+
+		for (ImmediateDraw draw : draws) {
+			StagedVertexBuffer.ExecuteInfo executeInfo = AFTER_TERRAIN_BUFFER.getExecuteInfo(draw.draw());
+
+			if (executeInfo != null) {
+				draw.renderType().drawFromBuffer(executeInfo, activeClassicTransparencyPass);
 			}
-
-			AFTER_TERRAIN_BUFFER.upload();
-
-			for (ImmediateDraw draw : draws) {
-				StagedVertexBuffer.ExecuteInfo executeInfo =
-						AFTER_TERRAIN_BUFFER.getExecuteInfo(draw.draw());
-
-				if (executeInfo != null) {
-					draw.renderType().drawFromBuffer(executeInfo);
-				}
-			}
-		} finally {
-			AFTER_TERRAIN_BUFFER.endFrame();
 		}
 	}
 
 	static void endSurfaceEffectsFrame() {
+		if (afterTerrainBufferFramePending) {
+			AFTER_TERRAIN_BUFFER.endFrame();
+			afterTerrainBufferFramePending = false;
+		}
+	}
+
+	public static void beginClassicTransparency(RenderPass renderPass) {
+		activeClassicTransparencyPass = renderPass;
+	}
+
+	public static void endClassicTransparency() {
+		activeClassicTransparencyPass = null;
 	}
 
 	static String worldScope(Minecraft minecraft, ClientLevel level) {

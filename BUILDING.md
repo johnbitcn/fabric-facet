@@ -26,7 +26,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | --- | --- | --- | --- |
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
-| `versions/fabric-26.3-snapshot-5` | Fabric | 26.3 Snapshot 5 | `Facet-Fabric-<mod-version>-26.3-snapshot-5.jar` |
+| `versions/fabric-26.3-snapshot-6` | Fabric | 26.3 Snapshot 6 | `Facet-Fabric-<mod-version>-26.3-snapshot-6.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -57,7 +57,7 @@ build; the tag workflow rebuilds it for the official release.
 ### Fabric only
 
 ```sh
-./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-snapshot-5:build
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-snapshot-6:build
 ```
 
 ### NeoForge only
