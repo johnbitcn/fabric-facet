@@ -104,6 +104,12 @@ Official releases use `.github/workflows/publish.yml`. From a version tag, it
 validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
+Minecraft compatibility previews use `.github/workflows/publish-preview.yml`
+and a tag such as `v1.2.3-mc26.3-snapshot-6-preview.1`. The preview workflow
+builds only the exact Fabric snapshot target, creates a GitHub Prerelease, and
+publishes the same JAR to Modrinth as a beta. It does not publish to CurseForge
+or replace assets in the corresponding formal release.
+
 Use the manual inputs only to recover a failed destination on an existing tag;
 leave destinations that already succeeded disabled.
 
