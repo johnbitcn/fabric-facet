@@ -44,11 +44,15 @@ modules:
 ./gradlew build
 ```
 
-Use a clean build when validating a release or cross-version change:
+Use one clean build to create candidate artifacts for a release or validate a
+cross-version change:
 
 ```sh
 ./gradlew clean build
 ```
+
+If the accepted candidate tree is unchanged, do not repeat the local clean
+build; the tag workflow rebuilds it for the official release.
 
 ### Fabric only
 
@@ -94,14 +98,15 @@ Launch a client for one exact target with that module's `runClient` task:
 A successful build or main-menu startup does not replace in-world validation
 for rendering, input, placement, or Loader-specific behavior.
 
-## Modrinth Publishing
+## Release Publishing
 
-`publishModrinth` publishes only the three Fabric modules configured in the
-root build. It requires a valid `MODRINTH_TOKEN` environment variable:
+Official releases use `.github/workflows/publish.yml`. From a version tag, it
+validates `mod_version`, builds every target, stages only main JARs, creates
+`SHA256SUMS.txt`, and publishes the configured destinations.
 
-```sh
-./gradlew publishModrinth
-```
+Use the manual inputs only to recover a failed destination on an existing tag;
+leave destinations that already succeeded disabled.
 
-NeoForge artifacts are not included in `publishModrinth` and must not be
-assumed to have been published by that task.
+The Gradle `publishModrinth` task is a legacy Fabric-only local path. It does
+not publish NeoForge artifacts or create the GitHub checksum manifest, so it is
+not the official release process.
