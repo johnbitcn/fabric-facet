@@ -101,6 +101,12 @@ public final class GraffitiStore {
 			return null;
 		}
 
+		Set<BlockPos> positions = POSITIONS_BY_CHUNK.get(chunkKey(activeWorld, activeDimension, pos));
+
+		if (positions == null || !positions.contains(pos)) {
+			return null;
+		}
+
 		Identifier blockId = blockId(state);
 		BlockPos immutable = pos.immutable();
 		GraffitiType[] types = new GraffitiType[6];
@@ -260,13 +266,8 @@ public final class GraffitiStore {
 	}
 
 	private static boolean hasAny(String world, Identifier dimension, BlockPos pos) {
-		for (Direction direction : Direction.values()) {
-			if (GRAFFITI.containsKey(new GraffitiKey(world, dimension, pos, direction))) {
-				return true;
-			}
-		}
-
-		return false;
+		Set<BlockPos> positions = POSITIONS_BY_CHUNK.get(chunkKey(world, dimension, pos));
+		return positions != null && positions.contains(pos);
 	}
 
 	private static void addToChunkIndex(GraffitiKey key) {
