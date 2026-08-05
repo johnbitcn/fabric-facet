@@ -1,6 +1,7 @@
 package com.facet.client;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -64,6 +65,9 @@ final class PlacementPreview {
 	private static final float EDGE_ALPHA_SCALE = 1.9f;
 	private static final float EDGE_WIDTH = 1.5f;
 	private static final float OVERLAP_SCALE = 1.002f;
+	private static final Vector3f VERTEX_SCRATCH = new Vector3f();
+	private static final Vector3f NORMAL_SCRATCH = new Vector3f();
+	private static final Vector3f LINE_SCRATCH = new Vector3f();
 
 	private PlacementPreview() {
 	}
@@ -111,10 +115,14 @@ final class PlacementPreview {
 		float screenRightX = -left.x();
 		float screenRightZ = -left.z();
 
-		prediction.blocks().stream()
-				.sorted(Comparator.comparingDouble((PreviewBlock block) -> distanceSquared(block.pos(), camera.pos)).reversed())
-				.forEach(block -> renderBlock(context, sink, minecraft, level, camera.pos, block,
-						prediction.anchor(), prediction.visual(), bootFrame, frame, screenRightX, screenRightZ));
+		PreviewBlock[] blocks = prediction.blocks().toArray(PreviewBlock[]::new);
+		Arrays.sort(blocks, Comparator.comparingDouble(
+				(PreviewBlock block) -> distanceSquared(block.pos(), camera.pos)).reversed());
+
+		for (PreviewBlock block : blocks) {
+			renderBlock(context, sink, minecraft, level, camera.pos, block,
+					prediction.anchor(), prediction.visual(), bootFrame, frame, screenRightX, screenRightZ);
+		}
 	}
 
 	static void flipFacing(Minecraft minecraft) {
@@ -411,7 +419,7 @@ final class PlacementPreview {
 			return;
 		}
 
-		Vector3f normal = pose.transformNormal(direction.getUnitVec3f(), new Vector3f());
+		Vector3f normal = pose.transformNormal(direction.getUnitVec3f(), NORMAL_SCRATCH);
 
 		for (int index = 1; index < vertices.size() - 1; index++) {
 			emitVertex(pose, consumer, vertices.get(0), color, normal, offsetX, offsetZ);
@@ -424,7 +432,7 @@ final class PlacementPreview {
 	private static void emitVertex(PoseStack.Pose pose, VertexConsumer consumer, HologramVertex vertex,
 			int color, Vector3f normal, float offsetX, float offsetZ) {
 		Vector3f transformed = pose.pose().transformPosition(
-				new Vector3f(vertex.x() + offsetX, vertex.y(), vertex.z() + offsetZ));
+				VERTEX_SCRATCH.set(vertex.x() + offsetX, vertex.y(), vertex.z() + offsetZ));
 		consumer.addVertex(transformed)
 				.setColor(color)
 				.setUv(vertex.u(), vertex.v())
@@ -482,7 +490,7 @@ final class PlacementPreview {
 		float endX = (float) (x1 + (x2 - x1) * end) + offsetX;
 		float endY = (float) (y1 + deltaY * end);
 		float endZ = (float) (z1 + (z2 - z1) * end) + offsetZ;
-		Vector3f normal = new Vector3f(endX - startX, endY - startY, endZ - startZ);
+		Vector3f normal = LINE_SCRATCH.set(endX - startX, endY - startY, endZ - startZ);
 
 		if (normal.lengthSquared() <= 1.0e-8f) {
 			return;

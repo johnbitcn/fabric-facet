@@ -36,6 +36,7 @@ final class FacetOutlineColor {
 	private static final Map<TextureAtlasSprite, Map<UvRegion, TextureSample>> SAMPLE_CACHE =
 			new ConcurrentHashMap<>();
 	private static final Map<BlockState, FaceColorPlan> COLOR_PLANS = new ConcurrentHashMap<>();
+	private static final Map<BlockState, List<BlockTintSource>> TINT_SOURCES = new ConcurrentHashMap<>();
 
 	private FacetOutlineColor() {
 	}
@@ -43,6 +44,7 @@ final class FacetOutlineColor {
 	static void clearCache() {
 		SAMPLE_CACHE.clear();
 		COLOR_PLANS.clear();
+		TINT_SOURCES.clear();
 	}
 
 	static void analyze(BlockState state, BlockStateModel model) {
@@ -178,9 +180,22 @@ final class FacetOutlineColor {
 
 	static final class FaceColors {
 		private final Map<Direction, Integer> colors;
+		private final int firstColor;
 
 		private FaceColors(Map<Direction, Integer> colors) {
 			this.colors = colors;
+			int first = FALLBACK_COLOR;
+
+			for (Direction direction : Direction.values()) {
+				Integer color = colors.get(direction);
+
+				if (color != null) {
+					first = color;
+					break;
+				}
+			}
+
+			this.firstColor = first;
 		}
 
 		private static FaceColors fallback() {
@@ -192,8 +207,8 @@ final class FacetOutlineColor {
 		}
 
 		int color(Direction direction) {
-			return colors.getOrDefault(direction, colors.values().stream().findFirst()
-					.orElse(FALLBACK_COLOR));
+			Integer color = colors.get(direction);
+			return color == null ? firstColor : color;
 		}
 	}
 
@@ -232,7 +247,7 @@ final class FacetOutlineColor {
 					}
 				}
 			}
-			return new FaceColorPlan(recipes);
+			return FaceColorPlan.create(recipes);
 		}
 	}
 
@@ -256,9 +271,42 @@ final class FacetOutlineColor {
 		}
 	}
 
-	private record FaceColorPlan(Map<Direction, ColorRecipe> recipes) {
+	private record FaceColorPlan(Map<Direction, ColorRecipe> recipes, FaceColors staticColors) {
+		private static FaceColorPlan create(Map<Direction, ColorRecipe> recipes) {
+			boolean tinted = false;
+
+			for (ColorRecipe recipe : recipes.values()) {
+				for (SampledLayer layer : recipe.layers) {
+					if (layer.tintIndex >= 0) {
+						tinted = true;
+						break;
+					}
+				}
+
+				if (tinted) {
+					break;
+				}
+			}
+
+			FaceColors staticColors = null;
+
+			if (!tinted) {
+				Map<Direction, Integer> colors = new EnumMap<>(Direction.class);
+				recipes.forEach((direction, recipe) ->
+						colors.put(direction, recipe.resolveUntinted()));
+				staticColors = new FaceColors(colors);
+			}
+
+			return new FaceColorPlan(recipes, staticColors);
+		}
+
 		private FaceColors resolve(BlockAndTintGetter level, BlockPos pos, BlockState state) {
-			List<BlockTintSource> tintSources = Minecraft.getInstance().getBlockColors().getTintSources(state);
+			if (staticColors != null) {
+				return staticColors;
+			}
+
+			List<BlockTintSource> tintSources = TINT_SOURCES.computeIfAbsent(state,
+					unused -> Minecraft.getInstance().getBlockColors().getTintSources(state));
 			Map<Direction, Integer> colors = new EnumMap<>(Direction.class);
 			recipes.forEach((direction, recipe) ->
 					colors.put(direction, recipe.resolve(tintSources, level, pos, state)));
@@ -267,6 +315,18 @@ final class FacetOutlineColor {
 	}
 
 	private record ColorRecipe(List<SampledLayer> layers) {
+		private int resolveUntinted() {
+			ColorAccumulator color = new ColorAccumulator();
+
+			for (SampledLayer layer : layers) {
+				color.add(layer.red, layer.green, layer.blue, layer.weight);
+			}
+
+			return color.weight <= 0.0
+					? FALLBACK_COLOR
+					: FacetOutlineRules.boostDarkTextureLightness(color.rgb());
+		}
+
 		private int resolve(List<BlockTintSource> tintSources,
 				BlockAndTintGetter level, BlockPos pos, BlockState state) {
 			ColorAccumulator color = new ColorAccumulator();

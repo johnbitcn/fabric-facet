@@ -1,11 +1,8 @@
 package com.facet.client;
 
-import java.util.List;
-
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 final class FacetShapeEdges {
@@ -20,7 +17,7 @@ final class FacetShapeEdges {
 	}
 
 	static void forEachSurfaceStrip(VoxelShape shape, double maxWidth, SurfaceStripConsumer consumer) {
-		List<AABB> boxes = shape.toAabbs();
+		double[] boxes = collectBoxes(shape);
 
 		forEachEdge(shape, (x1, y1, z1, x2, y2, z2) -> {
 			if (same(y1, y2) && same(z1, z2)) {
@@ -34,6 +31,24 @@ final class FacetShapeEdges {
 						(minZ, maxZ) -> emitZEdgeStrips(shape, boxes, x1, y1, minZ, maxZ, maxWidth, consumer));
 			}
 		});
+	}
+
+	private static double[] collectBoxes(VoxelShape shape) {
+		int[] count = {0};
+		shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> count[0]++);
+		double[] boxes = new double[count[0] * 6];
+		int[] index = {0};
+		shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
+			int offset = index[0] * 6;
+			boxes[offset] = minX;
+			boxes[offset + 1] = minY;
+			boxes[offset + 2] = minZ;
+			boxes[offset + 3] = maxX;
+			boxes[offset + 4] = maxY;
+			boxes[offset + 5] = maxZ;
+			index[0]++;
+		});
+		return boxes;
 	}
 
 	private static void forEachSegment(VoxelShape shape, Axis axis, double min, double max, SegmentConsumer consumer) {
@@ -60,7 +75,7 @@ final class FacetShapeEdges {
 		}
 	}
 
-	private static void emitXEdgeStrips(VoxelShape shape, List<AABB> boxes,
+	private static void emitXEdgeStrips(VoxelShape shape, double[] boxes,
 			double minX, double maxX, double y, double z, double maxWidth, SurfaceStripConsumer consumer) {
 		double midX = (minX + maxX) * 0.5;
 		boolean negativeYNegativeZ = contains(boxes, midX, y - SAMPLE_OFFSET, z - SAMPLE_OFFSET);
@@ -74,7 +89,7 @@ final class FacetShapeEdges {
 		emitXStripOnZ(shape, minX, maxX, y, z, 1, positiveYNegativeZ, positiveYPositiveZ, maxWidth, consumer);
 	}
 
-	private static void emitYEdgeStrips(VoxelShape shape, List<AABB> boxes,
+	private static void emitYEdgeStrips(VoxelShape shape, double[] boxes,
 			double x, double minY, double maxY, double z, double maxWidth, SurfaceStripConsumer consumer) {
 		double midY = (minY + maxY) * 0.5;
 		boolean negativeXNegativeZ = contains(boxes, x - SAMPLE_OFFSET, midY, z - SAMPLE_OFFSET);
@@ -88,7 +103,7 @@ final class FacetShapeEdges {
 		emitYStripOnZ(shape, x, minY, maxY, z, 1, positiveXNegativeZ, positiveXPositiveZ, maxWidth, consumer);
 	}
 
-	private static void emitZEdgeStrips(VoxelShape shape, List<AABB> boxes,
+	private static void emitZEdgeStrips(VoxelShape shape, double[] boxes,
 			double x, double y, double minZ, double maxZ, double maxWidth, SurfaceStripConsumer consumer) {
 		double midZ = (minZ + maxZ) * 0.5;
 		boolean negativeXNegativeY = contains(boxes, x - SAMPLE_OFFSET, y - SAMPLE_OFFSET, midZ);
@@ -183,11 +198,11 @@ final class FacetShapeEdges {
 		return Double.isFinite(nearest) ? Math.min(maxWidth, nearest) : 0.0;
 	}
 
-	private static boolean contains(List<AABB> boxes, double x, double y, double z) {
-		for (AABB box : boxes) {
-			if (x > box.minX && x < box.maxX
-					&& y > box.minY && y < box.maxY
-					&& z > box.minZ && z < box.maxZ) {
+	private static boolean contains(double[] boxes, double x, double y, double z) {
+		for (int offset = 0; offset < boxes.length; offset += 6) {
+			if (x > boxes[offset] && x < boxes[offset + 3]
+					&& y > boxes[offset + 1] && y < boxes[offset + 4]
+					&& z > boxes[offset + 2] && z < boxes[offset + 5]) {
 				return true;
 			}
 		}

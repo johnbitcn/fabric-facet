@@ -77,16 +77,17 @@ final class FacetNeoForgeOutlineRenderer {
 		public void collectParts(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random,
 				List<BlockStateModelPart> parts) {
 			super.collectParts(level, pos, state, random, parts);
-			emitOutlineParts(level, pos, state, parts);
-			emitGraffitiParts(level, pos, state, parts);
+			VoxelShape shape = state.getShape(level, pos);
+			emitOutlineParts(level, pos, state, parts, shape);
+			emitGraffitiParts(level, pos, state, parts, shape);
 		}
 
-		private void emitOutlineParts(BlockAndTintGetter level, BlockPos pos, BlockState state, List<BlockStateModelPart> parts) {
+		private void emitOutlineParts(BlockAndTintGetter level, BlockPos pos, BlockState state,
+				List<BlockStateModelPart> parts, VoxelShape shape) {
 			if (!FacetNeoForgeOutlineConfig.enabled() || !FacetOutlineRules.shouldRender(level, pos, state)) {
 				return;
 			}
 
-			VoxelShape shape = state.getShape(level, pos);
 			if (shape.isEmpty()) {
 				return;
 			}
@@ -123,24 +124,46 @@ final class FacetNeoForgeOutlineRenderer {
 			}
 		}
 
-		private void emitGraffitiParts(BlockAndTintGetter level, BlockPos pos, BlockState state, List<BlockStateModelPart> parts) {
-			VoxelShape shape = state.getShape(level, pos);
+		private void emitGraffitiParts(BlockAndTintGetter level, BlockPos pos, BlockState state,
+				List<BlockStateModelPart> parts, VoxelShape shape) {
 			if (shape.isEmpty()) {
 				return;
 			}
 
-			Map<Direction, List<BakedQuad>> culled = new EnumMap<>(Direction.class);
+			if (GraffitiEligibility.baseResult(level, pos, state) != GraffitiEligibility.Result.ALLOWED) {
+				return;
+			}
+
+			GraffitiType[] types = GraffitiStore.getTypes(pos, state);
+
+			if (types == null) {
+				return;
+			}
+
+			Map<Direction, List<BakedQuad>> culled = null;
+
 			for (Direction direction : Direction.values()) {
-				culled.put(direction, new ArrayList<>());
-				GraffitiType type = GraffitiStore.getType(pos, direction, state);
-				if (type == null || GraffitiEligibility.evaluate(level, pos, state, direction) != GraffitiEligibility.Result.ALLOWED) {
+				GraffitiType type = types[direction.ordinal()];
+
+				if (type == null
+						|| GraffitiEligibility.evaluateFace(level, pos, state, direction, shape)
+						!= GraffitiEligibility.Result.ALLOWED) {
 					continue;
 				}
+
+				if (culled == null) {
+					culled = new EnumMap<>(Direction.class);
+
+					for (Direction other : Direction.values()) {
+						culled.put(other, new ArrayList<>());
+					}
+				}
+
 				culled.get(direction).add(createGraffitiQuad(direction, GraffitiEligibility.facePlane(shape, direction),
 						graffitiMaterials.get(type)));
 			}
 
-			if (culled.values().stream().allMatch(List::isEmpty)) {
+			if (culled == null) {
 				return;
 			}
 			parts.add(new OutlinePart(List.of(), culled, material));

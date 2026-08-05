@@ -40,7 +40,7 @@ final class FacetNeoForgeDistanceHud {
 			return;
 		}
 
-		BlockHitResult hit = findViewedBlock(minecraft, FacetNeoForgePlatform.mainCamera(minecraft));
+		BlockHitResult hit = distanceTarget(minecraft);
 		if (hit.getType() != HitResult.Type.BLOCK) {
 			return;
 		}
@@ -96,7 +96,7 @@ final class FacetNeoForgeDistanceHud {
 			return;
 		}
 
-		BlockHitResult hit = findViewedBlock(minecraft, FacetNeoForgePlatform.mainCamera(minecraft));
+		BlockHitResult hit = distanceTarget(minecraft);
 		if (hit.getType() != HitResult.Type.BLOCK) {
 			return;
 		}
@@ -118,6 +118,20 @@ final class FacetNeoForgeDistanceHud {
 		double reach = Math.max(16.0, minecraft.options.renderDistance().get() * 16.0);
 		Vec3 to = from.add(camera.forwardVector().x() * reach, camera.forwardVector().y() * reach, camera.forwardVector().z() * reach);
 		return minecraft.level.clip(new ClipContext(from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, CollisionContext.empty()));
+	}
+
+	/**
+	 * Distance HUD/path target. Reuses the per-frame game hit result when the
+	 * crosshair already points at a block (same ray and first-hit target),
+	 * avoiding a full level raycast every frame.
+	 */
+	private static BlockHitResult distanceTarget(Minecraft minecraft) {
+		if (minecraft.hitResult instanceof BlockHitResult hit
+				&& hit.getType() == HitResult.Type.BLOCK) {
+			return hit;
+		}
+
+		return findViewedBlock(minecraft, FacetNeoForgePlatform.mainCamera(minecraft));
 	}
 
 	private static DistanceInfo distanceInfo(BlockPos from, BlockPos to) {

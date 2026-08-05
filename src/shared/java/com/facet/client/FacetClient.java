@@ -56,6 +56,7 @@ public final class FacetClient implements ClientModInitializer {
 	private static final int OUT_OF_RANGE_HOVER_OUTLINE_COLOR = 0xFF36F6FF;
 	private static final long HOVER_HUE_CYCLE_NANOS = 1_200_000_000L;
 	private static final double HOVER_FACE_PLANE_EPSILON = 1.0e-5;
+	private static final Vector3f LINE_NORMAL_SCRATCH = new Vector3f();
 	private static final Identifier DISTANCE_HUD_ID = Identifier.fromNamespaceAndPath("facet", "distance_hud");
 	private static final SoundEvent PLACEMENT_PREVIEW_TOGGLE_SOUND = SoundEvent.createVariableRangeEvent(
 			Identifier.fromNamespaceAndPath("facet", "placement_preview_toggle"));
@@ -237,8 +238,7 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		Camera camera = FacetMcBridge.mainCamera(minecraft);
-		BlockHitResult hitResult = findViewedBlock(minecraft, camera);
+		BlockHitResult hitResult = distanceTarget(minecraft);
 
 		if (hitResult.getType() != HitResult.Type.BLOCK) {
 			return;
@@ -325,6 +325,20 @@ public final class FacetClient implements ClientModInitializer {
 		return minecraft.level.clip(context);
 	}
 
+	/**
+	 * Distance HUD/path target. Reuses the per-frame game hit result when the
+	 * crosshair already points at a block (same ray and first-hit target),
+	 * avoiding a full level raycast every frame.
+	 */
+	private static BlockHitResult distanceTarget(Minecraft minecraft) {
+		if (minecraft.hitResult instanceof BlockHitResult hitResult
+				&& hitResult.getType() == HitResult.Type.BLOCK) {
+			return hitResult;
+		}
+
+		return findViewedBlock(minecraft, FacetMcBridge.mainCamera(minecraft));
+	}
+
 	private static DistanceInfo distanceInfo(BlockPos playerFootPos, BlockPos targetPos) {
 		int dx = targetPos.getX() - playerFootPos.getX();
 		int dy = targetPos.getY() - playerFootPos.getY();
@@ -356,8 +370,7 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		Camera camera = FacetMcBridge.mainCamera(minecraft);
-		BlockHitResult hitResult = findViewedBlock(minecraft, camera);
+		BlockHitResult hitResult = distanceTarget(minecraft);
 
 		if (hitResult.getType() != HitResult.Type.BLOCK) {
 			return;
@@ -496,7 +509,7 @@ public final class FacetClient implements ClientModInitializer {
 			return;
 		}
 
-		Vector3f normal = new Vector3f(deltaX, deltaY, deltaZ).normalize();
+		Vector3f normal = LINE_NORMAL_SCRATCH.set(deltaX, deltaY, deltaZ).normalize();
 
 		consumer.addVertex(pose, startX, startY, startZ)
 				.setColor(color)

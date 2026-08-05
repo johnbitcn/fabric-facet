@@ -80,8 +80,15 @@ final class FacetBlockOverlay {
 		public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
 			super.emitQuads(emitter, level, pos, state, random, cullTest);
 
-			emitOutlineQuads(emitter, level, pos, state, cullTest);
-			emitGraffitiQuads(emitter, level, pos, state, cullTest);
+			if (!FacetClient.usesExperimentalLineOutlines()
+					&& FacetConfig.enabled()
+					&& FacetOutlineRules.shouldRender(level, pos, state)) {
+				VoxelShape shape = state.getShape(level, pos);
+				emitOutlineQuads(emitter, level, pos, state, cullTest, shape);
+				emitGraffitiQuads(emitter, level, pos, state, cullTest, shape);
+			} else {
+				emitGraffitiQuads(emitter, level, pos, state, cullTest, null);
+			}
 		}
 
 		@Override
@@ -90,15 +97,7 @@ final class FacetBlockOverlay {
 		}
 
 		private void emitOutlineQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos,
-				BlockState state, Predicate<Direction> cullTest) {
-			if (FacetClient.usesExperimentalLineOutlines()
-					|| !FacetConfig.enabled()
-					|| !FacetOutlineRules.shouldRender(level, pos, state)) {
-				return;
-			}
-
-			VoxelShape shape = state.getShape(level, pos);
-
+				BlockState state, Predicate<Direction> cullTest, VoxelShape shape) {
 			if (shape.isEmpty()) {
 				return;
 			}
@@ -119,18 +118,32 @@ final class FacetBlockOverlay {
 			});
 		}
 
-		private void emitGraffitiQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, Predicate<Direction> cullTest) {
-			VoxelShape shape = state.getShape(level, pos);
+		private void emitGraffitiQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos,
+				BlockState state, Predicate<Direction> cullTest, VoxelShape shape) {
+			if (shape == null) {
+				shape = state.getShape(level, pos);
+			}
 
 			if (shape.isEmpty()) {
 				return;
 			}
 
+			if (GraffitiEligibility.baseResult(level, pos, state) != GraffitiEligibility.Result.ALLOWED) {
+				return;
+			}
+
+			GraffitiType[] types = GraffitiStore.getTypes(pos, state);
+
+			if (types == null) {
+				return;
+			}
+
 			for (Direction direction : Direction.values()) {
-				GraffitiType type = GraffitiStore.getType(pos, direction, state);
+				GraffitiType type = types[direction.ordinal()];
 
 				if (type == null || cullTest.test(direction)
-						|| GraffitiEligibility.evaluate(level, pos, state, direction) != GraffitiEligibility.Result.ALLOWED) {
+						|| GraffitiEligibility.evaluateFace(level, pos, state, direction, shape)
+						!= GraffitiEligibility.Result.ALLOWED) {
 					continue;
 				}
 

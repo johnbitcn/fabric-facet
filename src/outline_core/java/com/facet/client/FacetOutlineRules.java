@@ -32,12 +32,12 @@ final class FacetOutlineRules {
 	}
 
 	private static boolean isInScope(BlockGetter level, BlockPos pos, BlockState state) {
-		if (state.getBlock() instanceof ShulkerBoxBlock
-				|| BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath().contains("glass")) {
+		String path = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
+
+		if (state.getBlock() instanceof ShulkerBoxBlock || path.contains("glass")) {
 			return false;
 		}
 
-		String path = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
 		return state.isCollisionShapeFullBlock(level, pos)
 				|| state.getBlock() instanceof SlabBlock
 				|| state.getBlock() instanceof StairBlock

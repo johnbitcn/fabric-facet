@@ -90,6 +90,34 @@ public final class GraffitiStore {
 		return data == null || (data.blockId() != null && !data.blockId().equals(blockId(state))) ? null : data.type();
 	}
 
+	/**
+	 * Bulk per-block lookup for mesh emission. Resolves the position once and
+	 * returns one type per {@link Direction} (indexed by ordinal), or
+	 * {@code null} when the block carries no graffiti. Avoids allocating one
+	 * lookup key per face.
+	 */
+	static GraffitiType[] getTypes(BlockPos pos, BlockState state) {
+		if (activeDimension == null) {
+			return null;
+		}
+
+		Identifier blockId = blockId(state);
+		BlockPos immutable = pos.immutable();
+		GraffitiType[] types = new GraffitiType[6];
+		boolean any = false;
+
+		for (Direction direction : Direction.values()) {
+			GraffitiData data = GRAFFITI.get(new GraffitiKey(activeWorld, activeDimension, immutable, direction));
+
+			if (data != null && (data.blockId() == null || data.blockId().equals(blockId))) {
+				types[direction.ordinal()] = data.type();
+				any = true;
+			}
+		}
+
+		return any ? types : null;
+	}
+
 	static Change set(BlockPos pos, Direction direction, BlockState state, GraffitiType type) {
 		if (type == null) {
 			return Change.UNCHANGED;
