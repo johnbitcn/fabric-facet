@@ -117,8 +117,8 @@ jobs:
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          modrinth-files: release/Facet-Fabric-${RELEASE_VERSION}-26.3-snapshot-7.jar
-          modrinth-name: Facet ${RELEASE_VERSION} Preview for Minecraft 26.3 Snapshot 7
+          modrinth-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.3-snapshot-7.jar
+          modrinth-name: Facet ${{ env.RELEASE_VERSION }} Preview for Minecraft 26.3 Snapshot 7
           modrinth-version: ${{ env.PREVIEW_VERSION }}
           modrinth-version-type: beta
           modrinth-loaders: fabric
