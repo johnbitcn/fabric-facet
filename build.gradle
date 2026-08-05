@@ -36,7 +36,17 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
-]
+		":versions:fabric-26.3-snapshot-7": [
+				archivesName: "Facet-Fabric",
+				minecraftVersion: findProperty("minecraft_version_26_3_snapshot_7"),
+				fabricApiVersion: findProperty("fabric_api_version_26_3_snapshot_7"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_3_snapshot_7"),
+				modMenuDependency: findProperty("modmenu_dependency_26_3_snapshot_7"),
+				minecraftDependency: "26.3-alpha.7",
+				legacyRenderer: true,
+				modMenuRuntime: false,
+		],
+	]
 
 allprojects {
 	group = rootProject.maven_group
