@@ -25,6 +25,7 @@ final class FacetNeoForgeHoverOutline {
 	private static final int DISTANT_OUTLINE_COLOR = 0xFF36F6FF;
 	private static final long HUE_CYCLE_NANOS = 1_200_000_000L;
 	private static final double FACE_PLANE_EPSILON = 1.0e-5;
+	private static final Vector3f LINE_NORMAL_SCRATCH = new Vector3f();
 
 	private FacetNeoForgeHoverOutline() {}
 
@@ -90,7 +91,7 @@ final class FacetNeoForgeHoverOutline {
 			double x1, double y1, double z1, double x2, double y2, double z2, int color) {
 		float sx = (float) (pos.getX() + x1 - camera.x), sy = (float) (pos.getY() + y1 - camera.y), sz = (float) (pos.getZ() + z1 - camera.z);
 		float ex = (float) (pos.getX() + x2 - camera.x), ey = (float) (pos.getY() + y2 - camera.y), ez = (float) (pos.getZ() + z2 - camera.z);
-		Vector3f normal = new Vector3f(ex - sx, ey - sy, ez - sz);
+		Vector3f normal = LINE_NORMAL_SCRATCH.set(ex - sx, ey - sy, ez - sz);
 		if (normal.lengthSquared() <= 1.0e-8f) return;
 		normal.normalize();
 		consumer.addVertex(pose.last(), sx, sy, sz).setColor(color).setNormal(pose.last(), normal).setLineWidth(FacetNeoForgeOutlineConfig.hoverWidth());

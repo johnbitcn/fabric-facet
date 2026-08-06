@@ -77,24 +77,22 @@ final class FacetNeoForgeOutlineRenderer {
 		public void collectParts(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random,
 				List<BlockStateModelPart> parts) {
 			super.collectParts(level, pos, state, random, parts);
-			emitOutlineParts(level, pos, state, parts);
-			emitGraffitiParts(level, pos, state, parts);
+			VoxelShape shape = state.getShape(level, pos);
+			emitOutlineParts(level, pos, state, parts, shape);
+			emitGraffitiParts(level, pos, state, parts, shape);
 		}
 
-		private void emitOutlineParts(BlockAndTintGetter level, BlockPos pos, BlockState state, List<BlockStateModelPart> parts) {
+		private void emitOutlineParts(BlockAndTintGetter level, BlockPos pos, BlockState state,
+				List<BlockStateModelPart> parts, VoxelShape shape) {
 			if (!FacetNeoForgeOutlineConfig.enabled() || !FacetOutlineRules.shouldRender(level, pos, state)) {
 				return;
 			}
 
-			VoxelShape shape = state.getShape(level, pos);
 			if (shape.isEmpty()) {
 				return;
 			}
 
-			Map<Direction, List<BakedQuad>> culled = new EnumMap<>(Direction.class);
-			for (Direction direction : Direction.values()) {
-				culled.put(direction, new ArrayList<>());
-			}
+			CulledQuads culled = new CulledQuads();
 			List<BakedQuad> unculled = new ArrayList<>();
 			FacetOutlineColor.FaceColors faceColors = FacetOutlineColor.resolve(level, pos, state);
 			boolean carpet = state.getBlock() instanceof CarpetBlock;
@@ -107,43 +105,72 @@ final class FacetNeoForgeOutlineRenderer {
 						BakedQuad quad = createOutlineQuad(face, faceColors.color(face),
 								minX, minY, minZ, maxX, maxY, maxZ);
 						if (FacetOutlineRules.touchesBlockBoundary(face, minX, minY, minZ, maxX, maxY, maxZ)) {
-							culled.get(face).add(quad);
+							if (culled.byDirection == null) {
+								culled.byDirection = new EnumMap<>(Direction.class);
+							}
+							culled.byDirection.computeIfAbsent(face, unused -> new ArrayList<>()).add(quad);
 						} else {
 							unculled.add(quad);
 						}
 					});
 
-			if (unculled.isEmpty() && culled.values().stream().allMatch(List::isEmpty)) {
+			if (unculled.isEmpty() && culled.byDirection == null) {
 				return;
 			}
 			parts.add(new OutlinePart(unculled, culled, material));
 			if (LOGGED_FIRST_GEOMETRY.compareAndSet(false, true)) {
-				int quadCount = unculled.size() + culled.values().stream().mapToInt(List::size).sum();
+				int quadCount = unculled.size() + (culled.byDirection == null
+						? 0
+						: culled.byDirection.values().stream().mapToInt(List::size).sum());
 				FacetNeoForgeOutline.LOGGER.info("First Facet NeoForge outline geometry contained {} quads", quadCount);
 			}
 		}
 
-		private void emitGraffitiParts(BlockAndTintGetter level, BlockPos pos, BlockState state, List<BlockStateModelPart> parts) {
-			VoxelShape shape = state.getShape(level, pos);
+		private void emitGraffitiParts(BlockAndTintGetter level, BlockPos pos, BlockState state,
+				List<BlockStateModelPart> parts, VoxelShape shape) {
 			if (shape.isEmpty()) {
 				return;
 			}
 
-			Map<Direction, List<BakedQuad>> culled = new EnumMap<>(Direction.class);
+			if (GraffitiEligibility.baseResult(level, pos, state) != GraffitiEligibility.Result.ALLOWED) {
+				return;
+			}
+
+			GraffitiType[] types = GraffitiStore.getTypes(pos, state);
+
+			if (types == null) {
+				return;
+			}
+
+			Map<Direction, List<BakedQuad>> culled = null;
+
 			for (Direction direction : Direction.values()) {
-				culled.put(direction, new ArrayList<>());
-				GraffitiType type = GraffitiStore.getType(pos, direction, state);
-				if (type == null || GraffitiEligibility.evaluate(level, pos, state, direction) != GraffitiEligibility.Result.ALLOWED) {
+				GraffitiType type = types[direction.ordinal()];
+
+				if (type == null
+						|| GraffitiEligibility.evaluateFace(level, pos, state, direction, shape)
+						!= GraffitiEligibility.Result.ALLOWED) {
 					continue;
 				}
+
+				if (culled == null) {
+					culled = new EnumMap<>(Direction.class);
+
+					for (Direction other : Direction.values()) {
+						culled.put(other, new ArrayList<>());
+					}
+				}
+
 				culled.get(direction).add(createGraffitiQuad(direction, GraffitiEligibility.facePlane(shape, direction),
 						graffitiMaterials.get(type)));
 			}
 
-			if (culled.values().stream().allMatch(List::isEmpty)) {
+			if (culled == null) {
 				return;
 			}
-			parts.add(new OutlinePart(List.of(), culled, material));
+			CulledQuads culledQuads = new CulledQuads();
+			culledQuads.byDirection = culled;
+			parts.add(new OutlinePart(List.of(), culledQuads, material));
 		}
 
 		@Override
@@ -216,11 +243,17 @@ final class FacetNeoForgeOutlineRenderer {
 		}
 	}
 
-	private record OutlinePart(List<BakedQuad> unculled, Map<Direction, List<BakedQuad>> culled, Material.Baked material)
+	private static final class CulledQuads {
+		private Map<Direction, List<BakedQuad>> byDirection;
+	}
+
+	private record OutlinePart(List<BakedQuad> unculled, CulledQuads culled, Material.Baked material)
 			implements BlockStateModelPart {
 		@Override
 		public List<BakedQuad> getQuads(Direction direction) {
-			return direction == null ? unculled : culled.get(direction);
+			return direction == null ? unculled
+					: culled.byDirection == null ? List.of()
+					: culled.byDirection.getOrDefault(direction, List.of());
 		}
 
 		@Override
