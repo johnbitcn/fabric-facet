@@ -106,6 +106,11 @@ Official releases use `.github/workflows/publish.yml`. From a version tag, it
 validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
+The formal release set covers Fabric 26.1, 26.2, and 26.3 Snapshot 7, plus
+NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 Snapshot 6 stays buildable but
+is no longer part of the formal release set; it remains available only through
+its historical preview workflow.
+
 Minecraft compatibility previews use `.github/workflows/publish-preview.yml`
 and a tag such as `v1.2.3-mc26.3-snapshot-6-preview.1`. The preview workflow
 builds only the exact Fabric snapshot target, creates a GitHub Prerelease, and
@@ -114,6 +119,14 @@ or replace assets in the corresponding formal release.
 
 Snapshot 7 uses the isolated `.github/workflows/publish-preview-snapshot-7.yml`
 workflow and the tag pattern `v<version>-mc26.3-snapshot-7-preview.<number>`.
+
+`scripts/release.sh` prepares and verifies a release locally: it guards the
+tree, reads `mod_version`, runs one clean build, mechanically enumerates the
+release JAR set, verifies embedded versions, and stages a diagnostic
+`release/SHA256SUMS.txt`. Run it without arguments for the candidate step,
+then `scripts/release.sh --publish` after in-world acceptance to create the
+annotated tag and push it. The CI build from the tag is the authoritative
+final build; candidate hashes are diagnostic.
 
 Use the manual inputs only to recover a failed destination on an existing tag;
 leave destinations that already succeeded disabled.
