@@ -117,7 +117,8 @@ final class FacetNeoForgeOutlineRenderer {
 			if (unculled.isEmpty() && culled.byDirection == null) {
 				return;
 			}
-			parts.add(new OutlinePart(unculled, culled, material));
+			// Cutout outlines are not translucent; materialFlags 0 keeps them off sorted terrain.
+			parts.add(new OutlinePart(unculled, culled, material, 0));
 			if (LOGGED_FIRST_GEOMETRY.compareAndSet(false, true)) {
 				int quadCount = unculled.size() + (culled.byDirection == null
 						? 0
@@ -170,25 +171,21 @@ final class FacetNeoForgeOutlineRenderer {
 			}
 			CulledQuads culledQuads = new CulledQuads();
 			culledQuads.byDirection = culled;
-			parts.add(new OutlinePart(List.of(), culledQuads, material));
-		}
-
-		@Override
-		public Object createGeometryKey(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random) {
-			return null;
+			parts.add(new OutlinePart(List.of(), culledQuads, material, BakedQuad.FLAG_TRANSLUCENT));
 		}
 
 		private BakedQuad createOutlineQuad(Direction face, int color,
 				double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+			// NeoForge keeps CUTOUT; slightly larger shared SURFACE_BIAS reduces coplanar z-fight.
 			double bias = FacetOutlineRules.SURFACE_BIAS * face.getAxisDirection().getStep();
 			return switch (face) {
-				case DOWN, UP -> bakeQuad(material, face, color, false, true,
+				case DOWN, UP -> bakeQuad(material, face, color, false, true, true,
 						minX, minY + bias, minZ, maxX, minY + bias, minZ,
 						maxX, minY + bias, maxZ, minX, minY + bias, maxZ);
-				case NORTH, SOUTH -> bakeQuad(material, face, color, false, true,
+				case NORTH, SOUTH -> bakeQuad(material, face, color, false, true, true,
 						minX, minY, minZ + bias, maxX, minY, minZ + bias,
 						maxX, maxY, minZ + bias, minX, maxY, minZ + bias);
-				case WEST, EAST -> bakeQuad(material, face, color, false, true,
+				case WEST, EAST -> bakeQuad(material, face, color, false, true, true,
 						minX + bias, minY, minZ, minX + bias, minY, maxZ,
 						minX + bias, maxY, maxZ, minX + bias, maxY, minZ);
 			};
@@ -199,21 +196,25 @@ final class FacetNeoForgeOutlineRenderer {
 			double min = GRAFFITI_FACE_INSET;
 			double max = 1.0 - GRAFFITI_FACE_INSET;
 			return switch (face) {
-				case DOWN, UP -> bakeQuad(graffitiMaterial, face, -1, true, false,
+				case DOWN, UP -> bakeQuad(graffitiMaterial, face, -1, true, false, false,
 						min, biasedPlane, min, max, biasedPlane, min, max, biasedPlane, max, min, biasedPlane, max);
-				case NORTH, SOUTH -> bakeQuad(graffitiMaterial, face, -1, true, false,
+				case NORTH, SOUTH -> bakeQuad(graffitiMaterial, face, -1, true, false, false,
 						min, min, biasedPlane, max, min, biasedPlane, max, max, biasedPlane, min, max, biasedPlane);
-				case WEST, EAST -> bakeQuad(graffitiMaterial, face, -1, true, false,
+				case WEST, EAST -> bakeQuad(graffitiMaterial, face, -1, true, false, false,
 						biasedPlane, min, min, biasedPlane, min, max, biasedPlane, max, max, biasedPlane, max, min);
 			};
 		}
 
-		private BakedQuad bakeQuad(Material.Baked material, Direction face, int color, boolean fullSprite, boolean ambientOcclusion,
+		private BakedQuad bakeQuad(Material.Baked material, Direction face, int color, boolean fullSprite,
+				boolean ambientOcclusion, boolean outlineCutout,
 				double x1, double y1, double z1, double x2, double y2, double z2,
 				double x3, double y3, double z3, double x4, double y4, double z4) {
 			boolean reverseWinding = face == Direction.UP || face == Direction.NORTH || face == Direction.EAST;
 			MutableQuad quad = new MutableQuad()
-					.setSprite(material.sprite(), ChunkSectionLayer.TRANSLUCENT, Sheets.translucentBlockItemSheet())
+					.setSprite(
+							material.sprite(),
+							outlineCutout ? ChunkSectionLayer.CUTOUT : ChunkSectionLayer.TRANSLUCENT,
+							outlineCutout ? Sheets.cutoutBlockItemSheet() : Sheets.translucentBlockItemSheet())
 					.setDirection(face)
 					.setTintIndex(-1)
 					.setShade(true)
@@ -247,7 +248,7 @@ final class FacetNeoForgeOutlineRenderer {
 		private Map<Direction, List<BakedQuad>> byDirection;
 	}
 
-	private record OutlinePart(List<BakedQuad> unculled, CulledQuads culled, Material.Baked material)
+	private record OutlinePart(List<BakedQuad> unculled, CulledQuads culled, Material.Baked material, int materialFlags)
 			implements BlockStateModelPart {
 		@Override
 		public List<BakedQuad> getQuads(Direction direction) {
@@ -268,7 +269,7 @@ final class FacetNeoForgeOutlineRenderer {
 
 		@Override
 		public int materialFlags() {
-			return BakedQuad.FLAG_TRANSLUCENT;
+			return materialFlags;
 		}
 	}
 

@@ -1,5 +1,7 @@
 package com.facet.client;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -16,11 +18,36 @@ import net.minecraft.world.level.block.state.BlockState;
 
 final class FacetOutlineRules {
 	static final double DEFAULT_EDGE_WIDTH = 1.0 / 32.0;
-	static final double SURFACE_BIAS = 1.0 / 1024.0;
+	/**
+	 * Default offset along the face normal so cutout/solid depth tests keep strips above the
+	 * block face. Raised from 1/1024 together with the cutout-layer switch: coplanar cutout
+	 * strips z-fight without this offset. Shared by all version bridges (see
+	 * {@code FacetMcBridge.outlineSurfaceBias}); changing it requires in-world re-validation
+	 * on every target.
+	 */
+	static final double SURFACE_BIAS = 1.0 / 256.0;
+	/**
+	 * Vertex alpha for mesh outlines. The 26.3 custom terrain shader that consumed this
+	 * marker ({@code isFacetOutline()} via {@code rawVertexColor.a < 0.999}) was removed;
+	 * the value is kept so strips stay above typical cutout discard thresholds while
+	 * remaining distinct from opaque (alpha 255) terrain if a shader channel returns.
+	 */
+	static final int OUTLINE_SHADER_ALPHA = 254;
 	private static final float DARK_TEXTURE_VALUE_THRESHOLD = 15.0f;
 	private static final float DARK_TEXTURE_LIGHTNESS_BOOST = 15.0f;
+	/**
+	 * Cached per-state scope results. Vanilla {@link BlockState} instances are shared singletons
+	 * and {@code isCollisionShapeFullBlock} is a state constant, so results are position-independent
+	 * and remain valid for the lifetime of the client.
+	 */
+	private static final ConcurrentHashMap<BlockState, Boolean> SCOPE_CACHE = new ConcurrentHashMap<>();
 
 	private FacetOutlineRules() {
+	}
+
+	/** Apply the fixed outline alpha marker without changing RGB. */
+	static int withOutlineAlpha(int rgb) {
+		return ARGB.color(OUTLINE_SHADER_ALPHA, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
 	}
 
 	static boolean shouldRender(BlockAndTintGetter level, BlockPos pos, BlockState state) {
@@ -32,6 +59,18 @@ final class FacetOutlineRules {
 	}
 
 	private static boolean isInScope(BlockGetter level, BlockPos pos, BlockState state) {
+		Boolean cached = SCOPE_CACHE.get(state);
+
+		if (cached != null) {
+			return cached;
+		}
+
+		boolean computed = computeIsInScope(level, pos, state);
+		Boolean raced = SCOPE_CACHE.putIfAbsent(state, computed);
+		return raced != null ? raced : computed;
+	}
+
+	private static boolean computeIsInScope(BlockGetter level, BlockPos pos, BlockState state) {
 		String path = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
 
 		if (state.getBlock() instanceof ShulkerBoxBlock || path.contains("glass")) {

@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.StagedVertexBuffer;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
@@ -28,7 +29,6 @@ public final class FacetMcBridge {
 	private static final List<ImmediateDraw> AFTER_TERRAIN_DRAWS = new ArrayList<>();
 	private static RenderPass activeClassicTransparencyPass;
 	private static boolean afterTerrainBufferFramePending;
-
 	private FacetMcBridge() {
 	}
 
@@ -38,6 +38,22 @@ public final class FacetMcBridge {
 
 	static boolean placementRotationPrototypeEnabled() {
 		return true;
+	}
+
+	/** Cutout terrain, no translucency sort. Pending in-world validation on 26.3 (see
+	 *  FacetBlockOverlay: MultiDraw cutout depth fighting risk). */
+	static ChunkSectionLayer outlineChunkLayer() {
+		return ChunkSectionLayer.CUTOUT;
+	}
+
+	/** Same as 26.2: shared default surface bias. */
+	static double outlineSurfaceBias() {
+		return FacetOutlineRules.SURFACE_BIAS;
+	}
+
+	/** Same as 26.2: material-average colors from FacetOutlineColor, no extra darken/boost. */
+	static int prepareOutlineColor(int argb) {
+		return argb;
 	}
 
 	static void applyShade(QuadEmitter emitter, boolean shade) {

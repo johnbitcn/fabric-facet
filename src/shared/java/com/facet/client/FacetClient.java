@@ -136,6 +136,7 @@ public final class FacetClient implements ClientModInitializer {
 	}
 
 	private static void handleKeyMappings(Minecraft minecraft) {
+		FacetOutlineStats.tick();
 		FacetKeyConflictNotifier.tick(minecraft);
 		while (toggleOutlineKeyMapping.consumeClick()) {
 			FacetConfig.setEnabled(!FacetConfig.enabled());
