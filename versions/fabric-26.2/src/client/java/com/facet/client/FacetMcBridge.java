@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.StagedVertexBuffer;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -33,6 +34,20 @@ final class FacetMcBridge {
 
 	static boolean placementRotationPrototypeEnabled() {
 		return true;
+	}
+
+	/** Cutout terrain: no translucency sort; world-validated on 26.2 for FPS + visibility. */
+	static ChunkSectionLayer outlineChunkLayer() {
+		return ChunkSectionLayer.CUTOUT;
+	}
+
+	static double outlineSurfaceBias() {
+		return FacetOutlineRules.SURFACE_BIAS;
+	}
+
+	/** 26.2 outlines are already readable; pass-through. */
+	static int prepareOutlineColor(int argb) {
+		return argb;
 	}
 
 	static void applyShade(QuadEmitter emitter, boolean shade) {

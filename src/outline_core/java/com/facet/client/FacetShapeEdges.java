@@ -1,13 +1,40 @@
 package com.facet.client;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 final class FacetShapeEdges {
 	static final double AXIS_EPSILON = 1.0e-8;
 	private static final double SAMPLE_OFFSET = 1.0e-7;
+	private static final double WIDTH_UNIT = 1.0 / 64.0;
+	private static final int MIN_WIDTH_UNITS = 1;
+	private static final int MAX_WIDTH_UNITS = 20;
+	/** Cached surface strips for the unit cube, keyed by width units (1/64 block). */
+	private static final ConcurrentHashMap<Integer, List<Strip>> FULL_CUBE_STRIPS = new ConcurrentHashMap<>();
+	private static final int PARTIAL_SHAPE_CACHE_CAPACITY = 512;
+	/**
+	 * Cached surface strips for non-full-cube shapes, keyed by (shape, width).
+	 * Shapes returned by {@code BlockState.getShape} are shared singletons for static blocks,
+	 * so identity-keyed entries hit across chunk recompiles; per-position shapes (fences,
+	 * walls) miss and are bounded by the LRU capacity.
+	 */
+	private static final Map<PartialShapeKey, List<Strip>> PARTIAL_SHAPE_STRIPS =
+			Collections.synchronizedMap(new LinkedHashMap<>(64, 0.75f, true) {
+				@Override
+				protected boolean removeEldestEntry(Map.Entry<PartialShapeKey, List<Strip>> eldest) {
+					return size() > PARTIAL_SHAPE_CACHE_CAPACITY;
+				}
+			});
 
 	private FacetShapeEdges() {
 	}
@@ -17,6 +44,57 @@ final class FacetShapeEdges {
 	}
 
 	static void forEachSurfaceStrip(VoxelShape shape, double maxWidth, SurfaceStripConsumer consumer) {
+		if (isFullCube(shape)) {
+			List<Strip> strips = fullCubeStrips(maxWidth);
+
+			if (FacetOutlineStats.enabled()) {
+				FacetOutlineStats.FULL_CUBE_STRIPS_SERVED.addAndGet(strips.size());
+			}
+
+			for (Strip strip : strips) {
+				consumer.accept(strip.face, strip.minX, strip.minY, strip.minZ,
+						strip.maxX, strip.maxY, strip.maxZ);
+			}
+			return;
+		}
+
+		List<Strip> strips = partialShapeStrips(shape, maxWidth);
+
+		if (FacetOutlineStats.enabled()) {
+			FacetOutlineStats.PARTIAL_STRIPS_SERVED.addAndGet(strips.size());
+		}
+
+		for (Strip strip : strips) {
+			consumer.accept(strip.face, strip.minX, strip.minY, strip.minZ,
+					strip.maxX, strip.maxY, strip.maxZ);
+		}
+	}
+
+	private static List<Strip> partialShapeStrips(VoxelShape shape, double maxWidth) {
+		PartialShapeKey key = new PartialShapeKey(shape, maxWidth);
+		List<Strip> cached = PARTIAL_SHAPE_STRIPS.get(key);
+
+		if (cached != null) {
+			if (FacetOutlineStats.enabled()) {
+				FacetOutlineStats.PARTIAL_CACHE_HITS.incrementAndGet();
+			}
+			return cached;
+		}
+
+		if (FacetOutlineStats.enabled()) {
+			FacetOutlineStats.PARTIAL_CACHE_MISSES.incrementAndGet();
+		}
+
+		List<Strip> strips = new ArrayList<>();
+		forEachSurfaceStripUncached(shape, maxWidth,
+				(face, minX, minY, minZ, maxX, maxY, maxZ) ->
+						strips.add(new Strip(face, minX, minY, minZ, maxX, maxY, maxZ)));
+		List<Strip> immutable = List.copyOf(strips);
+		PARTIAL_SHAPE_STRIPS.put(key, immutable);
+		return immutable;
+	}
+
+	private static void forEachSurfaceStripUncached(VoxelShape shape, double maxWidth, SurfaceStripConsumer consumer) {
 		double[] boxes = collectBoxes(shape);
 
 		forEachEdge(shape, (x1, y1, z1, x2, y2, z2) -> {
@@ -31,6 +109,57 @@ final class FacetShapeEdges {
 						(minZ, maxZ) -> emitZEdgeStrips(shape, boxes, x1, y1, minZ, maxZ, maxWidth, consumer));
 			}
 		});
+	}
+
+	private static boolean isFullCube(VoxelShape shape) {
+		return shape == Shapes.block()
+				|| (!shape.isEmpty()
+				&& Math.abs(shape.min(Axis.X)) <= AXIS_EPSILON
+				&& Math.abs(shape.min(Axis.Y)) <= AXIS_EPSILON
+				&& Math.abs(shape.min(Axis.Z)) <= AXIS_EPSILON
+				&& Math.abs(shape.max(Axis.X) - 1.0) <= AXIS_EPSILON
+				&& Math.abs(shape.max(Axis.Y) - 1.0) <= AXIS_EPSILON
+				&& Math.abs(shape.max(Axis.Z) - 1.0) <= AXIS_EPSILON
+				&& shapeIsSingleFullBox(shape));
+	}
+
+	private static boolean shapeIsSingleFullBox(VoxelShape shape) {
+		int[] count = {0};
+		boolean[] full = {true};
+		shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
+			count[0]++;
+			if (Math.abs(minX) > AXIS_EPSILON || Math.abs(minY) > AXIS_EPSILON || Math.abs(minZ) > AXIS_EPSILON
+					|| Math.abs(maxX - 1.0) > AXIS_EPSILON || Math.abs(maxY - 1.0) > AXIS_EPSILON
+					|| Math.abs(maxZ - 1.0) > AXIS_EPSILON) {
+				full[0] = false;
+			}
+		});
+		return count[0] == 1 && full[0];
+	}
+
+	private static List<Strip> fullCubeStrips(double maxWidth) {
+		int units = clampWidthUnits((int) Math.round(maxWidth / WIDTH_UNIT));
+		return FULL_CUBE_STRIPS.computeIfAbsent(units, FacetShapeEdges::bakeFullCubeStrips);
+	}
+
+	private static List<Strip> bakeFullCubeStrips(int widthUnits) {
+		double maxWidth = widthUnits * WIDTH_UNIT;
+		List<Strip> strips = new ArrayList<>(24);
+		forEachSurfaceStripUncached(Shapes.block(), maxWidth,
+				(face, minX, minY, minZ, maxX, maxY, maxZ) ->
+						strips.add(new Strip(face, minX, minY, minZ, maxX, maxY, maxZ)));
+		return List.copyOf(strips);
+	}
+
+	private static int clampWidthUnits(int units) {
+		return Math.max(MIN_WIDTH_UNITS, Math.min(MAX_WIDTH_UNITS, units));
+	}
+
+	private record Strip(Direction face, double minX, double minY, double minZ,
+			double maxX, double maxY, double maxZ) {
+	}
+
+	private record PartialShapeKey(VoxelShape shape, double maxWidth) {
 	}
 
 	private static double[] collectBoxes(VoxelShape shape) {

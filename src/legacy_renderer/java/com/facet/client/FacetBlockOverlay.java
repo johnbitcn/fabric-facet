@@ -91,11 +91,6 @@ final class FacetBlockOverlay {
 			}
 		}
 
-		@Override
-		public Object createGeometryKey(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random) {
-			return null;
-		}
-
 		private void emitOutlineQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos,
 				BlockState state, Predicate<Direction> cullTest, VoxelShape shape) {
 			if (shape.isEmpty()) {
@@ -104,16 +99,31 @@ final class FacetBlockOverlay {
 
 			FacetOutlineColor.FaceColors faceColors = FacetOutlineColor.resolve(level, pos, state);
 			boolean isCarpet = state.getBlock() instanceof CarpetBlock;
+			boolean stats = FacetOutlineStats.enabled();
 
 			FacetShapeEdges.forEachSurfaceStrip(shape, FacetConfig.effectiveEdgeWidth(),
 					(direction, minX, minY, minZ, maxX, maxY, maxZ) -> {
-				if ((isCarpet && direction != Direction.UP)
-						|| (FacetOutlineRules.touchesBlockBoundary(direction, minX, minY, minZ, maxX, maxY, maxZ)
-						&& cullTest.test(direction))) {
+				boolean carpetSkipped = isCarpet && direction != Direction.UP;
+				boolean culled = FacetOutlineRules.touchesBlockBoundary(direction, minX, minY, minZ, maxX, maxY, maxZ)
+						&& cullTest.test(direction);
+
+				if (carpetSkipped || culled) {
+					if (stats) {
+						if (carpetSkipped) {
+							FacetOutlineStats.STRIPS_SKIPPED_CARPET.incrementAndGet();
+						} else {
+							FacetOutlineStats.STRIPS_SKIPPED_CULLED.incrementAndGet();
+						}
+					}
 					return;
 				}
 
-				emitSurfaceStrip(emitter, direction, faceColors.color(direction),
+				if (stats) {
+					FacetOutlineStats.STRIPS_EMITTED.incrementAndGet();
+				}
+
+				emitSurfaceStrip(emitter, direction,
+						FacetMcBridge.prepareOutlineColor(faceColors.color(direction)),
 						minX, minY, minZ, maxX, maxY, maxZ);
 			});
 		}
@@ -190,6 +200,7 @@ final class FacetBlockOverlay {
 					.normal(0, normalX, normalY, normalZ).normal(1, normalX, normalY, normalZ)
 					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
 					.nominalFace(face)
+					// Graffiti sprites need real alpha; stay on sorted translucent terrain.
 					.chunkLayer(ChunkSectionLayer.TRANSLUCENT)
 					.emissive(false);
 			FacetMcBridge.applyShade(emitter, true);
@@ -202,22 +213,22 @@ final class FacetBlockOverlay {
 		private void emitSurfaceStrip(QuadEmitter emitter, Direction face, int color,
 				double minX, double minY, double minZ,
 				double maxX, double maxY, double maxZ) {
-			double bias = FacetOutlineRules.SURFACE_BIAS * face.getAxisDirection().getStep();
+			double bias = FacetMcBridge.outlineSurfaceBias() * face.getAxisDirection().getStep();
 
 			switch (face) {
-				case DOWN, UP -> emitQuad(emitter, face, color,
+				case DOWN, UP -> emitOutlineQuad(emitter, face, color,
 						minX, minY + bias, minZ, maxX, minY + bias, minZ,
 						maxX, minY + bias, maxZ, minX, minY + bias, maxZ);
-				case NORTH, SOUTH -> emitQuad(emitter, face, color,
+				case NORTH, SOUTH -> emitOutlineQuad(emitter, face, color,
 						minX, minY, minZ + bias, maxX, minY, minZ + bias,
 						maxX, maxY, minZ + bias, minX, maxY, minZ + bias);
-				case WEST, EAST -> emitQuad(emitter, face, color,
+				case WEST, EAST -> emitOutlineQuad(emitter, face, color,
 						minX + bias, minY, minZ, minX + bias, minY, maxZ,
 						minX + bias, maxY, maxZ, minX + bias, maxY, minZ);
 			}
 		}
 
-		private void emitQuad(QuadEmitter emitter, Direction face, int color,
+		private void emitOutlineQuad(QuadEmitter emitter, Direction face, int color,
 				double x1, double y1, double z1,
 				double x2, double y2, double z2,
 				double x3, double y3, double z3,
@@ -239,7 +250,11 @@ final class FacetBlockOverlay {
 					.normal(0, normalX, normalY, normalZ).normal(1, normalX, normalY, normalZ)
 					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
 					.nominalFace(face)
-					.chunkLayer(ChunkSectionLayer.TRANSLUCENT)
+					// 26.1/26.2: CUTOUT (world-validated for FPS + visibility). 26.3 snapshot
+					// targets: bridge returns CUTOUT too, pending in-world validation; MultiDraw
+					// cutout depth fighting could make strips nearly invisible (fallback is
+					// TRANSLUCENT via the version bridge, at the cost of per-frame sorting).
+					.chunkLayer(FacetMcBridge.outlineChunkLayer())
 					.emissive(false);
 			FacetMcBridge.applyShade(emitter, true);
 			emitter.ambientOcclusion(TriState.DEFAULT)

@@ -28,6 +28,13 @@ final class FacetOutlineRulesTest {
 	}
 
 	@Test
+	void outlineAlphaMarkerIsTwoHundredFiftyFour() {
+		assertEquals(254, FacetOutlineRules.OUTLINE_SHADER_ALPHA);
+		assertEquals(0xFE39FF14, FacetOutlineRules.withOutlineAlpha(0xFF39FF14));
+		assertEquals(0xFE000000, FacetOutlineRules.withOutlineAlpha(0xFF000000));
+	}
+
+	@Test
 	void everyRegisteredShulkerBoxStateIsExcluded() {
 		var shulkerBoxes = BuiltInRegistries.BLOCK.stream()
 				.filter(ShulkerBoxBlock.class::isInstance)

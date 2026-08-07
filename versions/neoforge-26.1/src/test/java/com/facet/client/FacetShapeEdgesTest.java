@@ -1,5 +1,6 @@
 package com.facet.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,6 +17,14 @@ class FacetShapeEdgesTest {
 		List<Strip> strips = strips(Shapes.block());
 		assertFalse(strips.isEmpty());
 		assertTrue(strips.stream().allMatch(Strip::hasPositiveArea));
+	}
+
+	@Test
+	void fullCubeFastPathMatchesGenericStripCount() {
+		List<Strip> cached = strips(Shapes.block());
+		// Unit cube is the hot path (most solid blocks); cache must stay equivalent.
+		assertEquals(24, cached.size(), "unit cube should emit 12 edges × 2 face strips");
+		assertTrue(cached.stream().allMatch(Strip::hasPositiveArea));
 	}
 
 	@Test

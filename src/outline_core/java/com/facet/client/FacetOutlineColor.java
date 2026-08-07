@@ -208,7 +208,9 @@ final class FacetOutlineColor {
 
 		int color(Direction direction) {
 			Integer color = colors.get(direction);
-			return color == null ? firstColor : color;
+			int rgb = color == null ? firstColor : color;
+			// Fixed sub-opaque alpha marker for the cutout outline channel.
+			return FacetOutlineRules.withOutlineAlpha(rgb);
 		}
 	}
 
