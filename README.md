@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Reworked the overall outline logic and all the colors. It doesn't look so harsh now!
+Optimized block-outline performance so the game stays smooth with outlines enabled!
 
 ## Complete Feature List
 
@@ -37,6 +37,13 @@ Reworked the overall outline logic and all the colors. It doesn't look so harsh 
 - NeoForge
 
 ## Feature Updates
+
+### v1.3.7 - Optimized Block-Outline Performance
+- The game now stays smooth with block outlines enabled
+
+### v1.3.6 - Minecraft 26.3 Snapshot 7 Support
+- Added support for Minecraft 26.3 Snapshot 7
+- Improved the overall experience
 
 ### v1.3.5 - Reworked the overall outline logic and colors. It doesn't look so harsh now!
 
