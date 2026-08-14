@@ -113,8 +113,9 @@ NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 Snapshot 6 stays buildable but
 is no longer part of the formal release set; it remains available only through
 its historical preview workflow.
 
-Minecraft 26.3 Snapshot 8 is a buildable adaptation target and is not yet part
-of the formal release set.
+Minecraft 26.3 Snapshot 8 is a buildable adaptation target and is not part
+of the formal release set; it remains available through its isolated preview
+workflow.
 
 Minecraft compatibility previews use `.github/workflows/publish-preview.yml`
 and a tag such as `v1.2.3-mc26.3-snapshot-6-preview.1`. The preview workflow
@@ -124,6 +125,9 @@ or replace assets in the corresponding formal release.
 
 Snapshot 7 uses the isolated `.github/workflows/publish-preview-snapshot-7.yml`
 workflow and the tag pattern `v<version>-mc26.3-snapshot-7-preview.<number>`.
+
+Snapshot 8 uses the isolated `.github/workflows/publish-preview-snapshot-8.yml`
+workflow and the tag pattern `v<version>-mc26.3-snapshot-8-preview.<number>`.
 
 `scripts/release.sh` prepares and verifies a release locally: it guards the
 tree, reads `mod_version`, runs one clean build, mechanically enumerates the
