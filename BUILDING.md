@@ -28,6 +28,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3-snapshot-6` | Fabric | 26.3 Snapshot 6 | `Facet-Fabric-<mod-version>-26.3-snapshot-6.jar` |
 | `versions/fabric-26.3-snapshot-7` | Fabric | 26.3 Snapshot 7 | `Facet-Fabric-<mod-version>-26.3-snapshot-7.jar` |
+| `versions/fabric-26.3-snapshot-8` | Fabric | 26.3 Snapshot 8 | `Facet-Fabric-<mod-version>-26.3-snapshot-8.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -38,7 +39,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 
 ### All supported targets
 
-The unqualified `build` task builds and tests all seven Fabric and NeoForge
+The unqualified `build` task builds and tests all eight Fabric and NeoForge
 modules:
 
 ```sh
@@ -60,6 +61,7 @@ build; the tag workflow rebuilds it for the official release.
 ```sh
 ./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-snapshot-6:build
 ./gradlew :versions:fabric-26.3-snapshot-7:build
+./gradlew :versions:fabric-26.3-snapshot-8:build
 ```
 
 ### NeoForge only
@@ -110,6 +112,9 @@ The formal release set covers Fabric 26.1, 26.2, and 26.3 Snapshot 7, plus
 NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 Snapshot 6 stays buildable but
 is no longer part of the formal release set; it remains available only through
 its historical preview workflow.
+
+Minecraft 26.3 Snapshot 8 is a buildable adaptation target and is not yet part
+of the formal release set.
 
 Minecraft compatibility previews use `.github/workflows/publish-preview.yml`
 and a tag such as `v1.2.3-mc26.3-snapshot-6-preview.1`. The preview workflow
