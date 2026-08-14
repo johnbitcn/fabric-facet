@@ -108,14 +108,13 @@ Official releases use `.github/workflows/publish.yml`. From a version tag, it
 validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
-The formal release set covers Fabric 26.1, 26.2, and 26.3 Snapshot 7, plus
-NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 Snapshot 6 stays buildable but
-is no longer part of the formal release set; it remains available only through
-its historical preview workflow.
+The formal release set covers Fabric 26.1, 26.2, and 26.3 Snapshot 8, plus
+NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 Snapshot 6 and Snapshot 7 stay
+buildable but are no longer part of the formal release set; each remains
+available through its preview workflow.
 
-Minecraft 26.3 Snapshot 8 is a buildable adaptation target and is not part
-of the formal release set; it remains available through its isolated preview
-workflow.
+Minecraft 26.3 Snapshot 8 joined the formal release set in v1.3.8 and keeps
+its isolated preview workflow.
 
 Minecraft compatibility previews use `.github/workflows/publish-preview.yml`
 and a tag such as `v1.2.3-mc26.3-snapshot-6-preview.1`. The preview workflow
