@@ -133,6 +133,9 @@ workflow and the tag pattern `v<version>-mc26.3-snapshot-7-preview.<number>`.
 Snapshot 8 uses the isolated `.github/workflows/publish-preview-snapshot-8.yml`
 workflow and the tag pattern `v<version>-mc26.3-snapshot-8-preview.<number>`.
 
+Snapshot 9 uses the isolated `.github/workflows/publish-preview-snapshot-9.yml`
+workflow and the tag pattern `v<version>-mc26.3-snapshot-9-preview.<number>`.
+
 `scripts/release.sh` prepares and verifies a release locally: it guards the
 tree, reads `mod_version`, runs one clean build, mechanically enumerates the
 release JAR set, verifies embedded versions, and stages a diagnostic
