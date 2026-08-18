@@ -38,6 +38,9 @@
 
 ## 機能アップデート
 
+### v1.3.8 - Minecraft 26.3 Snapshot 9 プレビュー
+- Minecraft 26.3 Snapshot 9 の互換性プレビューを追加しました
+
 ### v1.3.8 - Minecraft 26.3 Snapshot 8 対応
 - Minecraft 26.3 Snapshot 8 に対応しました
 

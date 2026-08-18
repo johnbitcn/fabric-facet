@@ -38,6 +38,9 @@ Optimized block-outline performance so the game stays smooth with outlines enabl
 
 ## Feature Updates
 
+### v1.3.8 - Minecraft 26.3 Snapshot 9 Preview
+- Added a compatibility preview for Minecraft 26.3 Snapshot 9
+
 ### v1.3.8 - Minecraft 26.3 Snapshot 8 Support
 - Added support for Minecraft 26.3 Snapshot 8
 

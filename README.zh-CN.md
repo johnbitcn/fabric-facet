@@ -36,6 +36,9 @@
 
 ## 功能更新
 
+### v1.3.8 - Minecraft 26.3 Snapshot 9 预览
+- 新增 Minecraft 26.3 Snapshot 9 兼容性预览
+
 ### v1.3.8 - 新增 Minecraft 26.3 Snapshot 8 支持
 - 支持最新的 Minecraft 26.3 Snapshot 8
 
