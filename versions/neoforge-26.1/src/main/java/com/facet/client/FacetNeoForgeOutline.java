@@ -27,6 +27,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -121,10 +122,17 @@ public final class FacetNeoForgeOutline {
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeHoverOutline::extract);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeHoverOutline::renderDistant);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeDistanceHud::renderPath);
+		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::clearFarTargetCache);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgePlacementPreview::render);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::handleChunkLoad);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::handleClientLogout);
 		LOGGER.info("Registering Minecraft 26.1 NeoForge block-outline renderer");
+	}
+
+	/** Fired once per frame before rendering: resets the shared distant-target raycast memo so
+	 *  the distance HUD, distance path and hover outline reuse a single level.clip per frame. */
+	private static void clearFarTargetCache(RenderFrameEvent.Pre event) {
+		FacetNeoForgeDistanceHud.clearFarTargetCache();
 	}
 
 	private static void registerKeyMappings(RegisterKeyMappingsEvent event) {

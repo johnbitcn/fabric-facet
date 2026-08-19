@@ -68,6 +68,10 @@ public final class FacetClient implements ClientModInitializer {
 	private static KeyMapping openSettingsKeyMapping;
 	private static KeyMapping flipPlacementFacingKeyMapping;
 	private static boolean distanceHudVisible;
+	/** Per-frame memo of the distant-target raycast, shared by the distance HUD, the distance
+	 *  path and the hover outline. Cleared at the start of every level render so all consumers
+	 *  of one frame reuse a single level.clip (see {@link #distanceTarget(Minecraft)}). */
+	private static BlockHitResult farTargetCache;
 
 	@Override
 	public void onInitializeClient() {
@@ -79,6 +83,7 @@ public final class FacetClient implements ClientModInitializer {
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
 		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::collectSurfaceEffects);
 		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetClient::renderSurfaceEffectsAfterTerrain);
+		LevelRenderEvents.START_MAIN.register(context -> clearFarTargetCache());
 		LevelRenderEvents.END_MAIN.register(context -> FacetMcBridge.endSurfaceEffectsFrame());
 		LevelRenderEvents.BEFORE_BLOCK_OUTLINE.register(FacetClient::beforeBlockOutline);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
@@ -327,9 +332,12 @@ public final class FacetClient implements ClientModInitializer {
 	}
 
 	/**
-	 * Distance HUD/path target. Reuses the per-frame game hit result when the
-	 * crosshair already points at a block (same ray and first-hit target),
-	 * avoiding a full level raycast every frame.
+	 * Distance HUD/path/hover target. Reuses the per-frame game hit result when the
+	 * crosshair already points at a block (same ray and first-hit target), avoiding a
+	 * full level raycast every frame. When the crosshair misses, the distant raycast
+	 * result is memoized per frame (cleared at START_MAIN) so the HUD, the distance
+	 * path and the hover outline share a single level.clip instead of each running
+	 * their own (up to 200+ block steps at typical render distances).
 	 */
 	private static BlockHitResult distanceTarget(Minecraft minecraft) {
 		if (minecraft.hitResult instanceof BlockHitResult hitResult
@@ -337,7 +345,15 @@ public final class FacetClient implements ClientModInitializer {
 			return hitResult;
 		}
 
-		return findViewedBlock(minecraft, FacetMcBridge.mainCamera(minecraft));
+		if (farTargetCache == null) {
+			farTargetCache = findViewedBlock(minecraft, FacetMcBridge.mainCamera(minecraft));
+		}
+
+		return farTargetCache;
+	}
+
+	private static void clearFarTargetCache() {
+		farTargetCache = null;
 	}
 
 	private static DistanceInfo distanceInfo(BlockPos playerFootPos, BlockPos targetPos) {
@@ -435,7 +451,7 @@ public final class FacetClient implements ClientModInitializer {
 			hitResult = nearHitResult;
 			inRange = true;
 		} else {
-			hitResult = findViewedBlock(minecraft, FacetMcBridge.mainCamera(minecraft));
+			hitResult = distanceTarget(minecraft);
 
 			if (hitResult.getType() != HitResult.Type.BLOCK) {
 				return;

@@ -9,7 +9,6 @@ import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -46,7 +45,7 @@ final class FacetNeoForgeHoverOutline {
 		var minecraft = net.minecraft.client.Minecraft.getInstance();
 		if (minecraft.level == null || minecraft.hitResult instanceof BlockHitResult) return;
 		var camera = FacetNeoForgePlatform.mainCamera(minecraft);
-		BlockHitResult hit = findViewedBlock(camera);
+		BlockHitResult hit = FacetNeoForgeDistanceHud.distanceTarget(minecraft);
 		if (hit.getType() != HitResult.Type.BLOCK || !minecraft.level.isLoaded(hit.getBlockPos())) return;
 		BlockPos pos = hit.getBlockPos();
 		VoxelShape shape = minecraft.level.getBlockState(pos).getShape(minecraft.level, pos);
@@ -56,13 +55,6 @@ final class FacetNeoForgeHoverOutline {
 		FacetNeoForgePlatform.render(event, RenderTypes.lines(), (pose, consumer) ->
 			FacetShapeEdges.forEachEdge(finalShape, (x1, y1, z1, x2, y2, z2) ->
 				emitLine(pose, consumer, pos, cameraPos, x1, y1, z1, x2, y2, z2, DISTANT_OUTLINE_COLOR)));
-	}
-
-	private static BlockHitResult findViewedBlock(net.minecraft.client.Camera camera) {
-		Vec3 from = camera.position();
-		double reach = Math.max(16.0, net.minecraft.client.Minecraft.getInstance().options.renderDistance().get() * 16.0);
-		Vec3 to = from.add(camera.forwardVector().x() * reach, camera.forwardVector().y() * reach, camera.forwardVector().z() * reach);
-		return net.minecraft.client.Minecraft.getInstance().level.clip(new ClipContext(from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
 	}
 
 	private record Renderer(Direction hitFace, double facePlane) implements CustomBlockOutlineRenderer {

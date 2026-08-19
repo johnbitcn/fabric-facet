@@ -22,8 +22,16 @@ final class FacetNeoForgeDistanceHud {
 	private static final int Y_COLOR = 0xFF39FF14;
 	private static final int HUD_FONT_SIZE_INCREASE = 2;
 	private static boolean visible;
+	/** Per-frame memo of the distant-target raycast, shared by the distance HUD, the distance
+	 *  path and the hover outline. Cleared before every frame render (RenderFrameEvent.Pre) so
+	 *  all consumers of one frame reuse a single level.clip (see {@link #distanceTarget}). */
+	private static BlockHitResult farTargetCache;
 
 	private FacetNeoForgeDistanceHud() {
+	}
+
+	static void clearFarTargetCache() {
+		farTargetCache = null;
 	}
 
 	static void toggle() {
@@ -121,17 +129,24 @@ final class FacetNeoForgeDistanceHud {
 	}
 
 	/**
-	 * Distance HUD/path target. Reuses the per-frame game hit result when the
-	 * crosshair already points at a block (same ray and first-hit target),
-	 * avoiding a full level raycast every frame.
+	 * Distance HUD/path/hover target. Reuses the per-frame game hit result when the
+	 * crosshair already points at a block (same ray and first-hit target), avoiding a
+	 * full level raycast every frame. When the crosshair misses, the distant raycast
+	 * result is memoized per frame (cleared at RenderFrameEvent.Pre) so the HUD, the
+	 * distance path and the hover outline share a single level.clip instead of each
+	 * running their own (up to 200+ block steps at typical render distances).
 	 */
-	private static BlockHitResult distanceTarget(Minecraft minecraft) {
+	static BlockHitResult distanceTarget(Minecraft minecraft) {
 		if (minecraft.hitResult instanceof BlockHitResult hit
 				&& hit.getType() == HitResult.Type.BLOCK) {
 			return hit;
 		}
 
-		return findViewedBlock(minecraft, FacetNeoForgePlatform.mainCamera(minecraft));
+		if (farTargetCache == null) {
+			farTargetCache = findViewedBlock(minecraft, FacetNeoForgePlatform.mainCamera(minecraft));
+		}
+
+		return farTargetCache;
 	}
 
 	private static DistanceInfo distanceInfo(BlockPos from, BlockPos to) {

@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Optimized block-outline performance so the game stays smooth with outlines enabled!
+Reduced per-frame raycast overhead when the crosshair points at empty space or distant terrain — the distance HUD, distance path, and hover outline now share a single distant-target scan per frame.
 
 ## Complete Feature List
 
@@ -37,6 +37,9 @@ Optimized block-outline performance so the game stays smooth with outlines enabl
 - NeoForge
 
 ## Feature Updates
+
+### v1.3.9 - Reduced Per-Frame Raycast Cost
+- The distance HUD, distance path, and hover outline now share one distant-target raycast per frame instead of each scanning the world, lowering CPU cost when looking at empty space or distant terrain
 
 ### v1.3.8 - Minecraft 26.3 Snapshot 9 Preview
 - Added a compatibility preview for Minecraft 26.3 Snapshot 9
