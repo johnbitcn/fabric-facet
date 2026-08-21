@@ -71,7 +71,7 @@ jobs:
           ./gradlew
           :versions:fabric-26.1:build
           :versions:fabric-26.2:build
-          :versions:fabric-26.3-snapshot-8:build
+          :versions:fabric-26.3-snapshot-9:build
           :versions:neoforge-26.1:build
           :versions:neoforge-26.1.2:build
           :versions:neoforge-26.2:build
@@ -84,7 +84,7 @@ jobs:
           mkdir release
           cp "versions/fabric-26.1/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.1.jar" release/
           cp "versions/fabric-26.2/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.2.jar" release/
-          cp "versions/fabric-26.3-snapshot-8/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.3-snapshot-8.jar" release/
+          cp "versions/fabric-26.3-snapshot-9/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.3-snapshot-9.jar" release/
           cp "versions/neoforge-26.1/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.1.jar" release/
           cp "versions/neoforge-26.1.2/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.1.2.jar" release/
           cp "versions/neoforge-26.2/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.2.jar" release/
@@ -250,21 +250,21 @@ jobs:
           modrinth-game-version-filter: none
           modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2.
 
-      - name: Publish Fabric 26.3 Snapshot 8 to Modrinth
+      - name: Publish Fabric 26.3 Snapshot 9 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          modrinth-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.3-snapshot-8.jar
-          modrinth-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 Snapshot 8
+          modrinth-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.3-snapshot-9.jar
+          modrinth-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 Snapshot 9
           modrinth-version: ${{ env.RELEASE_VERSION }}
           modrinth-version-type: beta
           modrinth-loaders: fabric
           modrinth-environment: client
-          modrinth-game-versions: 26.3-snapshot-8
+          modrinth-game-versions: 26.3-snapshot-9
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 Snapshot 8.
+          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 Snapshot 9.
 
       - name: Publish NeoForge 26.1 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
