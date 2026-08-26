@@ -27,6 +27,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3-snapshot-9` | Fabric | 26.3 Snapshot 9 | `Facet-Fabric-<mod-version>-26.3-snapshot-9.jar` |
+| `versions/fabric-26.3-snapshot-10` | Fabric | 26.3 Snapshot 10 | `Facet-Fabric-<mod-version>-26.3-snapshot-10.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -37,7 +38,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 
 ### All supported targets
 
-The unqualified `build` task builds and tests all six Fabric and NeoForge
+The unqualified `build` task builds and tests all seven Fabric and NeoForge
 modules:
 
 ```sh
@@ -57,7 +58,7 @@ build; the tag workflow rebuilds it for the official release.
 ### Fabric only
 
 ```sh
-./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-snapshot-9:build
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-snapshot-9:build :versions:fabric-26.3-snapshot-10:build
 ```
 
 ### NeoForge only
@@ -112,9 +113,12 @@ the snapshot policy only the newest snapshot is maintained.
 Minecraft 26.3 Snapshot 9 is the maintained snapshot target, part of the
 formal release set, and keeps its isolated preview workflow.
 
+Minecraft 26.3 Snapshot 10 is a buildable adaptation target and is not yet part
+of the formal release set.
+
 Minecraft compatibility previews use the isolated
-`.github/workflows/publish-preview-snapshot-9.yml` workflow and the tag
-pattern `v<version>-mc26.3-snapshot-9-preview.<number>`. The preview workflow
+`.github/workflows/publish-preview-snapshot-10.yml` workflow and the tag
+pattern `v<version>-mc26.3-snapshot-10-preview.<number>`. The preview workflow
 builds only the exact Fabric snapshot target, creates a GitHub Prerelease, and
 publishes the same JAR to Modrinth as a beta. It does not publish to CurseForge
 or replace assets in the corresponding formal release.

@@ -8,6 +8,7 @@ import java.util.List;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -301,7 +302,9 @@ final class PlacementPreview {
 			case Y -> new Quaternionf().rotationY(radians);
 			case Z -> new Quaternionf().rotationZ(radians);
 		};
-		poseStack.mulPose(rotation);
+		// 26.3 Snapshot 10 removed PoseStack.mulPose(Quaternionfc); the matrix
+		// overload is equivalent (post-multiply with matching normal rotation).
+		poseStack.mulPose(new Matrix4f().rotation(rotation));
 		poseStack.translate(pos.getX() - anchorX, pos.getY() - anchorY, pos.getZ() - anchorZ);
 	}
 
