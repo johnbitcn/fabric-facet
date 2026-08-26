@@ -25,7 +25,7 @@ echo "== 1/6 环境守卫 =="
 
 branch="$(git branch --show-current)"
 if [[ "$branch" != "main" ]]; then
-	echo "必须在 main 分支发布（当前: $branch）" >&2
+	echo "必须在 main 分支发布（当前: ${branch}）" >&2
 	exit 1
 fi
 
@@ -58,7 +58,7 @@ echo "mod_version=$mod_version"
 release_targets=(
 	fabric-26.1
 	fabric-26.2
-	fabric-26.3-snapshot-9
+	fabric-26.3-snapshot-10
 	neoforge-26.1
 	neoforge-26.1.2
 	neoforge-26.2

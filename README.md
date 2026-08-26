@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Reduced per-frame raycast overhead when the crosshair points at empty space or distant terrain — the distance HUD, distance path, and hover outline now share a single distant-target scan per frame.
+Added support for Minecraft 26.3 Snapshot 10. Releases are now unified: every version tag ships one complete release covering all loader and game-version targets — snapshot builds are no longer published separately, and only the newest snapshot is maintained.
 
 ## Complete Feature List
 
@@ -37,6 +37,11 @@ Reduced per-frame raycast overhead when the crosshair points at empty space or d
 - NeoForge
 
 ## Feature Updates
+
+### v1.3.10 - Minecraft 26.3 Snapshot 10 Support
+- Added support for Minecraft 26.3 Snapshot 10
+- Releases are now unified: every version tag ships one complete release covering all loader and game-version targets — snapshot builds are no longer published separately
+- Only the newest snapshot is maintained; Snapshot 9 has been retired
 
 ### v1.3.9 - Reduced Per-Frame Raycast Cost
 - The distance HUD, distance path, and hover outline now share one distant-target raycast per frame instead of each scanning the world, lowering CPU cost when looking at empty space or distant terrain

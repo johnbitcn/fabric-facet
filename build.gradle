@@ -26,16 +26,6 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: true,
 		],
-		":versions:fabric-26.3-snapshot-9": [
-				archivesName: "Facet-Fabric",
-				minecraftVersion: findProperty("minecraft_version_26_3_snapshot_9"),
-				fabricApiVersion: findProperty("fabric_api_version_26_3_snapshot_9"),
-				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_3_snapshot_9"),
-				modMenuDependency: findProperty("modmenu_dependency_26_3_snapshot_9"),
-				minecraftDependency: "26.3-alpha.9",
-				legacyRenderer: true,
-				modMenuRuntime: false,
-		],
 		":versions:fabric-26.3-snapshot-10": [
 				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_3_snapshot_10"),
