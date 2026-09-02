@@ -105,9 +105,9 @@ validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
 The formal release set covers Fabric 26.1, 26.2, and 26.3 Pre-Release 1, plus
-NeoForge 26.1, 26.1.2, and 26.2. Older Minecraft 26.3 snapshots are historical
-targets and are no longer supported; only the newest 26.3 prerelease is
-maintained.
+NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 snapshots and prereleases
+share one rolling target: only the newest version is maintained, replacing its
+predecessor.
 
 Minecraft 26.3 Pre-Release 1 is part of the formal release set. Every version
 tag produces one complete release covering all targets. The prerelease build

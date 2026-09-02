@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added Fabric support for Minecraft 26.3 Pre-Release 1.
+Added Fabric support for Minecraft 26.3 Pre-Release 1. Like snapshots, only the newest 26.3 prerelease is maintained and it replaces the previous snapshot target. Prerelease builds are published only to Modrinth.
 
 ## Complete Feature List
 
@@ -37,6 +37,11 @@ Added Fabric support for Minecraft 26.3 Pre-Release 1.
 - NeoForge
 
 ## Feature Updates
+
+### v1.3.11 - Minecraft 26.3 Pre-Release 1 Support
+- Added Fabric support for Minecraft 26.3 Pre-Release 1
+- Replaced the previous Snapshot 10 target; snapshots and prereleases share one rolling latest-version target
+- Prerelease builds are published only to Modrinth
 
 ### v1.3.10 - Minecraft 26.3 Snapshot 10 Support
 - Added support for Minecraft 26.3 Snapshot 10
