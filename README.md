@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added support for Minecraft 26.3 Snapshot 10. Releases are now unified: every version tag ships one complete release covering all loader and game-version targets — snapshot builds are no longer published separately, and only the newest snapshot is maintained.
+Added Fabric support for Minecraft 26.3 Pre-Release 1.
 
 ## Complete Feature List
 

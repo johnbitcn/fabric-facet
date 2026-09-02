@@ -302,7 +302,7 @@ final class PlacementPreview {
 			case Y -> new Quaternionf().rotationY(radians);
 			case Z -> new Quaternionf().rotationZ(radians);
 		};
-		// 26.3 Snapshot 10 removed PoseStack.mulPose(Quaternionfc); the matrix
+		// 26.3 removed PoseStack.mulPose(Quaternionfc); the matrix
 		// overload is equivalent (post-multiply with matching normal rotation).
 		poseStack.mulPose(new Matrix4f().rotation(rotation));
 		poseStack.translate(pos.getX() - anchorX, pos.getY() - anchorY, pos.getZ() - anchorZ);
