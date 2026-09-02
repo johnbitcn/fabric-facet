@@ -5,5 +5,4 @@ run/
 versions/**/bin/
 release/
 *.log
-AGENTS.md
 memory.md
