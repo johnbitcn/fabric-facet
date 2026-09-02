@@ -26,7 +26,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | --- | --- | --- | --- |
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
-| `versions/fabric-26.3-snapshot-10` | Fabric | 26.3 Snapshot 10 | `Facet-Fabric-<mod-version>-26.3-snapshot-10.jar` |
+| `versions/fabric-26.3-pre-1` | Fabric | 26.3 Pre-Release 1 | `Facet-Fabric-<mod-version>-26.3-pre-1.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -57,7 +57,7 @@ build; the tag workflow rebuilds it for the official release.
 ### Fabric only
 
 ```sh
-./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-snapshot-10:build
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3-pre-1:build
 ```
 
 ### NeoForge only
@@ -104,15 +104,14 @@ Official releases use `.github/workflows/publish.yml`. From a version tag, it
 validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
-The formal release set covers Fabric 26.1, 26.2, and 26.3 Snapshot 10, plus
-NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 Snapshot 9 is a historical
-snapshot target and is no longer supported; per the snapshot policy only the
-newest snapshot is maintained.
+The formal release set covers Fabric 26.1, 26.2, and 26.3 Pre-Release 1, plus
+NeoForge 26.1, 26.1.2, and 26.2. Minecraft 26.3 snapshots and prereleases
+share one rolling target: only the newest version is maintained, replacing its
+predecessor.
 
-Minecraft 26.3 Snapshot 10 is the maintained snapshot target and part of the
-formal release set. Every version tag produces one complete release covering
-all targets — there are no separate snapshot preview releases. The snapshot
-build is published to Modrinth as a beta; it is not published to CurseForge.
+Minecraft 26.3 Pre-Release 1 is part of the formal release set. Every version
+tag produces one complete release covering all targets. The prerelease build
+is published to Modrinth as a beta; it is not published to CurseForge.
 
 `scripts/release.sh` prepares and verifies a release locally: it guards the
 tree, reads `mod_version`, runs one clean build, mechanically enumerates the
