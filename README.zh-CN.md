@@ -12,7 +12,7 @@
 现在我把它分享出来，希望你们喜欢！
 
 ## 最新更新内容
-新增 Fabric 对 Minecraft 26.3 Pre-Release 1 的支持。与快照版本相同，仅维护最新的 26.3 预发布版本，并替换之前的快照目标；预发布版本仅发布到 Modrinth。
+新增 Fabric 对 Minecraft 26.3 Pre-Release 3 的支持。
 
 ## 完整功能列表
 - 全息投影放置预览 + 开启音效
@@ -35,6 +35,9 @@
 - NeoForge
 
 ## 功能更新
+
+### v1.3.12 - 新增 Minecraft 26.3 Pre-Release 3 支持
+- 新增 Fabric 对 Minecraft 26.3 Pre-Release 3 的支持
 
 ### v1.3.11 - 新增 Minecraft 26.3 Pre-Release 1 支持
 - 新增 Fabric 对 Minecraft 26.3 Pre-Release 1 的支持

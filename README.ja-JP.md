@@ -12,7 +12,7 @@
 皆さんにも楽しんでもらえるよう公開します！
 
 ## 最新のアップデート
-Fabric で Minecraft 26.3 Pre-Release 1 に対応しました。スナップショットと同様に、26.3 のプレリリースは最新版のみを維持し、以前のスナップショット対象を置き換えます。プレリリース版は Modrinth のみに公開します。
+Fabric で Minecraft 26.3 Pre-Release 3 に対応しました。
 
 ## 全機能一覧
 
@@ -37,6 +37,9 @@ Fabric で Minecraft 26.3 Pre-Release 1 に対応しました。スナップシ�
 - NeoForge
 
 ## 機能アップデート
+
+### v1.3.12 - Minecraft 26.3 Pre-Release 3 対応
+- Fabric で Minecraft 26.3 Pre-Release 3 に対応しました
 
 ### v1.3.11 - Minecraft 26.3 Pre-Release 1 対応
 - Fabric で Minecraft 26.3 Pre-Release 1 に対応しました
