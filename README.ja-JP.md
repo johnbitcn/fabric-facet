@@ -12,7 +12,7 @@
 皆さんにも楽しんでもらえるよう公開します！
 
 ## 最新のアップデート
-Fabric で Minecraft 26.3 Release Candidate 3 に対応しました。
+Fabric で Minecraft 26.3 に対応しました。
 
 ## 全機能一覧
 
@@ -37,6 +37,9 @@ Fabric で Minecraft 26.3 Release Candidate 3 に対応しました。
 - NeoForge
 
 ## 機能アップデート
+
+### v1.3.14 - Minecraft 26.3 対応
+- Fabric で Minecraft 26.3 に対応しました
 
 ### v1.3.13 - Minecraft 26.3 Release Candidate 3 対応
 - Fabric で Minecraft 26.3 Release Candidate 3 に対応しました

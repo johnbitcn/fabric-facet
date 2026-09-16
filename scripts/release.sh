@@ -58,7 +58,7 @@ echo "mod_version=$mod_version"
 release_targets=(
 	fabric-26.1
 	fabric-26.2
-	fabric-26.3-rc-3
+	fabric-26.3
 	neoforge-26.1
 	neoforge-26.1.2
 	neoforge-26.2
