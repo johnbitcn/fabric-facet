@@ -16,7 +16,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.client.CustomBlockOutlineRenderer;
 import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Vector3f;
 
 final class FacetNeoForgeHoverOutline {
@@ -40,7 +39,7 @@ final class FacetNeoForgeHoverOutline {
 		event.addCustomRenderer(new Renderer(hit.getDirection(), plane));
 	}
 
-	static void renderDistant(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+	static void renderDistant(FacetNeoForgeFrameContext context) {
 		if (!FacetNeoForgeOutlineConfig.hoverEnabled()) return;
 		var minecraft = net.minecraft.client.Minecraft.getInstance();
 		if (minecraft.level == null || minecraft.hitResult instanceof BlockHitResult) return;
@@ -52,7 +51,7 @@ final class FacetNeoForgeHoverOutline {
 		if (shape.isEmpty()) shape = Shapes.block();
 		Vec3 cameraPos = camera.position();
 		VoxelShape finalShape = shape;
-		FacetNeoForgePlatform.render(event, RenderTypes.lines(), (pose, consumer) ->
+		context.draw(RenderTypes.lines(), (pose, consumer) ->
 			FacetShapeEdges.forEachEdge(finalShape, (x1, y1, z1, x2, y2, z2) ->
 				emitLine(pose, consumer, pos, cameraPos, x1, y1, z1, x2, y2, z2, DISTANT_OUTLINE_COLOR)));
 	}

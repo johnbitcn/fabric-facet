@@ -14,7 +14,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 final class FacetNeoForgeDistanceHud {
 	private static final int X_COLOR = 0xFFFF6F8F;
@@ -94,13 +93,13 @@ final class FacetNeoForgeDistanceHud {
 		}
 	}
 
-	static void renderPath(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+	static void renderPath(FacetNeoForgeFrameContext context) {
 		if (!visible || !FacetNeoForgeOutlineConfig.distancePathVisible()) {
 			return;
 		}
 
 		Minecraft minecraft = Minecraft.getInstance();
-		if (minecraft.player == null || minecraft.level == null || event.getLevelRenderState().cameraRenderState.pos == null) {
+		if (minecraft.player == null || minecraft.level == null || context.levelRenderState().cameraRenderState.pos == null) {
 			return;
 		}
 
@@ -113,8 +112,8 @@ final class FacetNeoForgeDistanceHud {
 		BlockPos target = hit.getBlockPos();
 		BlockPos xCorner = new BlockPos(target.getX(), start.getY(), start.getZ());
 		BlockPos zCorner = new BlockPos(target.getX(), start.getY(), target.getZ());
-		Vec3 camera = event.getLevelRenderState().cameraRenderState.pos;
-		FacetNeoForgePlatform.render(event, RenderTypes.debugFilledBox(), (pose, consumer) -> {
+		Vec3 camera = context.levelRenderState().cameraRenderState.pos;
+		context.draw(RenderTypes.debugFilledBox(), (pose, consumer) -> {
 			renderSegment(pose, consumer, camera, start, xCorner, pulseColor(255, 32, 96));
 			renderSegment(pose, consumer, camera, xCorner, zCorner, pulseColor(255, 255, 32));
 			renderSegment(pose, consumer, camera, zCorner, target, pulseColor(57, 255, 20));

@@ -14,8 +14,10 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.quad.MutableQuad;
+import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Quaternionf;
 
 final class FacetNeoForgePlatform {
@@ -110,5 +112,34 @@ final class FacetNeoForgePlatform {
 			PreparedRenderType prepared = renderType.prepare();
 			prepared.drawFromBuffer(info);
 		}
+	}
+
+	static void registerRenderListeners() {
+		NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent.AfterTranslucentBlocks event) -> {
+			FacetNeoForgeFrameContext context = new FacetNeoForgeFrameContext() {
+				@Override
+				public PoseStack poseStack() {
+					return event.getPoseStack();
+				}
+
+				@Override
+				public LevelRenderState levelRenderState() {
+					return event.getLevelRenderState();
+				}
+
+				@Override
+				public void draw(RenderType renderType, Geometry geometry) {
+					FacetNeoForgePlatform.render(event, renderType, geometry);
+				}
+
+				@Override
+				public void draw(RenderType firstType, RenderType secondType, DualGeometry geometry) {
+					FacetNeoForgePlatform.render(event, firstType, secondType, geometry);
+				}
+			};
+			FacetNeoForgeHoverOutline.renderDistant(context);
+			FacetNeoForgeDistanceHud.renderPath(context);
+			FacetNeoForgePlacementPreview.render(context);
+		});
 	}
 }

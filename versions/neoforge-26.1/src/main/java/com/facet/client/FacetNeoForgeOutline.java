@@ -120,10 +120,8 @@ public final class FacetNeoForgeOutline {
 		modBus.addListener(FacetNeoForgeOutline::handleConfigReload);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::handleClientTick);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeHoverOutline::extract);
-		NeoForge.EVENT_BUS.addListener(FacetNeoForgeHoverOutline::renderDistant);
-		NeoForge.EVENT_BUS.addListener(FacetNeoForgeDistanceHud::renderPath);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::clearFarTargetCache);
-		NeoForge.EVENT_BUS.addListener(FacetNeoForgePlacementPreview::render);
+		FacetNeoForgePlatform.registerRenderListeners();
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::handleChunkLoad);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::handleClientLogout);
 		LOGGER.info("Registering Minecraft 26.1 NeoForge block-outline renderer");

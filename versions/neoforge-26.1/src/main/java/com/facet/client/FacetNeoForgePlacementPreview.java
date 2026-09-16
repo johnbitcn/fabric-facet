@@ -45,7 +45,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 final class FacetNeoForgePlacementPreview {
 	private static final int HOLOGRAM_RED = 72;
@@ -69,7 +68,7 @@ final class FacetNeoForgePlacementPreview {
 	private FacetNeoForgePlacementPreview() {
 	}
 
-	static void render(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+	static void render(FacetNeoForgeFrameContext context) {
 		if (!FacetNeoForgeOutlineConfig.placementPreviewEnabled()) {
 			HologramBootAnimation.reset();
 			NeoForgePlacementRotationController.reset();
@@ -85,7 +84,7 @@ final class FacetNeoForgePlacementPreview {
 		ClientLevel level = minecraft.level;
 		if (level == null || minecraft.player == null || minecraft.player.isSpectator()
 				|| !(minecraft.hitResult instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK
-				|| event.getLevelRenderState().cameraRenderState.pos == null) {
+				|| context.levelRenderState().cameraRenderState.pos == null) {
 			return;
 		}
 
@@ -94,13 +93,13 @@ final class FacetNeoForgePlacementPreview {
 			return;
 		}
 
-		Vec3 camera = event.getLevelRenderState().cameraRenderState.pos;
+		Vec3 camera = context.levelRenderState().cameraRenderState.pos;
 		HologramFrame frame = HologramFrame.create(timeNanos,
 				!prediction.visual().active() && !bootFrame.active(), bootFrame.alphaScale());
 		Vector3fc left = FacetNeoForgePlatform.mainCamera(minecraft).leftVector();
 		float screenRightX = -left.x();
 		float screenRightZ = -left.z();
-		FacetNeoForgePlatform.render(event, RenderTypes.translucentMovingBlock(), RenderTypes.linesTranslucent(),
+		context.draw(RenderTypes.translucentMovingBlock(), RenderTypes.linesTranslucent(),
 				(pose, modelConsumer, edgeConsumer) -> {
 			PreviewBlock[] blocks = prediction.blocks().toArray(PreviewBlock[]::new);
 			Arrays.sort(blocks, Comparator.comparingDouble(
