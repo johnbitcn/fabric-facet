@@ -5,11 +5,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.sprite.Material;
@@ -210,16 +208,12 @@ final class FacetNeoForgeOutlineRenderer {
 				double x1, double y1, double z1, double x2, double y2, double z2,
 				double x3, double y3, double z3, double x4, double y4, double z4) {
 			boolean reverseWinding = face == Direction.UP || face == Direction.NORTH || face == Direction.EAST;
-			MutableQuad quad = new MutableQuad()
-					.setSprite(
-							material.sprite(),
-							outlineCutout ? ChunkSectionLayer.CUTOUT : ChunkSectionLayer.TRANSLUCENT,
-							outlineCutout ? Sheets.cutoutBlockItemSheet() : Sheets.translucentBlockItemSheet())
+			MutableQuad quad = FacetNeoForgePlatform.setSprite(new MutableQuad(), material.sprite(), outlineCutout)
 					.setDirection(face)
 					.setTintIndex(-1)
-					.setShade(true)
 					.setLightEmission(0)
 					.setAmbientOcclusion(ambientOcclusion);
+			FacetNeoForgePlatform.setShade(quad, true);
 			quad.setPosition(0, (float) x1, (float) y1, (float) z1);
 			quad.setPosition(1, reverseWinding ? (float) x4 : (float) x2, reverseWinding ? (float) y4 : (float) y2,
 					reverseWinding ? (float) z4 : (float) z2);

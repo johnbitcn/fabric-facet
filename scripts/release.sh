@@ -62,6 +62,7 @@ release_targets=(
 	neoforge-26.1
 	neoforge-26.1.2
 	neoforge-26.2
+	neoforge-26.3
 )
 
 build_targets=()

@@ -1,12 +1,18 @@
 package com.facet.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.model.quad.MutableQuad;
+import org.joml.Quaternionf;
 
 final class FacetNeoForgePlatform {
 	interface Geometry {
@@ -18,6 +24,25 @@ final class FacetNeoForgePlatform {
 	}
 
 	private FacetNeoForgePlatform() {
+	}
+
+	static InputConstants.Type keyboardType() {
+		return InputConstants.Type.KEYSYM;
+	}
+
+	static void rotate(PoseStack poseStack, Quaternionf rotation) {
+		poseStack.mulPose(rotation);
+	}
+
+	static MutableQuad setSprite(MutableQuad quad, TextureAtlasSprite sprite, boolean cutout) {
+		if (cutout) {
+			return quad.setSprite(sprite, ChunkSectionLayer.CUTOUT, Sheets.cutoutBlockItemSheet());
+		}
+		return quad.setSprite(sprite, ChunkSectionLayer.TRANSLUCENT, Sheets.translucentBlockItemSheet());
+	}
+
+	static void setShade(MutableQuad quad, boolean shade) {
+		quad.setShade(shade);
 	}
 
 	static Camera mainCamera(Minecraft minecraft) {

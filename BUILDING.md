@@ -30,6 +30,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
+| `versions/neoforge-26.3` | NeoForge | 26.3 | `Facet-NeoForge-<mod-version>-26.3.jar` |
 
 `<mod-version>` comes from `mod_version` in `gradle.properties`.
 
@@ -37,7 +38,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 
 ### All supported targets
 
-The unqualified `build` task builds and tests all six Fabric and NeoForge
+The unqualified `build` task builds and tests all seven Fabric and NeoForge
 modules:
 
 ```sh
@@ -63,7 +64,7 @@ build; the tag workflow rebuilds it for the official release.
 ### NeoForge only
 
 ```sh
-./gradlew :versions:neoforge-26.1:build :versions:neoforge-26.1.2:build :versions:neoforge-26.2:build
+./gradlew :versions:neoforge-26.1:build :versions:neoforge-26.1.2:build :versions:neoforge-26.2:build :versions:neoforge-26.3:build
 ```
 
 ### One target
@@ -105,12 +106,12 @@ validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
 The formal release set covers Fabric 26.1, 26.2, and 26.3, plus NeoForge
-26.1, 26.1.2, and 26.2. Minecraft 26.3 snapshots, prereleases, and release
-candidates shared one rolling target during development; the 26.3 release
-replaced that target, and the pre-release targets have been removed.
+26.1, 26.1.2, 26.2, and 26.3. Minecraft 26.3 snapshots, prereleases, and
+release candidates shared one rolling target during development; the 26.3
+release replaced that target, and the pre-release targets have been removed.
 
 Every version tag produces one complete release covering all targets. The
-Minecraft 26.3 build is published to both Modrinth and CurseForge.
+Minecraft 26.3 builds are published to both Modrinth and CurseForge.
 
 `scripts/release.sh` prepares and verifies a release locally: it guards the
 tree, reads `mod_version`, runs one clean build, mechanically enumerates the

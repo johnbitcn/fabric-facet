@@ -75,6 +75,7 @@ jobs:
           :versions:neoforge-26.1:build
           :versions:neoforge-26.1.2:build
           :versions:neoforge-26.2:build
+          :versions:neoforge-26.3:build
           --no-daemon
           --console=plain
 
@@ -88,6 +89,7 @@ jobs:
           cp "versions/neoforge-26.1/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.1.jar" release/
           cp "versions/neoforge-26.1.2/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.1.2.jar" release/
           cp "versions/neoforge-26.2/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.2.jar" release/
+          cp "versions/neoforge-26.3/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.3.jar" release/
           (
             cd release
             sha256sum *.jar | sort > SHA256SUMS.txt
@@ -231,6 +233,22 @@ jobs:
           curseforge-game-version-filter: none
           curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2 on NeoForge.
 
+      - name: Publish NeoForge 26.3 to CurseForge
+        if: github.event_name == 'push' || inputs.publish_curseforge
+        uses: Kira-NT/mc-publish@v3
+        with:
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          curseforge-files: release/Facet-NeoForge-${{ env.RELEASE_VERSION }}-26.3.jar
+          curseforge-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 (NeoForge)
+          curseforge-version: ${{ env.RELEASE_VERSION }}+neoforge-mc26.3
+          curseforge-version-type: release
+          curseforge-loaders: neoforge
+          curseforge-environment: client
+          curseforge-game-versions: 26.3
+          curseforge-game-version-filter: none
+          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 on NeoForge.
+
       - name: Publish Fabric 26.1 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
         uses: Kira-NT/mc-publish@v3
@@ -329,3 +347,19 @@ jobs:
           modrinth-game-versions: 26.2
           modrinth-game-version-filter: none
           modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2 on NeoForge.
+
+      - name: Publish NeoForge 26.3 to Modrinth
+        if: github.event_name == 'push' || inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: release/Facet-NeoForge-${{ env.RELEASE_VERSION }}-26.3.jar
+          modrinth-name: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 (NeoForge)
+          modrinth-version: ${{ env.RELEASE_VERSION }}
+          modrinth-version-type: release
+          modrinth-loaders: neoforge
+          modrinth-environment: client
+          modrinth-game-versions: 26.3
+          modrinth-game-version-filter: none
+          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 on NeoForge.

@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.Direction;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.quad.MutableQuad;
 import org.joml.Quaternionf;
@@ -28,30 +29,32 @@ final class FacetNeoForgePlatform {
 	}
 
 	private static final StagedVertexBuffer AFTER_TERRAIN_PRIMARY_BUFFER =
-			new StagedVertexBuffer(() -> "Facet NeoForge 26.2 after translucent terrain primary", RenderType.TRANSIENT_BUFFER_SIZE);
+			new StagedVertexBuffer(() -> "Facet NeoForge 26.3 after translucent terrain primary", RenderType.TRANSIENT_BUFFER_SIZE);
 	private static final StagedVertexBuffer AFTER_TERRAIN_SECONDARY_BUFFER =
-			new StagedVertexBuffer(() -> "Facet NeoForge 26.2 after translucent terrain secondary", RenderType.TRANSIENT_BUFFER_SIZE);
+			new StagedVertexBuffer(() -> "Facet NeoForge 26.3 after translucent terrain secondary", RenderType.TRANSIENT_BUFFER_SIZE);
 
 	private FacetNeoForgePlatform() {
 	}
 
 	static InputConstants.Type keyboardType() {
-		return InputConstants.Type.KEYSYM;
+		return InputConstants.Type.KEYBOARD;
 	}
 
 	static void rotate(PoseStack poseStack, Quaternionf rotation) {
-		poseStack.mulPose(rotation);
+		poseStack.rotate(rotation);
 	}
 
 	static MutableQuad setSprite(MutableQuad quad, TextureAtlasSprite sprite, boolean cutout) {
 		if (cutout) {
-			return quad.setSprite(sprite, ChunkSectionLayer.CUTOUT, Sheets.cutoutBlockItemSheet());
+			return quad.setSprite(sprite, ChunkSectionLayer.CUTOUT,
+					Sheets.cutoutBlockItemSheet(), Sheets.cutoutBlockItemGlintSheet(), Sheets.cutoutBlockItemGlintSpecialSheet());
 		}
-		return quad.setSprite(sprite, ChunkSectionLayer.TRANSLUCENT, Sheets.translucentBlockItemSheet());
+		return quad.setSprite(sprite, ChunkSectionLayer.TRANSLUCENT,
+				Sheets.translucentBlockItemSheet(), Sheets.translucentBlockItemGlintSheet(), Sheets.translucentBlockItemGlintSpecialSheet());
 	}
 
 	static void setShade(MutableQuad quad, boolean shade) {
-		quad.setShade(shade);
+		quad.setShadeOverride(shade ? null : Direction.UP);
 	}
 
 	static Camera mainCamera(Minecraft minecraft) {
@@ -77,7 +80,7 @@ final class FacetNeoForgePlatform {
 			StagedVertexBuffer.Draw draw = append(AFTER_TERRAIN_PRIMARY_BUFFER, renderType);
 			geometry.render(event.getPoseStack(), AFTER_TERRAIN_PRIMARY_BUFFER.getVertexBuilder(draw));
 			AFTER_TERRAIN_PRIMARY_BUFFER.upload();
-			execute(AFTER_TERRAIN_PRIMARY_BUFFER, renderType, draw);
+			execute(event, AFTER_TERRAIN_PRIMARY_BUFFER, renderType, draw);
 		} finally {
 			AFTER_TERRAIN_PRIMARY_BUFFER.endFrame();
 		}
@@ -91,8 +94,8 @@ final class FacetNeoForgePlatform {
 					AFTER_TERRAIN_SECONDARY_BUFFER.getVertexBuilder(secondDraw));
 			AFTER_TERRAIN_PRIMARY_BUFFER.upload();
 			AFTER_TERRAIN_SECONDARY_BUFFER.upload();
-			execute(AFTER_TERRAIN_PRIMARY_BUFFER, firstType, firstDraw);
-			execute(AFTER_TERRAIN_SECONDARY_BUFFER, secondType, secondDraw);
+			execute(event, AFTER_TERRAIN_PRIMARY_BUFFER, firstType, firstDraw);
+			execute(event, AFTER_TERRAIN_SECONDARY_BUFFER, secondType, secondDraw);
 		} finally {
 			AFTER_TERRAIN_PRIMARY_BUFFER.endFrame();
 			AFTER_TERRAIN_SECONDARY_BUFFER.endFrame();
@@ -104,11 +107,11 @@ final class FacetNeoForgePlatform {
 		return buffer.appendDraw(renderType.format(), renderType.primitiveTopology(), sorting);
 	}
 
-	private static void execute(StagedVertexBuffer buffer, RenderType renderType, StagedVertexBuffer.Draw draw) {
+	private static void execute(RenderLevelStageEvent.AfterTranslucentBlocks event, StagedVertexBuffer buffer, RenderType renderType, StagedVertexBuffer.Draw draw) {
 		StagedVertexBuffer.ExecuteInfo info = buffer.getExecuteInfo(draw);
 		if (info != null) {
 			PreparedRenderType prepared = renderType.prepare();
-			prepared.drawFromBuffer(info);
+			prepared.drawFromBuffer(info, event.getRenderPass());
 		}
 	}
 }

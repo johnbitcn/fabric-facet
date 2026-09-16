@@ -12,7 +12,7 @@
 现在我把它分享出来，希望你们喜欢！
 
 ## 最新更新内容
-新增 Fabric 对 Minecraft 26.3 的支持。
+新增 Fabric 与 NeoForge 对 Minecraft 26.3 的支持。
 
 ## 完整功能列表
 - 全息投影放置预览 + 开启音效
@@ -37,7 +37,7 @@
 ## 功能更新
 
 ### v1.3.14 - 新增 Minecraft 26.3 支持
-- 新增 Fabric 对 Minecraft 26.3 的支持
+- 新增 Fabric 与 NeoForge 对 Minecraft 26.3 的支持
 
 ### v1.3.13 - 新增 Minecraft 26.3 Release Candidate 3 支持
 - 新增 Fabric 对 Minecraft 26.3 Release Candidate 3 的支持

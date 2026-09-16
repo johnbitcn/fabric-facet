@@ -233,7 +233,7 @@ final class FacetNeoForgePlacementPreview {
 			case Y -> new Quaternionf().rotationY(radians);
 			case Z -> new Quaternionf().rotationZ(radians);
 		};
-		poseStack.mulPose(rotation);
+		FacetNeoForgePlatform.rotate(poseStack, rotation);
 		poseStack.translate(pos.getX() - anchorX, pos.getY() - anchorY, pos.getZ() - anchorZ);
 	}
 

@@ -46,37 +46,37 @@ public final class FacetNeoForgeOutline {
 			Identifier.fromNamespaceAndPath(MOD_ID, "placement_preview_toggle"));
 	private static final KeyMapping TOGGLE_OUTLINE_KEY = new KeyMapping(
 			"key.facet.toggle_outline",
-			InputConstants.Type.KEYSYM,
+			FacetNeoForgePlatform.keyboardType(),
 			InputConstants.UNKNOWN.getValue(),
 			KEY_CATEGORY);
 	private static final KeyMapping GRAFFITI_KEY = new KeyMapping(
 			"key.facet.graffiti",
-			InputConstants.Type.KEYSYM,
+			FacetNeoForgePlatform.keyboardType(),
 			InputConstants.KEY_G,
 			KEY_CATEGORY);
 	private static final KeyMapping TOGGLE_HOVER_OUTLINE_KEY = new KeyMapping(
 			"key.facet.toggle_hover_outline",
-			InputConstants.Type.KEYSYM,
+			FacetNeoForgePlatform.keyboardType(),
 			InputConstants.UNKNOWN.getValue(),
 			KEY_CATEGORY);
 	private static final KeyMapping TOGGLE_DISTANCE_HUD_KEY = new KeyMapping(
 			"key.facet.toggle_distance_hud",
-			InputConstants.Type.KEYSYM,
+			FacetNeoForgePlatform.keyboardType(),
 			InputConstants.UNKNOWN.getValue(),
 			KEY_CATEGORY);
 	private static final KeyMapping TOGGLE_PLACEMENT_PREVIEW_KEY = new KeyMapping(
 			"key.facet.toggle_placement_preview",
-			InputConstants.Type.KEYSYM,
+			FacetNeoForgePlatform.keyboardType(),
 			InputConstants.UNKNOWN.getValue(),
 			KEY_CATEGORY);
 	private static final KeyMapping OPEN_SETTINGS_KEY = new KeyMapping(
 			"key.facet.open_settings",
-			InputConstants.Type.KEYSYM,
+			FacetNeoForgePlatform.keyboardType(),
 			InputConstants.UNKNOWN.getValue(),
 			KEY_CATEGORY);
 	private static final KeyMapping FLIP_PLACEMENT_FACING_KEY = new KeyMapping(
 			"key.facet.flip_placement_facing",
-			InputConstants.Type.KEYSYM,
+			FacetNeoForgePlatform.keyboardType(),
 			InputConstants.KEY_R,
 			KEY_CATEGORY);
 	private static final GraffitiClientAccess GRAFFITI_CLIENT_ACCESS = new GraffitiClientAccess() {
