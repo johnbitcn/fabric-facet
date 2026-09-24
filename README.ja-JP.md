@@ -12,7 +12,7 @@
 皆さんにも楽しんでもらえるよう公開します！
 
 ## 最新のアップデート
-Fabric と NeoForge で Minecraft 26.3 に対応しました。
+Minecraft 26.4 Snapshot 1 向けの Fabric Alpha 互換プレビューを追加しました。
 
 ## 全機能一覧
 
@@ -37,6 +37,9 @@ Fabric と NeoForge で Minecraft 26.3 に対応しました。
 - NeoForge
 
 ## 機能アップデート
+
+### Minecraft 26.4 Snapshot 1 互換プレビュー（Alpha）
+- Minecraft 26.4 Snapshot 1 向けの Fabric 互換プレビューを追加しました
 
 ### v1.3.14 - Minecraft 26.3 対応
 - Fabric と NeoForge で Minecraft 26.3 に対応しました

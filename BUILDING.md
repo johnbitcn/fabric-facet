@@ -27,6 +27,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
+| `versions/fabric-26.4-snapshot-1` | Fabric | 26.4 Snapshot 1 preview | `Facet-Fabric-<mod-version>-26.4-snapshot-1.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -38,8 +39,8 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 
 ### All supported targets
 
-The unqualified `build` task builds and tests all seven Fabric and NeoForge
-modules:
+The unqualified `build` task builds all eight configured targets, including the
+separate snapshot preview target:
 
 ```sh
 ./gradlew build
@@ -58,7 +59,7 @@ build; the tag workflow rebuilds it for the official release.
 ### Fabric only
 
 ```sh
-./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build :versions:fabric-26.4-snapshot-1:build
 ```
 
 ### NeoForge only
@@ -106,12 +107,16 @@ validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
 The formal release set covers Fabric 26.1, 26.2, and 26.3, plus NeoForge
-26.1, 26.1.2, 26.2, and 26.3. Minecraft 26.3 snapshots, prereleases, and
-release candidates shared one rolling target during development; the 26.3
-release replaced that target, and the pre-release targets have been removed.
+26.1, 26.1.2, 26.2, and 26.3. Minecraft 26.4 Snapshot 1 is a separate preview
+target and is not included in formal releases. Its preview tags use
+`v<version>-mc26.4-snapshot-1-preview.<number>` and publish a GitHub prerelease
+and a Modrinth Alpha build. All Minecraft snapshot builds use the Alpha
+classification. The older 26.3 snapshot and pre-release targets have been
+retired.
 
-Every version tag produces one complete release covering all targets. The
-Minecraft 26.3 builds are published to both Modrinth and CurseForge.
+Every formal release tag produces one complete release covering its seven
+formal targets. The Minecraft 26.3 builds are published to both Modrinth and
+CurseForge.
 
 `scripts/release.sh` prepares and verifies a release locally: it guards the
 tree, reads `mod_version`, runs one clean build, mechanically enumerates the

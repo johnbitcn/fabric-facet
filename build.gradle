@@ -36,6 +36,16 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
+		":versions:fabric-26.4-snapshot-1": [
+				archivesName: "Facet-Fabric",
+				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_1"),
+				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_1"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_1"),
+				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_1"),
+				minecraftDependency: "26.4-alpha.1",
+				legacyRenderer: true,
+				modMenuRuntime: false,
+		],
 	]
 
 allprojects {
@@ -191,7 +201,9 @@ versionConfigs.each { projectPath, cfg ->
 				projectId = findProperty("modrinth_project_id") ?: System.getenv("MODRINTH_PROJECT_ID")
 				versionName = "${cfg.archivesName} ${rootProject.mod_version} for Minecraft ${cfg.minecraftVersion}"
 				versionNumber = "${rootProject.mod_version}+mc${cfg.minecraftVersion}"
-				versionType = findProperty("modrinth_version_type") ?: "release"
+				versionType = cfg.minecraftVersion.contains("-snapshot-")
+						? "alpha"
+						: findProperty("modrinth_version_type") ?: "release"
 				uploadFile = tasks.named("jar").get()
 				gameVersions = [cfg.minecraftVersion]
 				loaders = ["fabric"]

@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added support for Minecraft 26.3 on Fabric and NeoForge.
+Added a Fabric Alpha compatibility preview for Minecraft 26.4 Snapshot 1.
 
 ## Complete Feature List
 
@@ -37,6 +37,9 @@ Added support for Minecraft 26.3 on Fabric and NeoForge.
 - NeoForge
 
 ## Feature Updates
+
+### Minecraft 26.4 Snapshot 1 Compatibility Preview (Alpha)
+- Added a Fabric compatibility preview for Minecraft 26.4 Snapshot 1
 
 ### v1.3.14 - Minecraft 26.3 Support
 - Added support for Minecraft 26.3 on Fabric and NeoForge
