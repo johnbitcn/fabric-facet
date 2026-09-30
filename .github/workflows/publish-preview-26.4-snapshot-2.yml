@@ -1,13 +1,13 @@
-name: Publish Minecraft 26.4 Snapshot 1 preview
+name: Publish Minecraft 26.4 Snapshot 2 preview
 
 on:
   push:
     tags:
-      - 'v*-mc26.4-snapshot-1-preview.*'
+      - 'v*-mc26.4-snapshot-2-preview.*'
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing Minecraft 26.4 Snapshot 1 preview tag to recover
+        description: Existing Minecraft 26.4 Snapshot 2 preview tag to recover
         required: true
         type: string
 
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   publish:
-    name: Build and publish Minecraft 26.4 Snapshot 1 Alpha preview
+    name: Build and publish Minecraft 26.4 Snapshot 2 Alpha preview
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
@@ -37,8 +37,8 @@ jobs:
       - name: Validate preview tag and project version
         shell: bash
         run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-mc26\.4-snapshot-1-preview\.([0-9]+)$ ]]; then
-            echo "Preview tag must use v<version>-mc26.4-snapshot-1-preview.<number>: $RELEASE_TAG" >&2
+          if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-mc26\.4-snapshot-2-preview\.([0-9]+)$ ]]; then
+            echo "Preview tag must use v<version>-mc26.4-snapshot-2-preview.<number>: $RELEASE_TAG" >&2
             exit 1
           fi
           git rev-parse --verify "refs/tags/$RELEASE_TAG" >/dev/null
@@ -50,12 +50,12 @@ jobs:
             exit 1
           fi
           echo "RELEASE_VERSION=$release_version" >> "$GITHUB_ENV"
-          echo "PREVIEW_VERSION=${release_version}-s1-preview.${preview_number}" >> "$GITHUB_ENV"
+          echo "PREVIEW_VERSION=${release_version}-s2-preview.${preview_number}" >> "$GITHUB_ENV"
 
-      - name: Build Snapshot 1 preview artifact
+      - name: Build Snapshot 2 preview artifact
         run: >-
           ./gradlew
-          :versions:fabric-26.4-snapshot-1:build
+          :versions:fabric-26.4-snapshot-2:build
           --no-daemon
           --console=plain
 
@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           mkdir release
-          cp "versions/fabric-26.4-snapshot-1/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.4-snapshot-1.jar" release/
+          cp "versions/fabric-26.4-snapshot-2/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.4-snapshot-2.jar" release/
           (
             cd release
             sha256sum *.jar > SHA256SUMS.txt
@@ -71,7 +71,11 @@ jobs:
           )
           cat release/SHA256SUMS.txt >> "$GITHUB_STEP_SUMMARY"
           cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
-          Fabric compatibility preview for Minecraft 26.4 Snapshot 1 (Alpha).
+          Fabric compatibility preview for Minecraft 26.4 Snapshot 2 (Alpha).
+
+          - With block outlines enabled, netherrack uses its original texture's average color.
+          - Ancient debris has flowing rainbow-striped outlines, 3/32 of a block wide.
+          - Reduced repeated block-outline calculations when chunks load or update.
           EOF
 
       - name: Archive exact preview files
@@ -91,7 +95,7 @@ jobs:
           gh release create "$RELEASE_TAG"
           release/*
           --verify-tag
-          --title "Facet v${RELEASE_VERSION} Minecraft 26.4 Snapshot 1 Alpha Preview"
+          --title "Facet v${RELEASE_VERSION} Minecraft 26.4 Snapshot 2 Alpha Preview"
           --notes-file "$RUNNER_TEMP/release-notes.md"
           --prerelease
 
@@ -107,17 +111,22 @@ jobs:
             sha256sum --check SHA256SUMS.txt
           )
 
-      - name: Publish Snapshot 1 Alpha preview to Modrinth
+      - name: Publish Snapshot 2 Alpha preview to Modrinth
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          modrinth-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.4-snapshot-1.jar
-          modrinth-name: Facet ${{ env.RELEASE_VERSION }} Preview for Minecraft 26.4 Snapshot 1
+          modrinth-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.4-snapshot-2.jar
+          modrinth-name: Facet ${{ env.RELEASE_VERSION }} Preview for Minecraft 26.4 Snapshot 2
           modrinth-version: ${{ env.PREVIEW_VERSION }}
           modrinth-version-type: alpha
           modrinth-loaders: fabric
           modrinth-environment: client
-          modrinth-game-versions: 26.4-snapshot-1
+          modrinth-game-versions: 26.4-snapshot-2
           modrinth-game-version-filter: none
-          modrinth-changelog: Minecraft 26.4 Snapshot 1 compatibility preview (Alpha).
+          modrinth-changelog: |
+            Fabric compatibility preview for Minecraft 26.4 Snapshot 2 (Alpha).
+
+            - With block outlines enabled, netherrack uses its original texture's average color.
+            - Ancient debris has flowing rainbow-striped outlines, 3/32 of a block wide.
+            - Reduced repeated block-outline calculations when chunks load or update.

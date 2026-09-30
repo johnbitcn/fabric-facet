@@ -20,7 +20,7 @@ final class FacetShapeEdges {
 	private static final int MIN_WIDTH_UNITS = 1;
 	private static final int MAX_WIDTH_UNITS = 20;
 	/** Cached surface strips for the unit cube, keyed by width units (1/64 block). */
-	private static final ConcurrentHashMap<Integer, List<Strip>> FULL_CUBE_STRIPS = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<Integer, List<List<Strip>>> FULL_CUBE_STRIPS = new ConcurrentHashMap<>();
 	private static final int PARTIAL_SHAPE_CACHE_CAPACITY = 512;
 	/**
 	 * Cached surface strips for non-full-cube shapes, keyed by (shape, width).
@@ -44,27 +44,46 @@ final class FacetShapeEdges {
 	}
 
 	static void forEachSurfaceStrip(VoxelShape shape, double maxWidth, SurfaceStripConsumer consumer) {
+		forEachSurfaceStrip(shape, maxWidth, 0, consumer);
+	}
+
+	static void forEachSurfaceStrip(VoxelShape shape, double maxWidth, int culledFaces,
+			SurfaceStripConsumer consumer) {
+		boolean stats = FacetOutlineStats.enabled();
 		if (isFullCube(shape)) {
-			List<Strip> strips = fullCubeStrips(maxWidth);
-
-			if (FacetOutlineStats.enabled()) {
-				FacetOutlineStats.FULL_CUBE_STRIPS_SERVED.addAndGet(strips.size());
-			}
-
-			for (Strip strip : strips) {
-				consumer.accept(strip.face, strip.minX, strip.minY, strip.minZ,
-						strip.maxX, strip.maxY, strip.maxZ);
+			List<List<Strip>> faces = fullCubeStrips(maxWidth);
+			for (int face = 0; face < faces.size(); face++) {
+				List<Strip> strips = faces.get(face);
+				if (stats) {
+					FacetOutlineStats.FULL_CUBE_STRIPS_SERVED.addAndGet(strips.size());
+				}
+				if ((culledFaces & (1 << face)) != 0) {
+					if (stats) {
+						FacetOutlineStats.STRIPS_SKIPPED_CULLED.addAndGet(strips.size());
+					}
+					continue;
+				}
+				for (Strip strip : strips) {
+					consumer.accept(strip.face, strip.minX, strip.minY, strip.minZ,
+							strip.maxX, strip.maxY, strip.maxZ);
+				}
 			}
 			return;
 		}
 
 		List<Strip> strips = partialShapeStrips(shape, maxWidth);
-
-		if (FacetOutlineStats.enabled()) {
+		if (stats) {
 			FacetOutlineStats.PARTIAL_STRIPS_SERVED.addAndGet(strips.size());
 		}
-
 		for (Strip strip : strips) {
+			if ((culledFaces & (1 << strip.face.ordinal())) != 0
+					&& FacetOutlineRules.touchesBlockBoundary(strip.face, strip.minX, strip.minY, strip.minZ,
+							strip.maxX, strip.maxY, strip.maxZ)) {
+				if (stats) {
+					FacetOutlineStats.STRIPS_SKIPPED_CULLED.incrementAndGet();
+				}
+				continue;
+			}
 			consumer.accept(strip.face, strip.minX, strip.minY, strip.minZ,
 					strip.maxX, strip.maxY, strip.maxZ);
 		}
@@ -137,18 +156,21 @@ final class FacetShapeEdges {
 		return count[0] == 1 && full[0];
 	}
 
-	private static List<Strip> fullCubeStrips(double maxWidth) {
+	private static List<List<Strip>> fullCubeStrips(double maxWidth) {
 		int units = clampWidthUnits((int) Math.round(maxWidth / WIDTH_UNIT));
 		return FULL_CUBE_STRIPS.computeIfAbsent(units, FacetShapeEdges::bakeFullCubeStrips);
 	}
 
-	private static List<Strip> bakeFullCubeStrips(int widthUnits) {
+	private static List<List<Strip>> bakeFullCubeStrips(int widthUnits) {
 		double maxWidth = widthUnits * WIDTH_UNIT;
-		List<Strip> strips = new ArrayList<>(24);
+		List<List<Strip>> faces = new ArrayList<>(6);
+		for (int face = 0; face < 6; face++) {
+			faces.add(new ArrayList<>(4));
+		}
 		forEachSurfaceStripUncached(Shapes.block(), maxWidth,
 				(face, minX, minY, minZ, maxX, maxY, maxZ) ->
-						strips.add(new Strip(face, minX, minY, minZ, maxX, maxY, maxZ)));
-		return List.copyOf(strips);
+						faces.get(face.ordinal()).add(new Strip(face, minX, minY, minZ, maxX, maxY, maxZ)));
+		return faces.stream().map(List::copyOf).toList();
 	}
 
 	private static int clampWidthUnits(int units) {

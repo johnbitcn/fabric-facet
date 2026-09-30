@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CarpetBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
@@ -30,8 +31,14 @@ final class FacetBlockOverlay {
 	private static final double GRAFFITI_FACE_SIZE = 0.785;
 	private static final double GRAFFITI_FACE_INSET = (1.0 - GRAFFITI_FACE_SIZE) / 2.0;
 	private static final float OUTLINE_UV = 0.5f;
+	private static final int RAINBOW_COLOR = FacetOutlineRules.withOutlineAlpha(0xFFFFFFFF);
 	private static final Material OUTLINE_TEXTURE = new Material(Identifier.withDefaultNamespace("block/white_concrete"), true);
 	private static final ModelDebugName OUTLINE_DEBUG_NAME = () -> "facet:outline";
+	private static final Identifier RAINBOW_TEXTURE_ID =
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline");
+	private static final Material RAINBOW_TEXTURE = new Material(RAINBOW_TEXTURE_ID, false);
+	private static final Material NETHERRACK_TEXTURE =
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/netherrack_average"), false);
 
 	private FacetBlockOverlay() {
 	}
@@ -50,9 +57,13 @@ final class FacetBlockOverlay {
 			if (state.isAir() || state.getRenderShape() != RenderShape.MODEL || model instanceof OutlineBlockStateModel) {
 				return model;
 			}
-			FacetOutlineColor.analyze(state, model);
+			boolean rainbowOutline = state.is(Blocks.ANCIENT_DEBRIS);
+			if (!rainbowOutline) {
+				FacetOutlineColor.analyze(state, model);
+			}
 
-			Material.Baked outlineMaterial = modifierContext.baker().materials().get(OUTLINE_TEXTURE, OUTLINE_DEBUG_NAME);
+			Material.Baked outlineMaterial = modifierContext.baker().materials().get(
+					rainbowOutline ? RAINBOW_TEXTURE : OUTLINE_TEXTURE, OUTLINE_DEBUG_NAME);
 			Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
 
 			for (GraffitiType type : GraffitiType.values()) {
@@ -61,24 +72,46 @@ final class FacetBlockOverlay {
 				graffitiMaterials.put(type, modifierContext.baker().materials().get(texture, debugName));
 			}
 
-			return new OutlineBlockStateModel(model, outlineMaterial, graffitiMaterials);
+			Material.Baked netherrackMaterial = state.is(Blocks.NETHERRACK)
+					? modifierContext.baker().materials().get(NETHERRACK_TEXTURE, OUTLINE_DEBUG_NAME)
+					: null;
+			return new OutlineBlockStateModel(model, outlineMaterial, graffitiMaterials, netherrackMaterial, rainbowOutline);
 		});
 	}
 
 	private static final class OutlineBlockStateModel extends WrapperBlockStateModel {
 		private final Material.Baked outlineMaterial;
 		private final Map<GraffitiType, Material.Baked> graffitiMaterials;
+		private final Material.Baked netherrackMaterial;
+		private final boolean rainbowOutline;
 
 		private OutlineBlockStateModel(BlockStateModel wrapped, Material.Baked outlineMaterial,
-				Map<GraffitiType, Material.Baked> graffitiMaterials) {
+				Map<GraffitiType, Material.Baked> graffitiMaterials, Material.Baked netherrackMaterial,
+				boolean rainbowOutline) {
 			super(wrapped);
 			this.outlineMaterial = outlineMaterial;
 			this.graffitiMaterials = graffitiMaterials;
+			this.netherrackMaterial = netherrackMaterial;
+			this.rainbowOutline = rainbowOutline;
 		}
 
 		@Override
 		public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
-			super.emitQuads(emitter, level, pos, state, random, cullTest);
+			if (netherrackMaterial != null && FacetConfig.enabled()) {
+				emitter.pushTransform(quad -> {
+					quad.uv(0, OUTLINE_UV, OUTLINE_UV).uv(1, OUTLINE_UV, OUTLINE_UV)
+							.uv(2, OUTLINE_UV, OUTLINE_UV).uv(3, OUTLINE_UV, OUTLINE_UV)
+							.materialBake(netherrackMaterial, MutableQuadView.BAKE_NORMALIZED);
+					return true;
+				});
+				try {
+					super.emitQuads(emitter, level, pos, state, random, cullTest);
+				} finally {
+					emitter.popTransform();
+				}
+			} else {
+				super.emitQuads(emitter, level, pos, state, random, cullTest);
+			}
 
 			if (!FacetClient.usesExperimentalLineOutlines()
 					&& FacetConfig.enabled()
@@ -97,23 +130,18 @@ final class FacetBlockOverlay {
 				return;
 			}
 
-			FacetOutlineColor.FaceColors faceColors = FacetOutlineColor.resolve(level, pos, state);
+			int culledFaces = FacetOutlineRules.culledFaces(cullTest);
+			FacetOutlineColor.FaceColors faceColors = rainbowOutline ? null : FacetOutlineColor.resolve(level, pos, state);
 			boolean isCarpet = state.getBlock() instanceof CarpetBlock;
 			boolean stats = FacetOutlineStats.enabled();
 
-			FacetShapeEdges.forEachSurfaceStrip(shape, FacetConfig.effectiveEdgeWidth(),
+			FacetShapeEdges.forEachSurfaceStrip(shape,
+					FacetOutlineRules.edgeWidth(state, FacetConfig.effectiveEdgeWidth()), culledFaces,
 					(direction, minX, minY, minZ, maxX, maxY, maxZ) -> {
 				boolean carpetSkipped = isCarpet && direction != Direction.UP;
-				boolean culled = FacetOutlineRules.touchesBlockBoundary(direction, minX, minY, minZ, maxX, maxY, maxZ)
-						&& cullTest.test(direction);
-
-				if (carpetSkipped || culled) {
+				if (carpetSkipped) {
 					if (stats) {
-						if (carpetSkipped) {
-							FacetOutlineStats.STRIPS_SKIPPED_CARPET.incrementAndGet();
-						} else {
-							FacetOutlineStats.STRIPS_SKIPPED_CULLED.incrementAndGet();
-						}
+						FacetOutlineStats.STRIPS_SKIPPED_CARPET.incrementAndGet();
 					}
 					return;
 				}
@@ -123,13 +151,17 @@ final class FacetBlockOverlay {
 				}
 
 				emitSurfaceStrip(emitter, direction,
-						FacetMcBridge.prepareOutlineColor(faceColors.color(direction)),
+						rainbowOutline ? RAINBOW_COLOR : faceColors.color(direction),
 						minX, minY, minZ, maxX, maxY, maxZ);
 			});
 		}
 
 		private void emitGraffitiQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos,
 				BlockState state, Predicate<Direction> cullTest, VoxelShape shape) {
+			GraffitiType[] types = GraffitiStore.getTypes(pos, state);
+			if (types == null) {
+				return;
+			}
 			if (shape == null) {
 				shape = state.getShape(level, pos);
 			}
@@ -139,12 +171,6 @@ final class FacetBlockOverlay {
 			}
 
 			if (GraffitiEligibility.baseResult(level, pos, state) != GraffitiEligibility.Result.ALLOWED) {
-				return;
-			}
-
-			GraffitiType[] types = GraffitiStore.getTypes(pos, state);
-
-			if (types == null) {
 				return;
 			}
 
@@ -245,8 +271,15 @@ final class FacetBlockOverlay {
 					.pos(3, reverseWinding ? (float) x2 : (float) x4, reverseWinding ? (float) y2 : (float) y4, reverseWinding ? (float) z2 : (float) z4)
 					.color(0, color).color(1, color).color(2, color).color(3, color)
 					.uv(0, OUTLINE_UV, OUTLINE_UV).uv(1, OUTLINE_UV, OUTLINE_UV)
-					.uv(2, OUTLINE_UV, OUTLINE_UV).uv(3, OUTLINE_UV, OUTLINE_UV)
-					.materialBake(outlineMaterial, MutableQuadView.BAKE_NORMALIZED)
+					.uv(2, OUTLINE_UV, OUTLINE_UV).uv(3, OUTLINE_UV, OUTLINE_UV);
+			if (rainbowOutline) {
+				// A shared diagonal coordinate keeps moving stripes continuous across block faces.
+				for (int vertex = 0; vertex < 4; vertex++) {
+					float u = (emitter.x(vertex) + emitter.y(vertex) + emitter.z(vertex)) / 3.0f;
+					emitter.uv(vertex, Math.clamp(u, 0.0f, 1.0f), OUTLINE_UV);
+				}
+			}
+			emitter.materialBake(outlineMaterial, MutableQuadView.BAKE_NORMALIZED)
 					.normal(0, normalX, normalY, normalZ).normal(1, normalX, normalY, normalZ)
 					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
 					.nominalFace(face)

@@ -12,7 +12,7 @@
 皆さんにも楽しんでもらえるよう公開します！
 
 ## 最新のアップデート
-Minecraft 26.4 Snapshot 1 向けの Fabric Alpha 互換プレビューを追加しました。
+Minecraft 26.4 Snapshot 2 の Fabric 対応を追加し、ブロックのアウトラインを最適化しました。
 
 ## 全機能一覧
 
@@ -37,6 +37,12 @@ Minecraft 26.4 Snapshot 1 向けの Fabric Alpha 互換プレビューを追加�
 - NeoForge
 
 ## 機能アップデート
+
+### Minecraft 26.4 Snapshot 2
+- Minecraft 26.4 Snapshot 2 の Fabric 対応を追加しました
+- ブロックのアウトラインが有効な場合、ネザーラックを元のテクスチャの平均色で単色表示します
+- 古代の残骸に、幅 3/32 ブロックの流れる虹色ストライプのアウトラインを追加しました
+- チャンクの読み込み・更新時にアウトラインの重複計算を減らしました
 
 ### Minecraft 26.4 Snapshot 1 互換プレビュー（Alpha）
 - Minecraft 26.4 Snapshot 1 向けの Fabric 互換プレビューを追加しました

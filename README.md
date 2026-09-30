@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added a Fabric Alpha compatibility preview for Minecraft 26.4 Snapshot 1.
+Added Fabric support for Minecraft 26.4 Snapshot 2 and optimized block outlines.
 
 ## Complete Feature List
 
@@ -37,6 +37,12 @@ Added a Fabric Alpha compatibility preview for Minecraft 26.4 Snapshot 1.
 - NeoForge
 
 ## Feature Updates
+
+### Minecraft 26.4 Snapshot 2
+- Added Fabric support for Minecraft 26.4 Snapshot 2
+- With block outlines enabled, netherrack uses a solid color averaged from its original texture
+- Ancient debris has flowing rainbow-striped outlines, 3/32 of a block wide
+- Reduced repeated block-outline calculations when chunks load or update
 
 ### Minecraft 26.4 Snapshot 1 Compatibility Preview (Alpha)
 - Added a Fabric compatibility preview for Minecraft 26.4 Snapshot 1

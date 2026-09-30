@@ -12,7 +12,7 @@
 现在我把它分享出来，希望你们喜欢！
 
 ## 最新更新内容
-新增 Fabric 对 Minecraft 26.4 Snapshot 1 的 Alpha 兼容性预览。
+新增 Fabric 对 Minecraft 26.4 Snapshot 2 的支持，并优化方块描边。
 
 ## 完整功能列表
 - 全息投影放置预览 + 开启音效
@@ -35,6 +35,12 @@
 - NeoForge
 
 ## 功能更新
+
+### Minecraft 26.4 Snapshot 2
+- 新增 Fabric 对 Minecraft 26.4 Snapshot 2 的支持
+- 开启方块描边时，下界岩显示为原贴图均值色的纯色外观
+- 远古残骸使用流动彩虹条纹描边，宽度为 3/32 格
+- 减少方块描边在区块加载与更新时的重复计算
 
 ### Minecraft 26.4 Snapshot 1 兼容性预览（Alpha）
 - 新增 Fabric 对 Minecraft 26.4 Snapshot 1 的兼容性预览

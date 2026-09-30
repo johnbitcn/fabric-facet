@@ -27,7 +27,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
-| `versions/fabric-26.4-snapshot-1` | Fabric | 26.4 Snapshot 1 preview | `Facet-Fabric-<mod-version>-26.4-snapshot-1.jar` |
+| `versions/fabric-26.4-snapshot-2` | Fabric | 26.4 Snapshot 2 preview | `Facet-Fabric-<mod-version>-26.4-snapshot-2.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -59,7 +59,7 @@ build; the tag workflow rebuilds it for the official release.
 ### Fabric only
 
 ```sh
-./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build :versions:fabric-26.4-snapshot-1:build
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build :versions:fabric-26.4-snapshot-2:build
 ```
 
 ### NeoForge only
@@ -107,9 +107,9 @@ validates `mod_version`, builds every target, stages only main JARs, creates
 `SHA256SUMS.txt`, and publishes the configured destinations.
 
 The formal release set covers Fabric 26.1, 26.2, and 26.3, plus NeoForge
-26.1, 26.1.2, 26.2, and 26.3. Minecraft 26.4 Snapshot 1 is a separate preview
+26.1, 26.1.2, 26.2, and 26.3. Minecraft 26.4 Snapshot 2 is a separate preview
 target and is not included in formal releases. Its preview tags use
-`v<version>-mc26.4-snapshot-1-preview.<number>` and publish a GitHub prerelease
+`v<version>-mc26.4-snapshot-2-preview.<number>` and publish a GitHub prerelease
 and a Modrinth Alpha build. All Minecraft snapshot builds use the Alpha
 classification. The older 26.3 snapshot and pre-release targets have been
 retired.

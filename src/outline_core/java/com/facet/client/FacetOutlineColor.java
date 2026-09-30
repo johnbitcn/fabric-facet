@@ -26,7 +26,7 @@ import org.joml.Vector3fc;
 
 import com.facet.client.mixin.SpriteContentsAccessor;
 
-final class FacetOutlineColor {
+public final class FacetOutlineColor {
 	private static final int FALLBACK_COLOR = 0xFFFFFFFF;
 	private static final Direction[] REPRESENTATIVE_ORDER = {
 			Direction.UP, Direction.NORTH, Direction.SOUTH,
@@ -39,6 +39,25 @@ final class FacetOutlineColor {
 	private static final Map<BlockState, List<BlockTintSource>> TINT_SOURCES = new ConcurrentHashMap<>();
 
 	private FacetOutlineColor() {
+	}
+
+	/** Replace RGB with the alpha-weighted linear-light mean, preserving transparency. */
+	public static void flattenTexture(NativeImage image) {
+		PixelAccumulator pixels = new PixelAccumulator();
+		for (int y = 0; y < image.getHeight(); y++) {
+			for (int x = 0; x < image.getWidth(); x++) {
+				pixels.add(image.getPixel(x, y));
+			}
+		}
+		TextureSample sample = pixels.finish();
+		int rgb = ARGB.color(255, Math.round(linearToSrgb(sample.red) * 255.0f),
+				Math.round(linearToSrgb(sample.green) * 255.0f),
+				Math.round(linearToSrgb(sample.blue) * 255.0f)) & 0xFFFFFF;
+		for (int y = 0; y < image.getHeight(); y++) {
+			for (int x = 0; x < image.getWidth(); x++) {
+				image.setPixel(x, y, (image.getPixel(x, y) & 0xFF000000) | rgb);
+			}
+		}
 	}
 
 	static void clearCache() {
@@ -183,8 +202,9 @@ final class FacetOutlineColor {
 		private final int firstColor;
 
 		private FaceColors(Map<Direction, Integer> colors) {
+			colors.replaceAll((direction, color) -> FacetOutlineRules.withOutlineAlpha(color));
 			this.colors = colors;
-			int first = FALLBACK_COLOR;
+			int first = FacetOutlineRules.withOutlineAlpha(FALLBACK_COLOR);
 
 			for (Direction direction : Direction.values()) {
 				Integer color = colors.get(direction);
@@ -208,9 +228,7 @@ final class FacetOutlineColor {
 
 		int color(Direction direction) {
 			Integer color = colors.get(direction);
-			int rgb = color == null ? firstColor : color;
-			// Fixed sub-opaque alpha marker for the cutout outline channel.
-			return FacetOutlineRules.withOutlineAlpha(rgb);
+			return color == null ? firstColor : color;
 		}
 	}
 
