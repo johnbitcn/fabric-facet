@@ -37,6 +37,8 @@ final class FacetBlockOverlay {
 	private static final Identifier RAINBOW_TEXTURE_ID =
 			Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline");
 	private static final Material RAINBOW_TEXTURE = new Material(RAINBOW_TEXTURE_ID, false);
+	private static final Material PASTEL_RAINBOW_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline_pastel"), false);
 	private static final Material NETHERRACK_TEXTURE =
 			new Material(Identifier.fromNamespaceAndPath("facet", "block/netherrack_average"), false);
 
@@ -57,13 +59,14 @@ final class FacetBlockOverlay {
 			if (state.isAir() || state.getRenderShape() != RenderShape.MODEL || model instanceof OutlineBlockStateModel) {
 				return model;
 			}
-			boolean rainbowOutline = state.is(Blocks.ANCIENT_DEBRIS);
+			boolean rainbowOutline = FacetOutlineRules.usesRainbowOutline(state);
 			if (!rainbowOutline) {
 				FacetOutlineColor.analyze(state, model);
 			}
 
-			Material.Baked outlineMaterial = modifierContext.baker().materials().get(
-					rainbowOutline ? RAINBOW_TEXTURE : OUTLINE_TEXTURE, OUTLINE_DEBUG_NAME);
+			Material outlineTexture = state.is(Blocks.POWDER_SNOW) ? PASTEL_RAINBOW_TEXTURE
+					: rainbowOutline ? RAINBOW_TEXTURE : OUTLINE_TEXTURE;
+			Material.Baked outlineMaterial = modifierContext.baker().materials().get(outlineTexture, OUTLINE_DEBUG_NAME);
 			Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
 
 			for (GraffitiType type : GraffitiType.values()) {
@@ -115,7 +118,7 @@ final class FacetBlockOverlay {
 
 			if (!FacetClient.usesExperimentalLineOutlines()
 					&& FacetConfig.enabled()
-					&& FacetOutlineRules.shouldRender(level, pos, state)) {
+					&& (rainbowOutline || FacetOutlineRules.shouldRender(level, pos, state))) {
 				VoxelShape shape = state.getShape(level, pos);
 				emitOutlineQuads(emitter, level, pos, state, cullTest, shape);
 				emitGraffitiQuads(emitter, level, pos, state, cullTest, shape);
@@ -136,7 +139,7 @@ final class FacetBlockOverlay {
 			boolean stats = FacetOutlineStats.enabled();
 
 			FacetShapeEdges.forEachSurfaceStrip(shape,
-					FacetOutlineRules.edgeWidth(state, FacetConfig.effectiveEdgeWidth()), culledFaces,
+					rainbowOutline ? FacetOutlineRules.ANCIENT_DEBRIS_EDGE_WIDTH : FacetConfig.effectiveEdgeWidth(), culledFaces,
 					(direction, minX, minY, minZ, maxX, maxY, maxZ) -> {
 				boolean carpetSkipped = isCarpet && direction != Direction.UP;
 				if (carpetSkipped) {

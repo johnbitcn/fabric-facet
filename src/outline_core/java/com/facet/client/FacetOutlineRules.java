@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 final class FacetOutlineRules {
 	static final double DEFAULT_EDGE_WIDTH = 1.0 / 32.0;
+	static final double ANCIENT_DEBRIS_EDGE_WIDTH = 3.0 / 32.0;
 	private static final Direction[] DIRECTIONS = Direction.values();
 	/**
 	 * Default offset along the face normal so cutout/solid depth tests keep strips above the
@@ -58,8 +59,12 @@ final class FacetOutlineRules {
 		return mask;
 	}
 
+	static boolean usesRainbowOutline(BlockState state) {
+		return state.is(Blocks.ANCIENT_DEBRIS) || state.is(Blocks.BUDDING_AMETHYST) || state.is(Blocks.POWDER_SNOW);
+	}
+
 	static double edgeWidth(BlockState state, double configuredWidth) {
-		return state.is(Blocks.ANCIENT_DEBRIS) ? 3.0 / 32.0 : configuredWidth;
+		return usesRainbowOutline(state) ? ANCIENT_DEBRIS_EDGE_WIDTH : configuredWidth;
 	}
 
 	/** Apply the fixed outline alpha marker without changing RGB. */
