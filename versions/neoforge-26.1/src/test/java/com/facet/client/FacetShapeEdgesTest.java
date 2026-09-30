@@ -46,9 +46,44 @@ class FacetShapeEdgesTest {
 		assertTrue(hasVerticalSegment(strips, 1.0, 0.5, 1.0), strips::toString);
 	}
 
+	@Test
+	void faceMaskPreservesBoundaryCullingAcrossAllCombinations() {
+		VoxelShape[] shapes = {
+				Shapes.block(),
+				Shapes.box(0, 0, 0, 1, 0.5, 1),
+				Shapes.box(0, 0.5, 0, 1, 1, 1),
+				Shapes.or(Shapes.box(0, 0, 0, 1, 0.5, 1), Shapes.box(0, 0.5, 0, 0.5, 1, 1))
+		};
+		for (VoxelShape shape : shapes) {
+			List<Strip> all = strips(shape);
+			for (int mask = 0; mask < 64; mask++) {
+				int culledFaces = mask;
+				List<Strip> expected = all.stream().filter(strip ->
+						(culledFaces & (1 << strip.face.ordinal())) == 0
+						|| !FacetOutlineRules.touchesBlockBoundary(strip.face, strip.minX, strip.minY, strip.minZ,
+								strip.maxX, strip.maxY, strip.maxZ)).toList();
+				assertEquals(expected, strips(shape, mask));
+			}
+		}
+		assertFalse(strips(shapes[1], 63).isEmpty());
+	}
+
+	@Test
+	void oneRequestedCubeFaceProducesOnlyFourStrips() {
+		for (Direction face : Direction.values()) {
+			List<Strip> visible = strips(Shapes.block(), 63 & ~(1 << face.ordinal()));
+			assertEquals(4, visible.size());
+			assertTrue(visible.stream().allMatch(strip -> strip.face == face));
+		}
+	}
+
 	private static List<Strip> strips(VoxelShape shape) {
+		return strips(shape, 0);
+	}
+
+	private static List<Strip> strips(VoxelShape shape, int culledFaces) {
 		List<Strip> strips = new ArrayList<>();
-		FacetShapeEdges.forEachSurfaceStrip(shape, FacetOutlineRules.DEFAULT_EDGE_WIDTH,
+		FacetShapeEdges.forEachSurfaceStrip(shape, FacetOutlineRules.DEFAULT_EDGE_WIDTH, culledFaces,
 				(face, minX, minY, minZ, maxX, maxY, maxZ) -> strips.add(new Strip(face, minX, minY, minZ, maxX, maxY, maxZ)));
 		return strips;
 	}

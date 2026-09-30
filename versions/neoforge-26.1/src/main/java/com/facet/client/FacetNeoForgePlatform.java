@@ -2,11 +2,13 @@ package com.facet.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -17,6 +19,12 @@ import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Quaternionf;
 
 final class FacetNeoForgePlatform {
+	// Separate fallback buffers keep requesting the outline material from ending the model batch.
+	private static final MultiBufferSource.BufferSource AFTER_TERRAIN_PRIMARY_SOURCE =
+			MultiBufferSource.immediate(new ByteBufferBuilder(RenderType.TRANSIENT_BUFFER_SIZE));
+	private static final MultiBufferSource.BufferSource AFTER_TERRAIN_SECONDARY_SOURCE =
+			MultiBufferSource.immediate(new ByteBufferBuilder(RenderType.TRANSIENT_BUFFER_SIZE));
+
 	interface Geometry {
 		void render(PoseStack poseStack, VertexConsumer consumer);
 	}
@@ -62,19 +70,23 @@ final class FacetNeoForgePlatform {
 	}
 
 	static void render(RenderLevelStageEvent.AfterTranslucentBlocks event, RenderType renderType, Geometry geometry) {
-		Minecraft minecraft = Minecraft.getInstance();
-		VertexConsumer consumer = minecraft.renderBuffers().bufferSource().getBuffer(renderType);
-		geometry.render(event.getPoseStack(), consumer);
-		minecraft.renderBuffers().bufferSource().endBatch(renderType);
+		try {
+			VertexConsumer consumer = AFTER_TERRAIN_PRIMARY_SOURCE.getBuffer(renderType);
+			geometry.render(event.getPoseStack(), consumer);
+		} finally {
+			AFTER_TERRAIN_PRIMARY_SOURCE.endBatch(renderType);
+		}
 	}
 
 	static void render(RenderLevelStageEvent.AfterTranslucentBlocks event, RenderType firstType, RenderType secondType, DualGeometry geometry) {
-		Minecraft minecraft = Minecraft.getInstance();
-		VertexConsumer first = minecraft.renderBuffers().bufferSource().getBuffer(firstType);
-		VertexConsumer second = minecraft.renderBuffers().bufferSource().getBuffer(secondType);
-		geometry.render(event.getPoseStack(), first, second);
-		minecraft.renderBuffers().bufferSource().endBatch(firstType);
-		minecraft.renderBuffers().bufferSource().endBatch(secondType);
+		try {
+			VertexConsumer first = AFTER_TERRAIN_PRIMARY_SOURCE.getBuffer(firstType);
+			VertexConsumer second = AFTER_TERRAIN_SECONDARY_SOURCE.getBuffer(secondType);
+			geometry.render(event.getPoseStack(), first, second);
+		} finally {
+			AFTER_TERRAIN_PRIMARY_SOURCE.endBatch(firstType);
+			AFTER_TERRAIN_SECONDARY_SOURCE.endBatch(secondType);
+		}
 	}
 
 	static void registerRenderListeners() {

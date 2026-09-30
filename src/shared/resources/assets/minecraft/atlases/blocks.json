@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "type": "minecraft:single",
+      "resource": "minecraft:block/netherrack",
+      "sprite": "facet:block/netherrack_average"
+    }
+  ]
+}

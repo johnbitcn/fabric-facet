@@ -1,6 +1,7 @@
 package com.facet.client;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.core.BlockPos;
@@ -9,6 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CarpetBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.SlabBlock;
@@ -18,6 +20,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 final class FacetOutlineRules {
 	static final double DEFAULT_EDGE_WIDTH = 1.0 / 32.0;
+	static final double ANCIENT_DEBRIS_EDGE_WIDTH = 3.0 / 32.0;
+	private static final Direction[] DIRECTIONS = Direction.values();
 	/**
 	 * Default offset along the face normal so cutout/solid depth tests keep strips above the
 	 * block face. Raised from 1/1024 together with the cutout-layer switch: coplanar cutout
@@ -43,6 +47,24 @@ final class FacetOutlineRules {
 	private static final ConcurrentHashMap<BlockState, Boolean> SCOPE_CACHE = new ConcurrentHashMap<>();
 
 	private FacetOutlineRules() {
+	}
+
+	static int culledFaces(Predicate<Direction> cullTest) {
+		int mask = 0;
+		for (Direction face : DIRECTIONS) {
+			if (cullTest.test(face)) {
+				mask |= 1 << face.ordinal();
+			}
+		}
+		return mask;
+	}
+
+	static boolean usesRainbowOutline(BlockState state) {
+		return state.is(Blocks.ANCIENT_DEBRIS) || state.is(Blocks.BUDDING_AMETHYST) || state.is(Blocks.POWDER_SNOW);
+	}
+
+	static double edgeWidth(BlockState state, double configuredWidth) {
+		return usesRainbowOutline(state) ? ANCIENT_DEBRIS_EDGE_WIDTH : configuredWidth;
 	}
 
 	/** Apply the fixed outline alpha marker without changing RGB. */

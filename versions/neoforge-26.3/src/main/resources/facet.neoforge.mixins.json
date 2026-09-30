@@ -7,7 +7,8 @@
     "BlockItemPlacementMixin",
     "MultiPlayerGameModeMixin",
     "ClientLevelMixin",
-    "SpriteContentsAccessor"
+    "SpriteContentsAccessor",
+    "NetherrackTextureMixin"
   ],
   "injectors": {
     "defaultRequire": 1
