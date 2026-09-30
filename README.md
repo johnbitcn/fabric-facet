@@ -41,7 +41,8 @@ Added Fabric support for Minecraft 26.4 Snapshot 2 and optimized block outlines.
 ### Minecraft 26.4 Snapshot 2
 - Added Fabric support for Minecraft 26.4 Snapshot 2
 - With block outlines enabled, netherrack uses a solid color averaged from its original texture
-- Ancient debris has flowing rainbow-striped outlines, 3/32 of a block wide
+- Ancient debris and budding amethyst have flowing rainbow-striped outlines, 3/32 of a block wide
+- Powder snow has opaque pastel rainbow-striped outlines, 3/32 of a block wide
 - Reduced repeated block-outline calculations when chunks load or update
 
 ### Minecraft 26.4 Snapshot 1 Compatibility Preview (Alpha)
