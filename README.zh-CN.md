@@ -12,7 +12,7 @@
 现在我把它分享出来，希望你们喜欢！
 
 ## 最新更新内容
-新增 Fabric 与 NeoForge 对 Minecraft 26.3 的支持。
+优化方块描边性能，为远古残骸、紫水晶母岩和细雪新增动态彩虹描边。
 
 ## 完整功能列表
 - 全息投影放置预览 + 开启音效
@@ -23,7 +23,7 @@
 - 方块描边
 
 ## 在“生存模式”可以旋转的全息放置预览
-![Facet 全息投影实时放置预览](https://github.com/user-attachments/assets/00d00559-bd56-49c9-a846-14532b872402)
+![Facet 全息投影实时放置预览](https://github.com/user-attachments/assets/1fad3271-fd6d-47ff-bc59-e7385e6838a3)
 
 ## 游戏截图
 
@@ -35,6 +35,10 @@
 - NeoForge
 
 ## 功能更新
+
+### v1.3.15 - 更流畅的方块描边与彩虹效果
+- 优化方块描边性能
+- 为远古残骸、紫水晶母岩和细雪新增动态彩虹描边
 
 ### v1.3.14 - 新增 Minecraft 26.3 支持
 - 新增 Fabric 与 NeoForge 对 Minecraft 26.3 的支持

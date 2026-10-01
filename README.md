@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added support for Minecraft 26.3 on Fabric and NeoForge.
+Improved block outline performance and added animated rainbow outlines for ancient debris, budding amethyst, and powder snow.
 
 ## Complete Feature List
 
@@ -25,7 +25,7 @@ Added support for Minecraft 26.3 on Fabric and NeoForge.
 
 ## Rotatable Holographic Placement Preview in Survival Mode
 
-![Facet real-time holographic placement preview](https://github.com/user-attachments/assets/00d00559-bd56-49c9-a846-14532b872402)
+![Facet real-time holographic placement preview](https://github.com/user-attachments/assets/1fad3271-fd6d-47ff-bc59-e7385e6838a3)
 
 ## Screenshots
 
@@ -37,6 +37,10 @@ Added support for Minecraft 26.3 on Fabric and NeoForge.
 - NeoForge
 
 ## Feature Updates
+
+### v1.3.15 - Smoother Block Outlines and Rainbow Effects
+- Improved block outline performance
+- Added animated rainbow outlines for ancient debris, budding amethyst, and powder snow
 
 ### v1.3.14 - Minecraft 26.3 Support
 - Added support for Minecraft 26.3 on Fabric and NeoForge
