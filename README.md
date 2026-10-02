@@ -25,7 +25,7 @@ Added snowflake and brush markers, warning outlines for budding amethyst and inf
 
 ## Rotatable Holographic Placement Preview in Survival Mode
 
-![Facet real-time holographic placement preview](https://github.com/user-attachments/assets/1fad3271-fd6d-47ff-bc59-e7385e6838a3)
+![Facet real-time holographic placement preview](https://github.com/user-attachments/assets/d0440d0b-2cfb-4b6b-8ca7-2c3f164eef46)
 
 ## Screenshots
 

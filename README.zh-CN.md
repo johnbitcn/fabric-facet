@@ -23,7 +23,7 @@
 - 方块描边
 
 ## 在“生存模式”可以旋转的全息放置预览
-![Facet 全息投影实时放置预览](https://github.com/user-attachments/assets/1fad3271-fd6d-47ff-bc59-e7385e6838a3)
+![Facet 全息投影实时放置预览](https://github.com/user-attachments/assets/d0440d0b-2cfb-4b6b-8ca7-2c3f164eef46)
 
 ## 游戏截图
 
