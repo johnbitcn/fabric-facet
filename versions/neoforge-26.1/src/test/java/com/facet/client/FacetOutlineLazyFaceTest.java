@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class FacetOutlineLazyFaceTest {
 	@Test
 	void onlyRequestedFacesAreBuiltAndRepeatedRequestsReuseQuads() {
-		var model = new FacetNeoForgeOutlineRenderer.OutlineModel(null, null, Map.of(), false, null);
+		var model = new FacetNeoForgeOutlineRenderer.OutlineModel(null, null, Map.of(), false, null, 0, null);
 		int[] calls = new int[6];
 		// Test the lazy dispatch without starting FML or allocating GPU-backed materials.
 		var part = model.new FullCubeOutlinePart(null, FacetOutlineRules.DEFAULT_EDGE_WIDTH) {
@@ -41,12 +41,45 @@ class FacetOutlineLazyFaceTest {
 
 	@Test
 	void rainbowPartKeepsAnimationFlagsWithoutResolvingOrdinaryColors() {
-		var model = new FacetNeoForgeOutlineRenderer.OutlineModel(null, null, Map.of(), true, null);
+		var model = new FacetNeoForgeOutlineRenderer.OutlineModel(null, null, Map.of(), true, null, BakedQuad.FLAG_ANIMATED, null);
 		var part = model.new FullCubeOutlinePart(null, FacetOutlineRules.ANCIENT_DEBRIS_EDGE_WIDTH);
 		assertEquals(3.0 / 32.0, FacetOutlineRules.ANCIENT_DEBRIS_EDGE_WIDTH);
 		assertEquals(BakedQuad.FLAG_ANIMATED, part.materialFlags());
 		assertTrue(part.getQuads(null).isEmpty());
 		assertEquals(0, part.generatedFaceCount());
+	}
+
+	@Test
+	void staticWarningOutlineDoesNotCarryAnimationFlags() {
+		var model = new FacetNeoForgeOutlineRenderer.OutlineModel(null, null, Map.of(), true, null, 0, null);
+		var part = model.new FullCubeOutlinePart(null, FacetOutlineRules.ANCIENT_DEBRIS_EDGE_WIDTH);
+		assertEquals(0, part.materialFlags());
+		assertTrue(part.getQuads(null).isEmpty());
+		assertEquals(BakedQuad.FLAG_TRANSLUCENT, model.new FullCubeSymbolPart(0.35).materialFlags(),
+				"Warning bug is translucent but never animated");
+	}
+
+	@Test
+	void faceSymbolsUseLazyVisibleFacesAndAnimatedTranslucency() {
+		var model = new FacetNeoForgeOutlineRenderer.OutlineModel(null, null, Map.of(), true, null,
+				BakedQuad.FLAG_ANIMATED, null);
+		int[] calls = new int[6];
+		var part = model.new FullCubeSymbolPart(0.70) {
+			@Override
+			List<BakedQuad> bakeFace(Direction face) {
+				calls[face.ordinal()]++;
+				return new ArrayList<>();
+			}
+		};
+		assertTrue(part.getQuads(null).isEmpty());
+		assertEquals(0, part.generatedFaceCount());
+		for (Direction face : Direction.values()) {
+			assertSame(part.getQuads(face), part.getQuads(face));
+			assertEquals(1, calls[face.ordinal()]);
+		}
+		assertEquals(6, part.generatedFaceCount());
+		assertFalse(part.useAmbientOcclusion());
+		assertEquals(BakedQuad.FLAG_TRANSLUCENT | BakedQuad.FLAG_ANIMATED, part.materialFlags());
 	}
 
 	@Test

@@ -35,7 +35,6 @@ final class FacetNeoForgeOutlineRenderer {
 	private static final int RAINBOW_COLOR = FacetOutlineRules.withOutlineAlpha(0xFFFFFFFF);
 	private static final double GRAFFITI_SURFACE_BIAS = 1.0 / 512.0;
 	private static final double GRAFFITI_FACE_SIZE = 0.785;
-	private static final double GRAFFITI_FACE_INSET = (1.0 - GRAFFITI_FACE_SIZE) / 2.0;
 	private static final AtomicBoolean LOGGED_FIRST_GEOMETRY = new AtomicBoolean();
 
 	private FacetNeoForgeOutlineRenderer() {
@@ -49,6 +48,16 @@ final class FacetNeoForgeOutlineRenderer {
 				Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline")), false);
 		Material.Baked pastelMaterial = new Material.Baked(event.getTextureGetter().apply(
 				Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline_pastel")), false);
+		Material.Baked warningMaterial = new Material.Baked(event.getTextureGetter().apply(
+				Identifier.fromNamespaceAndPath("facet", "block/warning_outline")), false);
+		Material.Baked infestedWarningMaterial = new Material.Baked(event.getTextureGetter().apply(
+				Identifier.fromNamespaceAndPath("facet", "block/infested_warning_outline")), false);
+		Material.Baked snowflakeMaterial = new Material.Baked(event.getTextureGetter().apply(
+				Identifier.fromNamespaceAndPath("facet", "block/rainbow_snowflake")), false);
+		Material.Baked brushMaterial = new Material.Baked(event.getTextureGetter().apply(
+				Identifier.fromNamespaceAndPath("facet", "block/rainbow_brush")), false);
+		Material.Baked bugMaterial = new Material.Baked(event.getTextureGetter().apply(
+				Identifier.fromNamespaceAndPath("facet", "block/warning_bug")), false);
 		Material.Baked netherrackMaterial = new Material.Baked(event.getTextureGetter().apply(
 				Identifier.fromNamespaceAndPath("facet", "block/netherrack_average")), false);
 		Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
@@ -67,10 +76,17 @@ final class FacetNeoForgeOutlineRenderer {
 			if (!rainbowOutline) {
 				FacetOutlineColor.analyze(state, model);
 			}
-			Material.Baked outlineMaterial = state.is(Blocks.POWDER_SNOW) ? pastelMaterial
+			boolean warningOutline = FacetOutlineRules.usesWarningOutline(state);
+			Material.Baked outlineMaterial = FacetOutlineRules.isInfested(state) ? infestedWarningMaterial
+					: warningOutline ? warningMaterial
+					: FacetOutlineRules.usesPastelOutline(state) ? pastelMaterial
 					: rainbowOutline ? rainbowMaterial : material;
+			Material.Baked symbolMaterial = state.is(Blocks.POWDER_SNOW) ? snowflakeMaterial
+					: FacetOutlineRules.usesBrushSymbol(state) ? brushMaterial
+					: FacetOutlineRules.isInfested(state) ? bugMaterial : null;
 			entry.setValue(new OutlineModel(model, outlineMaterial, graffitiMaterials,
-					rainbowOutline, state.is(Blocks.NETHERRACK) ? netherrackMaterial : null));
+					rainbowOutline, state.is(Blocks.NETHERRACK) ? netherrackMaterial : null,
+					rainbowOutline && !warningOutline ? BakedQuad.FLAG_ANIMATED : 0, symbolMaterial));
 			wrapped++;
 		}
 
@@ -82,14 +98,18 @@ final class FacetNeoForgeOutlineRenderer {
 		private final Map<GraffitiType, Material.Baked> graffitiMaterials;
 		private final boolean rainbowOutline;
 		private final Material.Baked netherrackMaterial;
+		private final int outlineFlags;
+		private final Material.Baked symbolMaterial;
 
 		OutlineModel(BlockStateModel delegate, Material.Baked material, Map<GraffitiType, Material.Baked> graffitiMaterials,
-				boolean rainbowOutline, Material.Baked netherrackMaterial) {
+				boolean rainbowOutline, Material.Baked netherrackMaterial, int outlineFlags, Material.Baked symbolMaterial) {
 			super(delegate);
 			this.material = material;
 			this.graffitiMaterials = graffitiMaterials;
 			this.rainbowOutline = rainbowOutline;
 			this.netherrackMaterial = netherrackMaterial;
+			this.outlineFlags = outlineFlags;
+			this.symbolMaterial = symbolMaterial;
 		}
 
 		@Override
@@ -123,6 +143,9 @@ final class FacetNeoForgeOutlineRenderer {
 				return;
 			}
 
+			if (symbolMaterial != null) {
+				parts.add(new FullCubeSymbolPart(FacetOutlineRules.faceSymbolSize(state)));
+			}
 			FacetOutlineColor.FaceColors faceColors = rainbowOutline ? null : FacetOutlineColor.resolve(level, pos, state);
 			double width = FacetOutlineRules.edgeWidth(state, FacetNeoForgeOutlineConfig.edgeWidth());
 			if (FacetShapeEdges.isFullCube(shape)) {
@@ -154,7 +177,7 @@ final class FacetNeoForgeOutlineRenderer {
 				return;
 			}
 			// Cutout outlines are not translucent; materialFlags 0 keeps them off sorted terrain.
-			parts.add(new OutlinePart(unculled, culled, material, rainbowOutline ? BakedQuad.FLAG_ANIMATED : 0));
+			parts.add(new OutlinePart(unculled, culled, material, outlineFlags));
 			if (LOGGED_FIRST_GEOMETRY.compareAndSet(false, true)) {
 				int quadCount = unculled.size() + (culled.byDirection == null
 						? 0
@@ -192,8 +215,8 @@ final class FacetNeoForgeOutlineRenderer {
 					}
 				}
 
-				culled.get(direction).add(createGraffitiQuad(direction, GraffitiEligibility.facePlane(shape, direction),
-						graffitiMaterials.get(type)));
+				culled.get(direction).add(createFaceDecal(direction, GraffitiEligibility.facePlane(shape, direction),
+						graffitiMaterials.get(type), GRAFFITI_FACE_SIZE));
 			}
 
 			if (culled == null) {
@@ -251,7 +274,38 @@ final class FacetNeoForgeOutlineRenderer {
 
 			@Override
 			public int materialFlags() {
-				return rainbowOutline ? BakedQuad.FLAG_ANIMATED : 0;
+				return outlineFlags;
+			}
+		}
+
+		/** Face symbols share lazy face dispatch and preserve smooth translucent edges. */
+		class FullCubeSymbolPart extends FullCubeOutlinePart {
+			private final double size;
+
+			FullCubeSymbolPart(double size) {
+				super(null, 0);
+				this.size = size;
+			}
+
+			@Override
+			List<BakedQuad> bakeFace(Direction face) {
+				double plane = face.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : 0;
+				return List.of(createFaceDecal(face, plane, symbolMaterial, size));
+			}
+
+			@Override
+			public boolean useAmbientOcclusion() {
+				return false;
+			}
+
+			@Override
+			public Material.Baked particleMaterial() {
+				return symbolMaterial;
+			}
+
+			@Override
+			public int materialFlags() {
+				return BakedQuad.FLAG_TRANSLUCENT | outlineFlags;
 			}
 		}
 
@@ -272,16 +326,16 @@ final class FacetNeoForgeOutlineRenderer {
 			};
 		}
 
-		private BakedQuad createGraffitiQuad(Direction face, double plane, Material.Baked graffitiMaterial) {
+		private BakedQuad createFaceDecal(Direction face, double plane, Material.Baked decalMaterial, double size) {
 			double biasedPlane = plane + GRAFFITI_SURFACE_BIAS * face.getAxisDirection().getStep();
-			double min = GRAFFITI_FACE_INSET;
-			double max = 1.0 - GRAFFITI_FACE_INSET;
+			double min = (1.0 - size) / 2.0;
+			double max = 1.0 - min;
 			return switch (face) {
-				case DOWN, UP -> bakeQuad(graffitiMaterial, face, -1, true, false, false,
+				case DOWN, UP -> bakeQuad(decalMaterial, face, -1, true, false, false,
 						min, biasedPlane, min, max, biasedPlane, min, max, biasedPlane, max, min, biasedPlane, max);
-				case NORTH, SOUTH -> bakeQuad(graffitiMaterial, face, -1, true, false, false,
+				case NORTH, SOUTH -> bakeQuad(decalMaterial, face, -1, true, false, false,
 						min, min, biasedPlane, max, min, biasedPlane, max, max, biasedPlane, min, max, biasedPlane);
-				case WEST, EAST -> bakeQuad(graffitiMaterial, face, -1, true, false, false,
+				case WEST, EAST -> bakeQuad(decalMaterial, face, -1, true, false, false,
 						biasedPlane, min, min, biasedPlane, min, max, biasedPlane, max, max, biasedPlane, max, min);
 			};
 		}

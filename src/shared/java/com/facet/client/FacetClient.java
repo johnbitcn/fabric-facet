@@ -73,6 +73,10 @@ public final class FacetClient implements ClientModInitializer {
 	 *  of one frame reuse a single level.clip (see {@link #distanceTarget(Minecraft)}). */
 	private static BlockHitResult farTargetCache;
 
+	public static boolean shouldBlockMouseScroll(Minecraft minecraft) {
+		return FacetMcBridge.shouldBlockMouseScroll(minecraft);
+	}
+
 	@Override
 	public void onInitializeClient() {
 		FacetConfig.load();

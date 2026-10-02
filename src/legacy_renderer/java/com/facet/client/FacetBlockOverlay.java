@@ -29,7 +29,6 @@ import net.fabricmc.fabric.api.util.TriState;
 final class FacetBlockOverlay {
 	private static final double GRAFFITI_SURFACE_BIAS = 1.0 / 512.0;
 	private static final double GRAFFITI_FACE_SIZE = 0.785;
-	private static final double GRAFFITI_FACE_INSET = (1.0 - GRAFFITI_FACE_SIZE) / 2.0;
 	private static final float OUTLINE_UV = 0.5f;
 	private static final int RAINBOW_COLOR = FacetOutlineRules.withOutlineAlpha(0xFFFFFFFF);
 	private static final Material OUTLINE_TEXTURE = new Material(Identifier.withDefaultNamespace("block/white_concrete"), true);
@@ -39,6 +38,16 @@ final class FacetBlockOverlay {
 	private static final Material RAINBOW_TEXTURE = new Material(RAINBOW_TEXTURE_ID, false);
 	private static final Material PASTEL_RAINBOW_TEXTURE = new Material(
 			Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline_pastel"), false);
+	private static final Material WARNING_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/warning_outline"), false);
+	private static final Material INFESTED_WARNING_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/infested_warning_outline"), false);
+	private static final Material SNOWFLAKE_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_snowflake"), false);
+	private static final Material BRUSH_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_brush"), false);
+	private static final Material BUG_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/warning_bug"), false);
 	private static final Material NETHERRACK_TEXTURE =
 			new Material(Identifier.fromNamespaceAndPath("facet", "block/netherrack_average"), false);
 
@@ -59,14 +68,22 @@ final class FacetBlockOverlay {
 			if (state.isAir() || state.getRenderShape() != RenderShape.MODEL || model instanceof OutlineBlockStateModel) {
 				return model;
 			}
-			boolean rainbowOutline = FacetOutlineRules.usesRainbowOutline(state);
+			boolean pastelRainbow = FacetOutlineRules.usesPastelOutline(state);
+			boolean rainbowOutline = pastelRainbow || FacetOutlineRules.usesRainbowOutline(state);
 			if (!rainbowOutline) {
 				FacetOutlineColor.analyze(state, model);
 			}
 
-			Material outlineTexture = state.is(Blocks.POWDER_SNOW) ? PASTEL_RAINBOW_TEXTURE
+			boolean warningOutline = FacetOutlineRules.usesWarningOutline(state);
+			Material outlineTexture = FacetOutlineRules.isInfested(state) ? INFESTED_WARNING_TEXTURE
+					: warningOutline ? WARNING_TEXTURE : pastelRainbow ? PASTEL_RAINBOW_TEXTURE
 					: rainbowOutline ? RAINBOW_TEXTURE : OUTLINE_TEXTURE;
 			Material.Baked outlineMaterial = modifierContext.baker().materials().get(outlineTexture, OUTLINE_DEBUG_NAME);
+			Material symbolTexture = state.is(Blocks.POWDER_SNOW) ? SNOWFLAKE_TEXTURE
+					: FacetOutlineRules.usesBrushSymbol(state) ? BRUSH_TEXTURE
+					: FacetOutlineRules.isInfested(state) ? BUG_TEXTURE : null;
+			Material.Baked symbolMaterial = symbolTexture == null ? null
+					: modifierContext.baker().materials().get(symbolTexture, OUTLINE_DEBUG_NAME);
 			Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
 
 			for (GraffitiType type : GraffitiType.values()) {
@@ -78,21 +95,23 @@ final class FacetBlockOverlay {
 			Material.Baked netherrackMaterial = state.is(Blocks.NETHERRACK)
 					? modifierContext.baker().materials().get(NETHERRACK_TEXTURE, OUTLINE_DEBUG_NAME)
 					: null;
-			return new OutlineBlockStateModel(model, outlineMaterial, graffitiMaterials, netherrackMaterial, rainbowOutline);
+			return new OutlineBlockStateModel(model, outlineMaterial, symbolMaterial, graffitiMaterials, netherrackMaterial, rainbowOutline);
 		});
 	}
 
 	private static final class OutlineBlockStateModel extends WrapperBlockStateModel {
 		private final Material.Baked outlineMaterial;
+		private final Material.Baked symbolMaterial;
 		private final Map<GraffitiType, Material.Baked> graffitiMaterials;
 		private final Material.Baked netherrackMaterial;
 		private final boolean rainbowOutline;
 
 		private OutlineBlockStateModel(BlockStateModel wrapped, Material.Baked outlineMaterial,
-				Map<GraffitiType, Material.Baked> graffitiMaterials, Material.Baked netherrackMaterial,
+				Material.Baked symbolMaterial, Map<GraffitiType, Material.Baked> graffitiMaterials, Material.Baked netherrackMaterial,
 				boolean rainbowOutline) {
 			super(wrapped);
 			this.outlineMaterial = outlineMaterial;
+			this.symbolMaterial = symbolMaterial;
 			this.graffitiMaterials = graffitiMaterials;
 			this.netherrackMaterial = netherrackMaterial;
 			this.rainbowOutline = rainbowOutline;
@@ -131,6 +150,16 @@ final class FacetBlockOverlay {
 				BlockState state, Predicate<Direction> cullTest, VoxelShape shape) {
 			if (shape.isEmpty()) {
 				return;
+			}
+
+			if (symbolMaterial != null) {
+				for (Direction face : Direction.values()) {
+					if (!cullTest.test(face)) {
+						emitFaceDecal(emitter, face,
+								face.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1.0 : 0.0,
+								symbolMaterial, FacetOutlineRules.faceSymbolSize(state), ChunkSectionLayer.TRANSLUCENT);
+					}
+				}
 			}
 
 			int culledFaces = FacetOutlineRules.culledFaces(cullTest);
@@ -186,26 +215,31 @@ final class FacetBlockOverlay {
 					continue;
 				}
 
-				emitGraffitiFace(emitter, direction, GraffitiEligibility.facePlane(shape, direction), graffitiMaterials.get(type));
+				emitFaceDecal(emitter, direction, GraffitiEligibility.facePlane(shape, direction),
+						graffitiMaterials.get(type), GRAFFITI_FACE_SIZE, ChunkSectionLayer.TRANSLUCENT);
 			}
 		}
 
-		private void emitGraffitiFace(QuadEmitter emitter, Direction face, double plane, Material.Baked graffitiMaterial) {
-			double biasedPlane = plane + GRAFFITI_SURFACE_BIAS * face.getAxisDirection().getStep();
-			double min = GRAFFITI_FACE_INSET;
-			double max = 1.0 - GRAFFITI_FACE_INSET;
+		private static void emitFaceDecal(QuadEmitter emitter, Direction face, double plane,
+				Material.Baked material, double size, ChunkSectionLayer layer) {
+			double bias = layer == ChunkSectionLayer.TRANSLUCENT
+					? GRAFFITI_SURFACE_BIAS : FacetMcBridge.outlineSurfaceBias();
+			double biasedPlane = plane + bias * face.getAxisDirection().getStep();
+			double min = (1.0 - size) / 2.0;
+			double max = 1.0 - min;
 
 			switch (face) {
-				case DOWN, UP -> emitGraffitiQuad(emitter, face, graffitiMaterial,
+				case DOWN, UP -> emitDecalQuad(emitter, face, material, layer,
 						min, biasedPlane, min, max, biasedPlane, min, max, biasedPlane, max, min, biasedPlane, max);
-				case NORTH, SOUTH -> emitGraffitiQuad(emitter, face, graffitiMaterial,
+				case NORTH, SOUTH -> emitDecalQuad(emitter, face, material, layer,
 						min, min, biasedPlane, max, min, biasedPlane, max, max, biasedPlane, min, max, biasedPlane);
-				case WEST, EAST -> emitGraffitiQuad(emitter, face, graffitiMaterial,
+				case WEST, EAST -> emitDecalQuad(emitter, face, material, layer,
 						biasedPlane, min, min, biasedPlane, min, max, biasedPlane, max, max, biasedPlane, max, min);
 			}
 		}
 
-		private void emitGraffitiQuad(QuadEmitter emitter, Direction face, Material.Baked graffitiMaterial,
+		private static void emitDecalQuad(QuadEmitter emitter, Direction face, Material.Baked material,
+				ChunkSectionLayer layer,
 				double x1, double y1, double z1,
 				double x2, double y2, double z2,
 				double x3, double y3, double z3,
@@ -225,12 +259,12 @@ final class FacetBlockOverlay {
 					.uv(1, reverseWinding ? 0.0f : 1.0f, reverseWinding ? 0.0f : 1.0f)
 					.uv(2, 1.0f, 0.0f)
 					.uv(3, reverseWinding ? 1.0f : 0.0f, reverseWinding ? 1.0f : 0.0f)
-					.materialBake(graffitiMaterial, MutableQuadView.BAKE_NORMALIZED)
+					.materialBake(material, MutableQuadView.BAKE_NORMALIZED)
 					.normal(0, normalX, normalY, normalZ).normal(1, normalX, normalY, normalZ)
 					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
 					.nominalFace(face)
-					// Graffiti sprites need real alpha; stay on sorted translucent terrain.
-					.chunkLayer(ChunkSectionLayer.TRANSLUCENT)
+					// Preserve the smooth alpha edges of graffiti and 128px face symbols.
+					.chunkLayer(layer)
 					.emissive(false);
 			FacetMcBridge.applyShade(emitter, true);
 			emitter.ambientOcclusion(TriState.FALSE)
@@ -276,7 +310,7 @@ final class FacetBlockOverlay {
 					.uv(0, OUTLINE_UV, OUTLINE_UV).uv(1, OUTLINE_UV, OUTLINE_UV)
 					.uv(2, OUTLINE_UV, OUTLINE_UV).uv(3, OUTLINE_UV, OUTLINE_UV);
 			if (rainbowOutline) {
-				// A shared diagonal coordinate keeps moving stripes continuous across block faces.
+				// A shared diagonal coordinate keeps patterned stripes continuous across block faces.
 				for (int vertex = 0; vertex < 4; vertex++) {
 					float u = (emitter.x(vertex) + emitter.y(vertex) + emitter.z(vertex)) / 3.0f;
 					emitter.uv(vertex, Math.clamp(u, 0.0f, 1.0f), OUTLINE_UV);

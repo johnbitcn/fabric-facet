@@ -32,6 +32,8 @@
 	"config.facet.hover_outline": "ホバーアウトライン：%s",
 	"config.facet.distance_path": "マンハッタン経路：%s",
 	"config.facet.placement_preview": "配置プレビュー：%s",
+  "config.facet.disable_mouse_scroll": "ホイール無効：%s",
+  "config.facet.disable_mouse_scroll.tooltip": "有効にするとプレイ中のマウスホイール入力を無効にします。メニューやインベントリのスクロールには影響しません。",
   "config.facet.width": "幅",
   "config.facet.hover_width": "ホバー幅",
 	"config.facet.reset": "リセット",

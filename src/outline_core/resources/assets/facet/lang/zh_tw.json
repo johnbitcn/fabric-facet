@@ -32,6 +32,8 @@
 	"config.facet.hover_outline": "懸停描邊：%s",
 	"config.facet.distance_path": "曼哈頓路徑：%s",
 	"config.facet.placement_preview": "放置預覽：%s",
+  "config.facet.disable_mouse_scroll": "停用滑鼠滾輪：%s",
+  "config.facet.disable_mouse_scroll.tooltip": "開啟後阻擋遊戲中的滑鼠滾輪輸入，不影響選單、背包等介面的捲動。",
   "config.facet.width": "寬度",
   "config.facet.hover_width": "懸停寬度",
 	"config.facet.reset": "重置",

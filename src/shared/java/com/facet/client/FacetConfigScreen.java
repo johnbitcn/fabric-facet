@@ -6,6 +6,7 @@ import java.util.function.DoubleConsumer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -126,10 +127,16 @@ public final class FacetConfigScreen extends Screen {
 		}).bounds(x, rowY, controlWidth, ROW_HEIGHT).build());
 		rowY += ROW_HEIGHT + ROW_GAP;
 
+		int toggleWidth = (controlWidth - CONTROL_GAP) / 2;
 		addRenderableWidget(Button.builder(placementPreviewEnabledMessage(), button -> {
 			FacetConfig.setPlacementPreviewEnabled(!FacetConfig.placementPreviewEnabled());
 			button.setMessage(placementPreviewEnabledMessage());
-		}).bounds(x, rowY, controlWidth, ROW_HEIGHT).build());
+		}).bounds(x, rowY, toggleWidth, ROW_HEIGHT).build());
+		addRenderableWidget(Button.builder(mouseScrollDisabledMessage(), button -> {
+			FacetConfig.setMouseScrollDisabled(!FacetConfig.mouseScrollDisabled());
+			button.setMessage(mouseScrollDisabledMessage());
+		}).bounds(x + toggleWidth + CONTROL_GAP, rowY, controlWidth - toggleWidth - CONTROL_GAP, ROW_HEIGHT)
+				.tooltip(Tooltip.create(Component.translatable("config.facet.disable_mouse_scroll.tooltip"))).build());
 		rowY = firstRowY(blockSectionY);
 
 		edgeWidthSlider = new ValueSlider(
@@ -208,6 +215,11 @@ public final class FacetConfigScreen extends Screen {
 		return Component.translatable(
 				"config.facet.placement_preview",
 				Component.translatable(FacetConfig.placementPreviewEnabled() ? "options.on" : "options.off"));
+	}
+
+	private static Component mouseScrollDisabledMessage() {
+		return Component.translatable("config.facet.disable_mouse_scroll",
+				Component.translatable(FacetConfig.mouseScrollDisabled() ? "options.on" : "options.off"));
 	}
 
 	private void drawPanel(GuiGraphicsExtractor graphics) {

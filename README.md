@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Improved block outline performance and added animated rainbow outlines for ancient debris, budding amethyst, and powder snow.
+Added snowflake and brush markers, warning outlines for budding amethyst and infested blocks, and a setting to disable the mouse wheel during gameplay.
 
 ## Complete Feature List
 
@@ -37,6 +37,13 @@ Improved block outline performance and added animated rainbow outlines for ancie
 - NeoForge
 
 ## Feature Updates
+
+### v1.5.1 - Special Block Markers and Mouse Wheel Toggle
+- Added animated pastel rainbow snowflakes to powder snow, retaining its pastel outlines
+- Added pastel rainbow outlines and brush markers to suspicious sand and suspicious gravel
+- Changed budding amethyst outlines to static yellow-and-black warning stripes
+- Added red-and-white warning outlines and bug warning markers to infested blocks
+- Added a setting to disable the mouse wheel during gameplay without affecting menu or inventory scrolling
 
 ### v1.3.15 - Smoother Block Outlines and Rainbow Effects
 - Improved block outline performance
