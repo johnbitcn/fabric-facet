@@ -113,6 +113,7 @@ public final class FacetNeoForgeOutline {
 	public FacetNeoForgeOutline(IEventBus modBus, ModContainer modContainer) {
 		modContainer.registerConfig(ModConfig.Type.CLIENT, FacetNeoForgeOutlineConfig.SPEC, "facet-neoforge-client.toml");
 		LavaGel.initialize(FacetNeoForgeOutlineConfig::enabled);
+		HologramNightVision.initialize(FacetNeoForgeOutlineConfig::placementPreviewEnabled);
 		modContainer.registerExtensionPoint(IConfigScreenFactory.class,
 				(IConfigScreenFactory) (container, modListScreen) -> new FacetNeoForgeConfigScreen(modListScreen));
 		GraffitiStore.initialize(FMLPaths.CONFIGDIR.get());

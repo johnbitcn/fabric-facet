@@ -12,6 +12,7 @@
     "LavaGelMixin",
     "LavaGelSpriteMixin",
     "LavaGelFogMixin",
+    "HologramNightVisionMixin",
     "NetherrackTextureMixin",
     "LevelRendererRenderPassMixin"
   ],

@@ -81,6 +81,7 @@ public final class FacetClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		FacetConfig.load();
 		LavaGel.initialize(FacetConfig::enabled);
+		HologramNightVision.initialize(FacetConfig::placementPreviewEnabled);
 		GraffitiStore.initialize(FabricLoader.getInstance().getConfigDir());
 		GraffitiStore.load();
 		registerKeyMappings();

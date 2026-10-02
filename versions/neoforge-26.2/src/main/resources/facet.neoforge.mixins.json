@@ -11,6 +11,7 @@
     "LavaGelMixin",
     "LavaGelSpriteMixin",
     "LavaGelFogMixin",
+    "HologramNightVisionMixin",
     "NetherrackTextureMixin"
   ],
   "injectors": {
