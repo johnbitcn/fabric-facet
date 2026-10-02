@@ -9,6 +9,9 @@
     "ClientLevelMixin",
     "MouseScrollMixin",
     "SpriteContentsAccessor",
+    "LavaGelMixin",
+    "LavaGelSpriteMixin",
+    "LavaGelFogMixin",
     "NetherrackTextureMixin"
   ],
   "injectors": {

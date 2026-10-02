@@ -80,6 +80,7 @@ public final class FacetClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		FacetConfig.load();
+		LavaGel.initialize(FacetConfig::enabled);
 		GraffitiStore.initialize(FabricLoader.getInstance().getConfigDir());
 		GraffitiStore.load();
 		registerKeyMappings();
