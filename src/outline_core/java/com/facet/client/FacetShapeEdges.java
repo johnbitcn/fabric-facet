@@ -130,7 +130,7 @@ final class FacetShapeEdges {
 		});
 	}
 
-	private static boolean isFullCube(VoxelShape shape) {
+	static boolean isFullCube(VoxelShape shape) {
 		return shape == Shapes.block()
 				|| (!shape.isEmpty()
 				&& Math.abs(shape.min(Axis.X)) <= AXIS_EPSILON

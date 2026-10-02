@@ -18,12 +18,14 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
@@ -119,6 +121,7 @@ public final class FacetNeoForgeOutline {
 		modBus.addListener(FacetNeoForgeOutline::registerGuiLayers);
 		modBus.addListener(FacetNeoForgeOutline::handleConfigReload);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::handleClientTick);
+		NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, FacetNeoForgeOutline::handleMouseScroll);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeHoverOutline::extract);
 		NeoForge.EVENT_BUS.addListener(FacetNeoForgeOutline::clearFarTargetCache);
 		FacetNeoForgePlatform.registerRenderListeners();
@@ -131,6 +134,13 @@ public final class FacetNeoForgeOutline {
 	 *  the distance HUD, distance path and hover outline reuse a single level.clip per frame. */
 	private static void clearFarTargetCache(RenderFrameEvent.Pre event) {
 		FacetNeoForgeDistanceHud.clearFarTargetCache();
+	}
+
+	// NeoForge posts this event only for gameplay, after handling screens and overlays.
+	private static void handleMouseScroll(InputEvent.MouseScrollingEvent event) {
+		if (FacetNeoForgeOutlineConfig.mouseScrollDisabled()) {
+			event.setCanceled(true);
+		}
 	}
 
 	private static void registerKeyMappings(RegisterKeyMappingsEvent event) {

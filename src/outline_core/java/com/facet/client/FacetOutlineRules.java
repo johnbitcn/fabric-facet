@@ -12,6 +12,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CarpetBlock;
+import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
@@ -59,8 +60,28 @@ final class FacetOutlineRules {
 		return mask;
 	}
 
+	static boolean usesBrushSymbol(BlockState state) {
+		return state.is(Blocks.SUSPICIOUS_SAND) || state.is(Blocks.SUSPICIOUS_GRAVEL);
+	}
+
+	static boolean isInfested(BlockState state) {
+		return state.getBlock() instanceof InfestedBlock;
+	}
+
+	static boolean usesWarningOutline(BlockState state) {
+		return state.is(Blocks.BUDDING_AMETHYST) || isInfested(state);
+	}
+
+	static boolean usesPastelOutline(BlockState state) {
+		return state.is(Blocks.POWDER_SNOW) || usesBrushSymbol(state);
+	}
+
 	static boolean usesRainbowOutline(BlockState state) {
-		return state.is(Blocks.ANCIENT_DEBRIS) || state.is(Blocks.BUDDING_AMETHYST) || state.is(Blocks.POWDER_SNOW);
+		return state.is(Blocks.ANCIENT_DEBRIS) || usesWarningOutline(state) || usesPastelOutline(state);
+	}
+
+	static double faceSymbolSize(BlockState state) {
+		return isInfested(state) ? 0.35 : 0.70;
 	}
 
 	static double edgeWidth(BlockState state, double configuredWidth) {

@@ -6,6 +6,7 @@ import java.util.function.DoubleConsumer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -113,10 +114,16 @@ final class FacetNeoForgeConfigScreen extends Screen {
 			button.setMessage(distancePathVisibleMessage());
 		}).bounds(x, rowY, controlWidth, ROW_HEIGHT).build());
 		rowY += ROW_HEIGHT + ROW_GAP;
+		int toggleWidth = (controlWidth - CONTROL_GAP) / 2;
 		addRenderableWidget(Button.builder(placementPreviewEnabledMessage(), button -> {
 			FacetNeoForgeOutlineConfig.setPlacementPreviewEnabled(!FacetNeoForgeOutlineConfig.placementPreviewEnabled());
 			button.setMessage(placementPreviewEnabledMessage());
-		}).bounds(x, rowY, controlWidth, ROW_HEIGHT).build());
+		}).bounds(x, rowY, toggleWidth, ROW_HEIGHT).build());
+		addRenderableWidget(Button.builder(mouseScrollDisabledMessage(), button -> {
+			FacetNeoForgeOutlineConfig.setMouseScrollDisabled(!FacetNeoForgeOutlineConfig.mouseScrollDisabled());
+			button.setMessage(mouseScrollDisabledMessage());
+		}).bounds(x + toggleWidth + CONTROL_GAP, rowY, controlWidth - toggleWidth - CONTROL_GAP, ROW_HEIGHT)
+				.tooltip(Tooltip.create(Component.translatable("config.facet.disable_mouse_scroll.tooltip"))).build());
 
 		rowY = firstRowY(blockSectionY);
 		edgeWidthSlider = new ValueSlider(x, rowY, sliderWidth, ROW_HEIGHT, "config.facet.width", 1.0, 20.0,
@@ -172,6 +179,10 @@ final class FacetNeoForgeConfigScreen extends Screen {
 
 	private static Component placementPreviewEnabledMessage() {
 		return toggleMessage("config.facet.placement_preview", FacetNeoForgeOutlineConfig.placementPreviewEnabled());
+	}
+
+	private static Component mouseScrollDisabledMessage() {
+		return toggleMessage("config.facet.disable_mouse_scroll", FacetNeoForgeOutlineConfig.mouseScrollDisabled());
 	}
 
 	private static Component toggleMessage(String key, boolean enabled) {

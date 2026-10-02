@@ -16,6 +16,7 @@ public final class FacetConfig {
 	public static final boolean DEFAULT_HOVER_ENABLED = true;
 	public static final boolean DEFAULT_DISTANCE_PATH_VISIBLE = true;
 	public static final boolean DEFAULT_PLACEMENT_PREVIEW_ENABLED = true;
+	public static final boolean DEFAULT_MOUSE_SCROLL_DISABLED = false;
 	public static final double EDGE_WIDTH_UNIT = 1.0 / 64.0;
 	public static final double DEFAULT_EDGE_WIDTH = 2.0 * EDGE_WIDTH_UNIT;
 	public static final float DEFAULT_HOVER_WIDTH = 2.0f;
@@ -30,6 +31,7 @@ public final class FacetConfig {
 	private static boolean hoverEnabled = DEFAULT_HOVER_ENABLED;
 	private static boolean distancePathVisible = DEFAULT_DISTANCE_PATH_VISIBLE;
 	private static boolean placementPreviewEnabled = DEFAULT_PLACEMENT_PREVIEW_ENABLED;
+	private static boolean mouseScrollDisabled = DEFAULT_MOUSE_SCROLL_DISABLED;
 	private static double edgeWidth = DEFAULT_EDGE_WIDTH;
 	private static float hoverWidth = DEFAULT_HOVER_WIDTH;
 
@@ -52,6 +54,8 @@ public final class FacetConfig {
 		placementPreviewEnabled = Boolean.parseBoolean(properties.getProperty(
 				"placementPreviewEnabled",
 				Boolean.toString(DEFAULT_PLACEMENT_PREVIEW_ENABLED)));
+		mouseScrollDisabled = Boolean.parseBoolean(properties.getProperty(
+				"mouseScrollDisabled", Boolean.toString(DEFAULT_MOUSE_SCROLL_DISABLED)));
 		edgeWidth = snapEdgeWidth(parseDouble(properties.getProperty("edgeWidth", Double.toString(DEFAULT_EDGE_WIDTH)), DEFAULT_EDGE_WIDTH));
 		hoverWidth = snapHoverWidth(parseFloat(properties.getProperty("hoverWidth", Float.toString(DEFAULT_HOVER_WIDTH)), DEFAULT_HOVER_WIDTH));
 
@@ -76,6 +80,10 @@ public final class FacetConfig {
 
 	public static boolean placementPreviewEnabled() {
 		return placementPreviewEnabled;
+	}
+
+	public static boolean mouseScrollDisabled() {
+		return mouseScrollDisabled;
 	}
 
 	public static double edgeWidth() {
@@ -118,6 +126,11 @@ public final class FacetConfig {
 		save();
 	}
 
+	public static void setMouseScrollDisabled(boolean value) {
+		mouseScrollDisabled = value;
+		save();
+	}
+
 	public static void setEdgeWidth(double value) {
 		edgeWidth = snapEdgeWidth(value);
 		saveAndRebuildChunks();
@@ -147,6 +160,7 @@ public final class FacetConfig {
 		properties.setProperty("hoverEnabled", Boolean.toString(hoverEnabled));
 		properties.setProperty("distancePathVisible", Boolean.toString(distancePathVisible));
 		properties.setProperty("placementPreviewEnabled", Boolean.toString(placementPreviewEnabled));
+		properties.setProperty("mouseScrollDisabled", Boolean.toString(mouseScrollDisabled));
 		properties.setProperty("edgeWidth", Double.toString(edgeWidth));
 		properties.setProperty("hoverWidth", Float.toString(hoverWidth));
 

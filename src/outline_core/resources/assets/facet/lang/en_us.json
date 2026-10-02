@@ -32,6 +32,8 @@
 	"config.facet.hover_outline": "Hover Outline: %s",
 	"config.facet.distance_path": "Manhattan Path: %s",
 	"config.facet.placement_preview": "Placement Preview: %s",
+  "config.facet.disable_mouse_scroll": "Block mouse wheel: %s",
+  "config.facet.disable_mouse_scroll.tooltip": "When enabled, mouse-wheel input is blocked during gameplay. Menus and inventories still scroll normally.",
   "config.facet.width": "Width",
   "config.facet.hover_width": "Hover Width",
 	"config.facet.reset": "Reset",

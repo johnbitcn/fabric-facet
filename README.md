@@ -12,7 +12,8 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added Fabric support for Minecraft 26.4 Snapshot 2 and optimized block outlines.
+Added snowflake and brush markers, warning outlines for budding amethyst and infested blocks, and a setting to disable the mouse wheel during gameplay.
+Also supports Minecraft 26.4 Snapshot 2 on Fabric.
 
 ## Complete Feature List
 
@@ -25,7 +26,8 @@ Added Fabric support for Minecraft 26.4 Snapshot 2 and optimized block outlines.
 
 ## Rotatable Holographic Placement Preview in Survival Mode
 
-![Facet real-time holographic placement preview](https://github.com/user-attachments/assets/00d00559-bd56-49c9-a846-14532b872402)
+![Facet real-time holographic placement preview](https://github.com/user-attachments/assets/6644570f-912c-417d-8400-d6fd1a1c12ad)
+
 
 ## Screenshots
 
@@ -39,14 +41,22 @@ Added Fabric support for Minecraft 26.4 Snapshot 2 and optimized block outlines.
 ## Feature Updates
 
 ### Minecraft 26.4 Snapshot 2
-- Added Fabric support for Minecraft 26.4 Snapshot 2
-- With block outlines enabled, netherrack uses a solid color averaged from its original texture
-- Ancient debris and budding amethyst have flowing rainbow-striped outlines, 3/32 of a block wide
-- Powder snow has opaque pastel rainbow-striped outlines, 3/32 of a block wide
-- Reduced repeated block-outline calculations when chunks load or update
+- Supports Minecraft 26.4 Snapshot 2 on Fabric
+- Added snowflake, brush and bug warning markers, special-block warning outlines, and a gameplay mouse wheel toggle
 
 ### Minecraft 26.4 Snapshot 1 Compatibility Preview (Alpha)
-- Added a Fabric compatibility preview for Minecraft 26.4 Snapshot 1
+- Added Fabric compatibility preview for Minecraft 26.4 Snapshot 1
+
+### v1.5.1 - Special Block Markers and Mouse Wheel Toggle
+- Added animated pastel rainbow snowflakes to powder snow, retaining its pastel outlines
+- Added pastel rainbow outlines and brush markers to suspicious sand and suspicious gravel
+- Changed budding amethyst outlines to static yellow-and-black warning stripes
+- Added red-and-white warning outlines and bug warning markers to infested blocks
+- Added a setting to disable the mouse wheel during gameplay without affecting menu or inventory scrolling
+
+### v1.3.15 - Smoother Block Outlines and Rainbow Effects
+- Improved block outline performance
+- Added animated rainbow outlines for ancient debris, budding amethyst, and powder snow
 
 ### v1.3.14 - Minecraft 26.3 Support
 - Added support for Minecraft 26.3 on Fabric and NeoForge

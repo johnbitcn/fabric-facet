@@ -50,6 +50,7 @@ sourceSets {
 
 	test {
 		java.srcDir(rootProject.file('versions/neoforge-26.1/src/test/java'))
+		java.exclude('com/facet/client/LegacyDualBufferTest.java')
 		compileClasspath += sourceSets.main.compileClasspath
 		runtimeClasspath += sourceSets.main.runtimeClasspath
 	}

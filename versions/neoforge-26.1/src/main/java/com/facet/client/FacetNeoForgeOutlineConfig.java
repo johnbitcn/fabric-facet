@@ -10,6 +10,7 @@ final class FacetNeoForgeOutlineConfig {
 	private static final ModConfigSpec.DoubleValue HOVER_WIDTH;
 	private static final ModConfigSpec.BooleanValue DISTANCE_PATH_VISIBLE;
 	private static final ModConfigSpec.BooleanValue PLACEMENT_PREVIEW_ENABLED;
+	private static final ModConfigSpec.BooleanValue MOUSE_SCROLL_DISABLED;
 
 	static {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -37,6 +38,10 @@ final class FacetNeoForgeOutlineConfig {
 				.comment("Whether Facet renders a holographic preview before placing a block.")
 				.translation("config.facet.placement_preview")
 				.define("placement_preview_enabled", true);
+		MOUSE_SCROLL_DISABLED = builder
+				.comment("Disable mouse-wheel input in gameplay, without affecting screen scrolling.")
+				.translation("config.facet.disable_mouse_scroll")
+				.define("mouse_scroll_disabled", false);
 		SPEC = builder.build();
 	}
 
@@ -100,6 +105,15 @@ final class FacetNeoForgeOutlineConfig {
 	static void setDistancePathVisible(boolean visible) {
 		DISTANCE_PATH_VISIBLE.set(visible);
 		DISTANCE_PATH_VISIBLE.save();
+	}
+
+	static boolean mouseScrollDisabled() {
+		return MOUSE_SCROLL_DISABLED.getAsBoolean();
+	}
+
+	static void setMouseScrollDisabled(boolean disabled) {
+		MOUSE_SCROLL_DISABLED.set(disabled);
+		MOUSE_SCROLL_DISABLED.save();
 	}
 
 	static boolean placementPreviewEnabled() {

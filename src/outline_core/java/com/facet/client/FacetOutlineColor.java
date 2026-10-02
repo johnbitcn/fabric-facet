@@ -201,7 +201,7 @@ public final class FacetOutlineColor {
 		private final Map<Direction, Integer> colors;
 		private final int firstColor;
 
-		private FaceColors(Map<Direction, Integer> colors) {
+		FaceColors(Map<Direction, Integer> colors) {
 			colors.replaceAll((direction, color) -> FacetOutlineRules.withOutlineAlpha(color));
 			this.colors = colors;
 			int first = FacetOutlineRules.withOutlineAlpha(FALLBACK_COLOR);

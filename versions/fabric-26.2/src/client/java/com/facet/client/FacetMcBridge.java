@@ -32,6 +32,12 @@ final class FacetMcBridge {
 		return InputConstants.Type.KEYSYM;
 	}
 
+	static boolean shouldBlockMouseScroll(Minecraft minecraft) {
+		return MouseScrollPolicy.shouldBlock(FacetConfig.mouseScrollDisabled(),
+				minecraft.level != null && minecraft.player != null,
+				minecraft.gui.screen() != null || minecraft.gui.overlay() != null);
+	}
+
 	static boolean placementRotationPrototypeEnabled() {
 		return true;
 	}

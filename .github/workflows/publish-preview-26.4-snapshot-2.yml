@@ -74,8 +74,12 @@ jobs:
           Fabric compatibility preview for Minecraft 26.4 Snapshot 2 (Alpha).
 
           - With block outlines enabled, netherrack uses its original texture's average color.
-          - Ancient debris and budding amethyst have flowing rainbow-striped outlines, 3/32 of a block wide.
-          - Powder snow has opaque pastel rainbow-striped outlines, 3/32 of a block wide.
+          - Ancient debris retains flowing rainbow-striped outlines.
+          - Powder snow has animated pastel rainbow snowflakes and pastel rainbow outlines.
+          - Suspicious sand and suspicious gravel have pastel rainbow outlines and brush markers.
+          - Budding amethyst has static yellow-and-black warning outlines.
+          - Infested blocks have red-and-white warning outlines and smaller bug warning markers.
+          - A setting can disable the mouse wheel during gameplay without affecting menus.
           - Reduced repeated block-outline calculations when chunks load or update.
           EOF
 
@@ -129,6 +133,10 @@ jobs:
             Fabric compatibility preview for Minecraft 26.4 Snapshot 2 (Alpha).
 
             - With block outlines enabled, netherrack uses its original texture's average color.
-            - Ancient debris and budding amethyst have flowing rainbow-striped outlines, 3/32 of a block wide.
-            - Powder snow has opaque pastel rainbow-striped outlines, 3/32 of a block wide.
+            - Ancient debris retains flowing rainbow-striped outlines.
+            - Powder snow has animated pastel rainbow snowflakes and pastel rainbow outlines.
+            - Suspicious sand and suspicious gravel have pastel rainbow outlines and brush markers.
+            - Budding amethyst has static yellow-and-black warning outlines.
+            - Infested blocks have red-and-white warning outlines and smaller bug warning markers.
+            - A setting can disable the mouse wheel during gameplay without affecting menus.
             - Reduced repeated block-outline calculations when chunks load or update.

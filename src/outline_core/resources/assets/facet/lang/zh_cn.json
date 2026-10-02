@@ -32,6 +32,8 @@
   "config.facet.hover_outline": "悬停描边：%s",
 	"config.facet.distance_path": "曼哈顿路径：%s",
 	"config.facet.placement_preview": "放置预览：%s",
+  "config.facet.disable_mouse_scroll": "禁用鼠标滚轮：%s",
+  "config.facet.disable_mouse_scroll.tooltip": "开启后屏蔽游戏中的鼠标滚轮输入，不影响菜单、背包等界面的滚动。",
   "config.facet.width": "宽度",
   "config.facet.hover_width": "悬停宽度",
   "config.facet.reset": "重置",
