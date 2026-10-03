@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added snowflake and brush markers, warning outlines for budding amethyst and infested blocks, and a setting to disable the mouse wheel during gameplay.
+Night vision while holographic preview is enabled and translucent lava make dark areas and lava interiors easier to see.
 
 ## Complete Feature List
 
@@ -38,6 +38,10 @@ Added snowflake and brush markers, warning outlines for budding amethyst and inf
 - NeoForge
 
 ## Feature Updates
+
+### v1.5.3 - Clearer Holographic Preview and Lava
+- Added night vision while holographic placement preview is enabled
+- Made lava translucent with clearer interior fog
 
 ### v1.5.1 - Special Block Markers and Mouse Wheel Toggle
 - Added animated pastel rainbow snowflakes to powder snow, retaining its pastel outlines
