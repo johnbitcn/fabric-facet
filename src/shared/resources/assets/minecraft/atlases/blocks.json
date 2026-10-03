@@ -7,13 +7,27 @@
     },
     {
       "type": "minecraft:single",
-      "resource": "minecraft:block/lava_still",
-      "sprite": "facet:block/lava_gel_still"
+      "resource": "facet:block/lava_gel_still"
     },
     {
       "type": "minecraft:single",
-      "resource": "minecraft:block/lava_flow",
-      "sprite": "facet:block/lava_gel_flow"
+      "resource": "facet:block/lava_gel_flow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "facet:block/water_direction_still"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "facet:block/water_direction_flow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "facet:block/lava_gel_side"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "facet:block/water_direction_side"
     }
   ]
 }

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 abstract class LavaGelMixin {
 	@Inject(method = "bake", at = @At("RETURN"))
 	private static void facet$bakeGel(MaterialBaker materials, CallbackInfoReturnable<Map<Fluid, FluidModel>> cir) {
-		LavaGel.bake(materials);
+		LavaGel.bake(materials, cir.getReturnValue());
 	}
 
 	@Inject(method = "get", at = @At("RETURN"), cancellable = true)

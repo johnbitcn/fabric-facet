@@ -9,7 +9,7 @@
     "ClientLevelMixin",
     "SpriteContentsAccessor",
     "LavaGelMixin",
-    "LavaGelSpriteMixin",
+    "FluidDirectionSideMixin",
     "LavaGelFogMixin",
     "HologramNightVisionMixin",
     "NetherrackTextureMixin"

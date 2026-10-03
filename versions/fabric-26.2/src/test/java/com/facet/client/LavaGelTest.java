@@ -1,23 +1,18 @@
 package com.facet.client;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.util.ARGB;
 import net.minecraft.world.level.material.Fluids;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.lang.invoke.MethodType;
-import java.util.Arrays;
-import java.util.Objects;
-
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.minecraft.client.renderer.texture.SpriteContents;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import javax.imageio.ImageIO;
 
 class LavaGelTest {
 	@BeforeAll
@@ -27,43 +22,72 @@ class LavaGelTest {
 	}
 
 	@Test
-	void onlyLavaChangesWhenOutlinesAreEnabledAndVanillaReturnsWhenDisabled() {
+	void bothFluidsChangeOnlyWhenEnabledAndBaked() {
 		var original = new FluidModel(ChunkSectionLayer.SOLID, null, null, null, (BlockTintSource) null);
 		var gel = new FluidModel(ChunkSectionLayer.TRANSLUCENT, null, null, null, (BlockTintSource) null);
-		for (var fluid : new net.minecraft.world.level.material.Fluid[] {Fluids.LAVA, Fluids.FLOWING_LAVA}) {
-			assertSame(gel, LavaGel.selectModel(true, fluid.defaultFluidState(), original, gel));
-			assertSame(original, LavaGel.selectModel(false, fluid.defaultFluidState(), original, gel));
-			assertSame(original, LavaGel.selectModel(true, fluid.defaultFluidState(), original, null));
+		var water = new FluidModel(ChunkSectionLayer.TRANSLUCENT, null, null, null, (BlockTintSource) null);
+		for (var fluid : new net.minecraft.world.level.material.Fluid[] {
+				Fluids.LAVA, Fluids.FLOWING_LAVA, Fluids.WATER, Fluids.FLOWING_WATER}) {
+			var expected = fluid == Fluids.LAVA || fluid == Fluids.FLOWING_LAVA ? gel : water;
+			assertSame(expected, LavaGel.selectModel(true, fluid.defaultFluidState(), original, gel, water));
+			assertSame(original, LavaGel.selectModel(false, fluid.defaultFluidState(), original, gel, water));
+			assertSame(original, LavaGel.selectModel(true, fluid.defaultFluidState(), original, null, null));
 		}
-		for (var fluid : new net.minecraft.world.level.material.Fluid[] {Fluids.WATER, Fluids.FLOWING_WATER, Fluids.EMPTY}) {
-			assertSame(original, LavaGel.selectModel(true, fluid.defaultFluidState(), original, gel));
-		}
+		assertSame(original, LavaGel.selectModel(true, Fluids.EMPTY.defaultFluidState(), original, gel, water));
 	}
 
 	@Test
-	void spriteInjectionSelectsAnExplicitExistingConstructor() throws ClassNotFoundException {
-		var injection = Arrays.stream(Class.forName("com.facet.client.mixin.LavaGelSpriteMixin").getDeclaredMethods())
-				.map(method -> method.getAnnotation(WrapOperation.class))
-				.filter(Objects::nonNull).findFirst().orElseThrow();
-		assertEquals(1, injection.method().length);
-		assertTrue(Arrays.stream(SpriteContents.class.getDeclaredConstructors()).anyMatch(constructor ->
-				injection.method()[0].equals("<init>" + MethodType.methodType(void.class,
-						constructor.getParameterTypes()).descriptorString())));
-	}
-
-	@Test
-	void transparencyPreservesOriginalLavaColorsAndTransparentPixels() {
-		int[] original = {0xFFFF4500, 0xFFC83105, 0x80F04A09, 0x000C0201};
-		try (NativeImage image = new NativeImage(2, 2, false)) {
-			for (int i = 0; i < original.length; i++) image.setPixel(i % 2, i / 2, original[i]);
-			LavaGel.applyTransparency(image);
-			for (int i = 0; i < original.length; i++) {
-				int actual = image.getPixel(i % 2, i / 2);
-				assertEquals(original[i] & 0xFFFFFF, actual & 0xFFFFFF);
-				assertEquals(ARGB.alpha(original[i]) * LavaGel.ALPHA / 255, ARGB.alpha(actual));
+	void brightRoadArrowsHaveSmoothEdgesAndUnchangedTransparency() throws Exception {
+		Path textures = Path.of("../../src/shared/resources/assets/facet/textures/block");
+		for (String name : new String[] {"lava_gel", "water_direction"}) {
+			var still = ImageIO.read(textures.resolve(name + "_still.png").toFile());
+			for (String face : new String[] {"flow", "side"}) {
+				Path file = textures.resolve(name + "_" + face + ".png");
+				assertFalse(Files.exists(Path.of(file + ".mcmeta")));
+				var image = ImageIO.read(file.toFile());
+				assertEquals(256, image.getWidth());
+				assertEquals(256, image.getHeight());
+				int scale = image.getWidth() / 32;
+				int center = (face.equals("flow") ? 16 : 8) * scale;
+				int background = image.getRGB(0, 0);
+				int arrow = image.getRGB(center, center);
+				assertEquals(still.getRGB(0, 0), background);
+				assertEquals(name.equals("lava_gel") ? 110 : 180, background >>> 24);
+				assertTrue(((arrow >> 16) & 255) > ((background >> 16) & 255));
+				boolean smoothEdge = false;
+				for (int y = 0; y < image.getHeight(); y++) {
+					for (int x = 0; x < image.getWidth(); x++) {
+						int pixel = image.getRGB(x, y);
+						assertEquals(background >>> 24, pixel >>> 24);
+						if (pixel != arrow && pixel != background) smoothEdge = true;
+					}
+				}
+				assertTrue(smoothEdge, "Diagonal edges must contain antialiased coverage");
+				// A straight narrow shaft, broad shoulders and a tapering head (not just a triangle).
+				assertEquals(arrow, image.getRGB(center, center - 6 * scale));
+				assertEquals(background, image.getRGB(center + 3 * scale, center - 6 * scale));
+				assertEquals(arrow, image.getRGB(center + 4 * scale, center + scale));
+				assertEquals(background, image.getRGB(center + 4 * scale, center + 5 * scale));
+				assertEquals(arrow, image.getRGB(center, center + 6 * scale));
+				assertEquals(background, image.getRGB(center, center + 7 * scale));
+				// The entire side arrow fits inside the UV quarter, symmetric about its midpoint.
+				int start = face.equals("flow") ? 8 * scale : 0;
+				int end = start + 16 * scale;
+				for (int y = start; y < end; y++) {
+					assertEquals(background, image.getRGB(start, y));
+					assertEquals(background, image.getRGB(end - 1, y));
+					for (int x = start; x < end; x++) {
+						assertEquals(image.getRGB(x, y), image.getRGB(2 * center - 1 - x, y));
+					}
+				}
 			}
-			assertEquals(com.mojang.blaze3d.platform.Transparency.TRANSPARENT_AND_TRANSLUCENT, image.computeTransparency());
 		}
+	}
+
+	@Test
+	void vanillaModelsKeepTheirSideMaterial() {
+		var original = new FluidModel(ChunkSectionLayer.SOLID, null, null, null, (BlockTintSource) null);
+		assertNull(LavaGel.sideMaterial(original, original.flowingMaterial()));
 	}
 
 	@Test
