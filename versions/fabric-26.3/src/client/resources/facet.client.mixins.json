@@ -9,6 +9,10 @@
     "ClientLevelMixin",
     "MouseScrollMixin",
     "SpriteContentsAccessor",
+    "LavaGelMixin",
+    "LavaGelSpriteMixin",
+    "LavaGelFogMixin",
+    "HologramNightVisionMixin",
     "NetherrackTextureMixin",
     "LevelRendererRenderPassMixin"
   ],

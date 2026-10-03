@@ -4,6 +4,16 @@
       "type": "minecraft:single",
       "resource": "minecraft:block/netherrack",
       "sprite": "facet:block/netherrack_average"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "minecraft:block/lava_still",
+      "sprite": "facet:block/lava_gel_still"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "minecraft:block/lava_flow",
+      "sprite": "facet:block/lava_gel_flow"
     }
   ]
 }

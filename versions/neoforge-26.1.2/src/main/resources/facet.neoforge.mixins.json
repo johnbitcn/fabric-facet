@@ -8,6 +8,10 @@
     "MultiPlayerGameModeMixin",
     "ClientLevelMixin",
     "SpriteContentsAccessor",
+    "LavaGelMixin",
+    "LavaGelSpriteMixin",
+    "LavaGelFogMixin",
+    "HologramNightVisionMixin",
     "NetherrackTextureMixin"
   ],
   "injectors": {
