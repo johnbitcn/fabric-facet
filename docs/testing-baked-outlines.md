@@ -1,91 +1,86 @@
-# Baked outline optimization: first phase
+# 烘焙轮廓优化：第一阶段
 
-## Scope
+## 适用范围
 
-Ordinary Minecraft full-cube models with one opaque, untinted, normally shaded quad per
-culled face may use a generated border sprite instead of four extra strips.
-Both SingleVariant and every child of a vanilla WeightedVariants must qualify.
-The complete model falls back if any face or random variant is unsafe.
+普通 Minecraft 完整立方体模型，如果每个参与面剔除的面都只有一个不透明、无染色且正常着色的四边形，
+便可使用生成的边框精灵图，替代四条额外的条带几何体。
+SingleVariant 以及原版 WeightedVariants 的每个子模型都必须满足条件。
+只要任意面或随机变体不符合安全条件，整个模型就会回退到原有方案。
 
-The original sprite and model remain intact. World rendering chooses the baked
-model only while outlines are enabled at the default width, 1/32 block.
-Items, particles and special blocks continue to reference their original materials.
-Changing the width uses the existing geometry path immediately; no forced resource
-reload is required. Resource-pack reload regenerates variants from the new images.
+原始精灵图和模型保持不变。世界渲染仅在启用轮廓且宽度为默认值（1/32 方块）时
+选择烘焙模型。物品、粒子和特殊方块继续使用原始材质。
+更改宽度后会立即使用现有的几何体方案，无需强制重载资源。
+重载资源包时，会根据新图像重新生成变体。
 
-Retained geometry cases include:
+以下情况仍使用几何体方案：
 
-- Rainbow, pastel, warning and infested outlines and their face symbols.
-- Slabs, stairs, carpets, snow layers and other non-full models.
-- Tint indices, multilayer faces, cropped/repeated UVs, custom/multipart models and modded blocks.
-- Animated, transparent, non-square or unsupported-resolution sprites.
-- NeoForge faces with extra colors/normals or disabled AO.
-- Missing variants, budget exhaustion and atlas overflow.
+- 彩虹、粉彩、警告和虫蚀轮廓，以及它们的面部符号。
+- 台阶、楼梯、地毯、雪层和其他非完整方块模型。
+- 带染色索引、多层面、裁剪或重复 UV、自定义或 multipart 模型，以及模组方块。
+- 动画、透明、非正方形或分辨率不受支持的精灵图。
+- 带额外颜色或法线数据，或禁用了环境光遮蔽（AO）的 NeoForge 面。
+- 变体缺失、预算耗尽和纹理图集溢出。
 
-## Resource cost and appearance
+## 资源开销与外观
 
-Sprites are power-of-two, at most 256x256. A 16x16 source is nearest-neighbour
-enlarged to 32x32, giving the default width an exact one-pixel border.
-Larger supported sprites retain their resolution. The border uses the existing
-linear-light mean and dark-color boost, modulated by the white-concrete center
-texel used by the old outline geometry. All generated alpha values are 255.
+精灵图的边长必须是 2 的幂，最大为 256×256。16×16 的源图会通过最近邻插值
+放大至 32×32，使默认宽度对应恰好一个像素的边框。
+更大的受支持精灵图保持原分辨率。边框沿用现有的线性光空间平均色和深色增强算法，
+并使用旧轮廓几何体所采用的白色混凝土中心纹素进行调制。生成图像的所有 alpha 值均为 255。
 
-Metadata is preserved. Original images are never modified by border baking.
-The separate netherrack-average sprite remains uniform inside; its baked model
-uses the original full-face UV layout, not the old center-only UV.
+元数据保持不变。边框烘焙不会修改原始图像。
+独立的下界岩平均色精灵图内部仍保持均匀；其烘焙模型使用原始的整面 UV 布局，
+而不是旧的仅采样中心区域的 UV。
 
-Generated base pixel data is capped at 8 MiB per block atlas, preferring small
-sprites. This is not a cap on total GPU memory: mipmaps, atlas padding, allocation
-rounding and original images also cost memory. Atlas stitch overflow retries the
-original sprites and disables baked variants for that reload.
+每个方块纹理图集生成的基础像素数据上限为 8 MiB，优先处理较小的精灵图。
+这并非 GPU 总显存的上限：mipmap、图集留边、分配大小取整和原始图像也会占用显存。
+若图集拼接溢出，将使用原始精灵图重试，并在本次重载中禁用烘焙变体。
 
-Baked borders use the native face's lighting/AO and mipmap filtering. They are
-not pixel-identical to the old slightly offset geometry, especially at distance.
+烘焙边框使用原始面的光照、AO 和 mipmap 过滤。
+它们与旧方案中略微偏移的几何体并非逐像素一致，远距离观察时尤其如此。
 
-## Automated verification
+## 自动化验证
 
-Use JDK 25 (the project targets Java 25):
+使用 JDK 25（项目目标版本为 Java 25）：
 
 ```sh
 JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home \
   ./gradlew --offline check build
 ```
 
-Shared tests cover pixel art, physical border width, opaque alpha, originals,
-metadata, reload availability, namespace collisions, budget, private Mixin hook
-signatures, UVs, cached quad counts, unsafe models and weighted variants.
-Fabric additionally boots vanilla registries to check special block/shape eligibility.
-NeoForge tests remain headless and do not attempt to create an FML client.
+共享测试覆盖像素图、实际边框宽度、不透明 alpha、原始图像、
+元数据、重载后的可用性、命名空间冲突、预算、私有 Mixin 钩子签名、
+UV、缓存的四边形数量、不安全模型和加权变体。
+Fabric 还会启动原版注册表，以检查特殊方块和形状是否符合条件。
+NeoForge 测试保持无界面运行，不尝试创建 FML 客户端。
 
-## In-game A/B verification (not yet measured)
+## 游戏内 A/B 验证（尚未实测）
 
-Use the same loader, game version, world, camera, render distance and resource pack.
-Disable VSync and FPS caps. Warm up and finish initial chunk builds before recording.
-Compare:
+使用相同的加载器、游戏版本、世界、视角、渲染距离和资源包。
+禁用垂直同步和 FPS 上限。记录前先预热，并等待初始区块构建完成。
+比较以下情况：
 
-1. Installed mod, outlines disabled.
-2. Installed mod, outlines enabled, JVM argument `-Dfacet.bakedOutlines=false`.
-3. Installed mod, outlines enabled, default width, baked optimization enabled.
+1. 已安装模组，关闭轮廓。
+2. 已安装模组，启用轮廓，并添加 JVM 参数 `-Dfacet.bakedOutlines=false`。
+3. 已安装模组，启用轮廓，使用默认宽度，并启用烘焙优化。
 
-Changing the JVM flag requires restarting the client. Do not compare different
-resource packs or loader versions. Check both a static camera and a repeatable
-moving/chunk-loading route. Record CPU/GPU frame time, median FPS and P95/P99 frame
-time, section-build time and GPU memory. A reduction in quad count is not a measured
-FPS gain.
+更改 JVM 参数需要重启客户端。不要比较不同资源包或不同加载器版本下的结果。
+同时测试固定视角和可重复的移动／区块加载路线。
+记录 CPU/GPU 帧耗时、FPS 中位数、P95/P99 帧耗时、区块分段构建耗时和 GPU 显存占用。
+四边形数量减少并不等于已经测得 FPS 提升。
 
-Fabric's `-Dfacet.outlineStats=true` reports strip counts and baked-block emission
-counts during section building. These are diagnostic workload counters, not an FPS
-profiler, and they are inactive on NeoForge.
+Fabric 的 `-Dfacet.outlineStats=true` 会在区块分段构建期间报告条带数量和烘焙方块输出数量。
+这些是用于诊断的工作量计数器，并非 FPS 性能分析工具，且在 NeoForge 上不生效。
 
-Visual checklist:
+视觉检查清单：
 
-- Stone, dirt, concrete, ore, logs and rotated weighted cube variants.
-- Netherrack uniform interior and visible border.
-- Ancient debris, budding amethyst, infested stone, powder snow and suspicious blocks.
-- Grass/foliage tint and stair/slab/carpet/snow-layer geometry fallback.
-- Graffiti, hover outlines, hologram boot animation and placement previews.
-- Toggle off/on; default width -> another width -> default width.
-- Vanilla and high-resolution/transparent/animated resource packs; reload with F3+T.
-- Near/far views, mipmap settings, AO and face culling.
-- Fabric 26.1/26.2/26.3 and NeoForge 26.1/26.1.2/26.2/26.3.
-- Optional renderer/shader combinations require separate in-game validation.
+- 石头、泥土、混凝土、矿石、原木，以及带旋转的加权立方体变体。
+- 下界岩内部颜色均匀，边框清晰可见。
+- 远古残骸、紫水晶母岩、虫蚀石头、细雪和可疑方块。
+- 草／树叶染色，以及楼梯／台阶／地毯／雪层的几何体回退。
+- 涂鸦、悬停轮廓、全息图启动动画和放置预览。
+- 关闭再开启；默认宽度 → 其他宽度 → 默认宽度。
+- 原版资源包，以及高分辨率／透明／动画资源包；使用 F3+T 重载。
+- 近景／远景、mipmap 设置、AO 和面剔除。
+- Fabric 26.1/26.2/26.3 和 NeoForge 26.1/26.1.2/26.2/26.3。
+- 可选的渲染器／着色器组合需要单独进行游戏内验证。
