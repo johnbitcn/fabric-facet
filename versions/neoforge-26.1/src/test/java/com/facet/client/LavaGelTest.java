@@ -1,23 +1,21 @@
 package com.facet.client;
 
-import com.mojang.blaze3d.platform.NativeImage;
-import net.minecraft.util.ARGB;
+import java.nio.file.Path;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LavaGelTest {
 	@Test
-	void transparencyPreservesOriginalLavaColorsAndTransparentPixels() {
-		int[] original = {0xFFFF4500, 0xFFC83105, 0x80F04A09, 0x000C0201};
-		try (NativeImage image = new NativeImage(2, 2, false)) {
-			for (int i = 0; i < original.length; i++) image.setPixel(i % 2, i / 2, original[i]);
-			LavaGel.applyTransparency(image);
-			for (int i = 0; i < original.length; i++) {
-				int actual = image.getPixel(i % 2, i / 2);
-				assertEquals(original[i] & 0xFFFFFF, actual & 0xFFFFFF);
-				assertEquals(ARGB.alpha(original[i]) * LavaGel.ALPHA / 255, ARGB.alpha(actual));
-			}
-			assertEquals(com.mojang.blaze3d.platform.Transparency.TRANSPARENT_AND_TRANSLUCENT, image.computeTransparency());
+	void brightArrowsRetainFluidTransparency() throws Exception {
+		for (String name : new String[] {"lava_gel", "water_direction"}) {
+			var image = ImageIO.read(Path.of("../../src/shared/resources/assets/facet/textures/block",
+					name + "_flow.png").toFile());
+			int background = image.getRGB(0, 0);
+			int arrow = image.getRGB(image.getWidth() / 2, image.getHeight() / 2);
+			assertEquals(background >>> 24, arrow >>> 24);
+			assertTrue((arrow >>> 24) > 0 && (arrow >>> 24) < 255);
+			assertTrue(((arrow >> 16) & 255) > ((background >> 16) & 255));
 		}
 	}
 

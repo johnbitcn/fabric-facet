@@ -47,6 +47,7 @@ sourceSets {
 	}
 
 	test {
+		java.srcDir(rootProject.file('src/outline_core/test/java'))
 		compileClasspath += sourceSets.main.compileClasspath
 		runtimeClasspath += sourceSets.main.runtimeClasspath
 	}

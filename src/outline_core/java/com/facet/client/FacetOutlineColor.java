@@ -43,6 +43,15 @@ public final class FacetOutlineColor {
 
 	/** Replace RGB with the alpha-weighted linear-light mean, preserving transparency. */
 	public static void flattenTexture(NativeImage image) {
+		int rgb = meanTextureColor(image) & 0xFFFFFF;
+		for (int y = 0; y < image.getHeight(); y++) {
+			for (int x = 0; x < image.getWidth(); x++) {
+				image.setPixel(x, y, (image.getPixel(x, y) & 0xFF000000) | rgb);
+			}
+		}
+	}
+
+	static int meanTextureColor(NativeImage image) {
 		PixelAccumulator pixels = new PixelAccumulator();
 		for (int y = 0; y < image.getHeight(); y++) {
 			for (int x = 0; x < image.getWidth(); x++) {
@@ -50,14 +59,9 @@ public final class FacetOutlineColor {
 			}
 		}
 		TextureSample sample = pixels.finish();
-		int rgb = ARGB.color(255, Math.round(linearToSrgb(sample.red) * 255.0f),
+		return ARGB.color(255, Math.round(linearToSrgb(sample.red) * 255.0f),
 				Math.round(linearToSrgb(sample.green) * 255.0f),
-				Math.round(linearToSrgb(sample.blue) * 255.0f)) & 0xFFFFFF;
-		for (int y = 0; y < image.getHeight(); y++) {
-			for (int x = 0; x < image.getWidth(); x++) {
-				image.setPixel(x, y, (image.getPixel(x, y) & 0xFF000000) | rgb);
-			}
-		}
+				Math.round(linearToSrgb(sample.blue) * 255.0f));
 	}
 
 	static void clearCache() {

@@ -95,7 +95,11 @@ final class FacetBlockOverlay {
 			Material.Baked netherrackMaterial = state.is(Blocks.NETHERRACK)
 					? modifierContext.baker().materials().get(NETHERRACK_TEXTURE, OUTLINE_DEBUG_NAME)
 					: null;
-			return new OutlineBlockStateModel(model, outlineMaterial, symbolMaterial, graffitiMaterials, netherrackMaterial, rainbowOutline);
+			BlockStateModel bakedModel = FacetBakedOutlineModel.create(state, model, netherrackMaterial,
+					id -> modifierContext.baker().materials().get(new Material(id, false), OUTLINE_DEBUG_NAME),
+					FacetBakedOutlineModel::remapQuad);
+			return new OutlineBlockStateModel(model, outlineMaterial, symbolMaterial, graffitiMaterials,
+					netherrackMaterial, rainbowOutline, bakedModel);
 		});
 	}
 
@@ -105,21 +109,31 @@ final class FacetBlockOverlay {
 		private final Map<GraffitiType, Material.Baked> graffitiMaterials;
 		private final Material.Baked netherrackMaterial;
 		private final boolean rainbowOutline;
+		private final BlockStateModel bakedModel;
 
 		private OutlineBlockStateModel(BlockStateModel wrapped, Material.Baked outlineMaterial,
 				Material.Baked symbolMaterial, Map<GraffitiType, Material.Baked> graffitiMaterials, Material.Baked netherrackMaterial,
-				boolean rainbowOutline) {
+				boolean rainbowOutline, BlockStateModel bakedModel) {
 			super(wrapped);
 			this.outlineMaterial = outlineMaterial;
 			this.symbolMaterial = symbolMaterial;
 			this.graffitiMaterials = graffitiMaterials;
 			this.netherrackMaterial = netherrackMaterial;
 			this.rainbowOutline = rainbowOutline;
+			this.bakedModel = bakedModel;
 		}
 
 		@Override
 		public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
-			if (netherrackMaterial != null && FacetConfig.enabled()) {
+			boolean baked = bakedModel != null && FacetConfig.enabled()
+					&& FacetBakedOutlineTextures.matchesWidth(FacetConfig.effectiveEdgeWidth())
+					&& FacetOutlineRules.shouldRender(level, pos, state);
+			if (baked) {
+				bakedModel.emitQuads(emitter, level, pos, state, random, cullTest);
+				if (FacetOutlineStats.enabled()) {
+					FacetOutlineStats.BAKED_BLOCKS_SERVED.incrementAndGet();
+				}
+			} else if (netherrackMaterial != null && FacetConfig.enabled()) {
 				emitter.pushTransform(quad -> {
 					quad.uv(0, OUTLINE_UV, OUTLINE_UV).uv(1, OUTLINE_UV, OUTLINE_UV)
 							.uv(2, OUTLINE_UV, OUTLINE_UV).uv(3, OUTLINE_UV, OUTLINE_UV)
@@ -135,7 +149,7 @@ final class FacetBlockOverlay {
 				super.emitQuads(emitter, level, pos, state, random, cullTest);
 			}
 
-			if (!FacetClient.usesExperimentalLineOutlines()
+			if (!baked && !FacetClient.usesExperimentalLineOutlines()
 					&& FacetConfig.enabled()
 					&& (rainbowOutline || FacetOutlineRules.shouldRender(level, pos, state))) {
 				VoxelShape shape = state.getShape(level, pos);

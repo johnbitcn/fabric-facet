@@ -48,6 +48,7 @@ sourceSets {
 	}
 
 	test {
+		java.srcDir(rootProject.file('src/outline_core/test/java'))
 		java.srcDir(rootProject.file('versions/neoforge-26.1/src/test/java'))
 		compileClasspath += sourceSets.main.compileClasspath
 		runtimeClasspath += sourceSets.main.runtimeClasspath

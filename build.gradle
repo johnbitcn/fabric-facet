@@ -132,6 +132,7 @@ versionConfigs.each { projectPath, cfg ->
 		}
 
 		if (projectPath == ":versions:fabric-26.2") {
+			sourceSets.test.java.srcDir(rootProject.file("src/outline_core/test/java"))
 			sourceSets.test.compileClasspath += sourceSets.client.output + configurations.clientCompileClasspath
 			sourceSets.test.runtimeClasspath += sourceSets.client.output + configurations.clientRuntimeClasspath
 			tasks.named("test") {

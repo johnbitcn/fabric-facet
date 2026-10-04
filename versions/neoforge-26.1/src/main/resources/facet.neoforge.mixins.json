@@ -8,8 +8,10 @@
     "MultiPlayerGameModeMixin",
     "ClientLevelMixin",
     "SpriteContentsAccessor",
+    "BakedOutlineAtlasMixin",
+    "WeightedVariantsAccessor",
     "LavaGelMixin",
-    "LavaGelSpriteMixin",
+    "FluidDirectionSideMixin",
     "LavaGelFogMixin",
     "HologramNightVisionMixin",
     "NetherrackTextureMixin"

@@ -24,6 +24,7 @@ final class FacetOutlineStats {
 	static final AtomicLong PARTIAL_CACHE_MISSES = new AtomicLong();
 	static final AtomicLong PARTIAL_STRIPS_SERVED = new AtomicLong();
 	static final AtomicLong FULL_CUBE_STRIPS_SERVED = new AtomicLong();
+	static final AtomicLong BAKED_BLOCKS_SERVED = new AtomicLong();
 
 	private static volatile boolean forceEnabled;
 
@@ -52,13 +53,14 @@ final class FacetOutlineStats {
 
 		lastLogNanos = now;
 		LOGGER.info("outline stats: strips emitted={} culled={} carpetSkipped={} | "
-						+ "partial cache hits={} misses={} served={} | fullCube served={}",
+						+ "partial cache hits={} misses={} served={} | fullCube served={} | baked blocks={}",
 				STRIPS_EMITTED.get(),
 				STRIPS_SKIPPED_CULLED.get(),
 				STRIPS_SKIPPED_CARPET.get(),
 				PARTIAL_CACHE_HITS.get(),
 				PARTIAL_CACHE_MISSES.get(),
 				PARTIAL_STRIPS_SERVED.get(),
-				FULL_CUBE_STRIPS_SERVED.get());
+				FULL_CUBE_STRIPS_SERVED.get(),
+				BAKED_BLOCKS_SERVED.get());
 	}
 }

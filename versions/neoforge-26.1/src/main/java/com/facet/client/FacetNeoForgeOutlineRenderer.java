@@ -84,13 +84,24 @@ final class FacetNeoForgeOutlineRenderer {
 			Material.Baked symbolMaterial = state.is(Blocks.POWDER_SNOW) ? snowflakeMaterial
 					: FacetOutlineRules.usesBrushSymbol(state) ? brushMaterial
 					: FacetOutlineRules.isInfested(state) ? bugMaterial : null;
+			Material.Baked replacement = state.is(Blocks.NETHERRACK) ? netherrackMaterial : null;
+			BlockStateModel bakedModel = FacetBakedOutlineModel.create(state, model, replacement,
+					id -> new Material.Baked(event.getTextureGetter().apply(id), false),
+					FacetNeoForgeOutlineRenderer::remapBakedQuad);
 			entry.setValue(new OutlineModel(model, outlineMaterial, graffitiMaterials,
-					rainbowOutline, state.is(Blocks.NETHERRACK) ? netherrackMaterial : null,
-					rainbowOutline && !warningOutline ? BakedQuad.FLAG_ANIMATED : 0, symbolMaterial));
+					rainbowOutline, replacement,
+					rainbowOutline && !warningOutline ? BakedQuad.FLAG_ANIMATED : 0, symbolMaterial, bakedModel));
 			wrapped++;
 		}
 
 		FacetNeoForgeOutline.LOGGER.info("Wrapped {} Minecraft 26.1 block-state models for the Facet outline renderer", wrapped);
+	}
+
+	private static BakedQuad remapBakedQuad(BakedQuad original, Material.Baked target) {
+		BakedQuad mapped = FacetBakedOutlineModel.remapQuad(original, target);
+		return new BakedQuad(mapped.position0(), mapped.position1(), mapped.position2(), mapped.position3(),
+				mapped.packedUV0(), mapped.packedUV1(), mapped.packedUV2(), mapped.packedUV3(), mapped.direction(),
+				mapped.materialInfo(), original.bakedNormals(), original.bakedColors());
 	}
 
 	static final class OutlineModel extends DelegateBlockStateModel {
@@ -100,9 +111,16 @@ final class FacetNeoForgeOutlineRenderer {
 		private final Material.Baked netherrackMaterial;
 		private final int outlineFlags;
 		private final Material.Baked symbolMaterial;
+		private final BlockStateModel bakedModel;
 
 		OutlineModel(BlockStateModel delegate, Material.Baked material, Map<GraffitiType, Material.Baked> graffitiMaterials,
 				boolean rainbowOutline, Material.Baked netherrackMaterial, int outlineFlags, Material.Baked symbolMaterial) {
+			this(delegate, material, graffitiMaterials, rainbowOutline, netherrackMaterial, outlineFlags, symbolMaterial, null);
+		}
+
+		OutlineModel(BlockStateModel delegate, Material.Baked material, Map<GraffitiType, Material.Baked> graffitiMaterials,
+				boolean rainbowOutline, Material.Baked netherrackMaterial, int outlineFlags,
+				Material.Baked symbolMaterial, BlockStateModel bakedModel) {
 			super(delegate);
 			this.material = material;
 			this.graffitiMaterials = graffitiMaterials;
@@ -110,19 +128,27 @@ final class FacetNeoForgeOutlineRenderer {
 			this.netherrackMaterial = netherrackMaterial;
 			this.outlineFlags = outlineFlags;
 			this.symbolMaterial = symbolMaterial;
+			this.bakedModel = bakedModel;
 		}
 
 		@Override
 		public void collectParts(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random,
 				List<BlockStateModelPart> parts) {
+			boolean baked = bakedModel != null && FacetNeoForgeOutlineConfig.enabled()
+					&& FacetBakedOutlineTextures.matchesWidth(FacetNeoForgeOutlineConfig.edgeWidth())
+					&& FacetOutlineRules.shouldRender(level, pos, state);
 			int firstPart = parts.size();
-			super.collectParts(level, pos, state, random, parts);
-			if (netherrackMaterial != null && FacetNeoForgeOutlineConfig.enabled()) {
+			if (baked) {
+				bakedModel.collectParts(level, pos, state, random, parts);
+			} else {
+				super.collectParts(level, pos, state, random, parts);
+			}
+			if (!baked && netherrackMaterial != null && FacetNeoForgeOutlineConfig.enabled()) {
 				for (int part = firstPart; part < parts.size(); part++) {
 					parts.set(part, new RetexturedPart(parts.get(part), netherrackMaterial));
 				}
 			}
-			boolean outline = FacetNeoForgeOutlineConfig.enabled()
+			boolean outline = !baked && FacetNeoForgeOutlineConfig.enabled()
 					&& (rainbowOutline || FacetOutlineRules.shouldRender(level, pos, state));
 			GraffitiType[] types = GraffitiStore.getTypes(pos, state);
 			if (!outline && types == null) {
