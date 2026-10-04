@@ -56,6 +56,19 @@ final class FacetNeoForgePlatform {
 		quad.setShade(shade);
 	}
 
+	static boolean defaultShade(net.minecraft.client.resources.model.geometry.BakedQuad.MaterialInfo info) {
+		return info.shade();
+	}
+
+	static net.minecraft.client.resources.model.geometry.BakedQuad.MaterialInfo remapMaterial(
+			net.minecraft.client.resources.model.geometry.BakedQuad.MaterialInfo old,
+			net.minecraft.client.resources.model.sprite.Material.Baked target) {
+		return new net.minecraft.client.resources.model.geometry.BakedQuad.MaterialInfo(
+				target.sprite(), old.layer(), old.itemRenderType(),
+				old.tintIndex(), old.shade(),
+				old.lightEmission(), old.ambientOcclusion());
+	}
+
 	static Camera mainCamera(Minecraft minecraft) {
 		return minecraft.gameRenderer.mainCamera();
 	}

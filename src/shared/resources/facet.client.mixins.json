@@ -9,6 +9,8 @@
     "ClientLevelMixin",
     "MouseScrollMixin",
     "SpriteContentsAccessor",
+    "BakedOutlineAtlasMixin",
+    "WeightedVariantsAccessor",
     "LavaGelMixin",
     "FluidDirectionSideMixin",
     "LavaGelFogMixin",
