@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "package": "com.facet.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "BlockItemInvoker",
+    "BlockItemPlacementMixin",
+    "MultiPlayerGameModeMixin",
+    "ClientLevelMixin",
+    "MouseScrollMixin",
+    "SpriteContentsAccessor",
+    "BakedOutlineAtlasMixin",
+    "WeightedVariantsAccessor",
+    "LavaGelMixin",
+    "FluidDirectionSideMixin",
+    "LavaGelFogMixin",
+    "HologramNightVisionMixin",
+    "NetherrackTextureMixin",
+    "LevelRendererRenderPassMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
