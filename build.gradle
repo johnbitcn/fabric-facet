@@ -78,6 +78,13 @@ allprojects {
 	}
 }
 
+// Authorize LWJGL native loading only in forked test JVMs, not Gradle or game runs.
+subprojects {
+	tasks.withType(Test).configureEach {
+		jvmArgs '--enable-native-access=ALL-UNNAMED'
+	}
+}
+
 versionConfigs.each { projectPath, cfg ->
 	project(projectPath) {
 		apply plugin: "net.fabricmc.fabric-loom"
