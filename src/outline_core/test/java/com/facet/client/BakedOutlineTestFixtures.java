@@ -11,7 +11,6 @@ import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.texture.MipmapStrategy;
 import net.minecraft.client.renderer.texture.SpriteContents;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.client.resources.metadata.texture.TextureMetadataSection;
@@ -123,7 +122,9 @@ final class BakedOutlineTestFixtures implements AutoCloseable {
 
 	static final class TestSprite extends TextureAtlasSprite {
 		TestSprite(SpriteContents contents, int offset) {
-			super(TextureAtlas.LOCATION_BLOCKS, contents, 512, 512, offset, offset, 0);
+			// TextureAtlasSprite expects a texture path, not the logical AtlasIds.BLOCKS ID.
+			super(Identifier.withDefaultNamespace("textures/atlas/blocks.png"),
+					contents, 512, 512, offset, offset, 0);
 		}
 	}
 }

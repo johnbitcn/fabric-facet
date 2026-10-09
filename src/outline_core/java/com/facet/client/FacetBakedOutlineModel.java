@@ -48,7 +48,7 @@ final class FacetBakedOutlineModel {
 			Function<Identifier, Material.Baked> materials, QuadMapper mapper) {
 		if (model.getClass() == SingleVariant.class) {
 			List<BlockStateModelPart> parts = new ArrayList<>();
-			model.collectParts(RandomSource.create(0), parts);
+			((SingleVariant) model).collectParts(RandomSource.create(0), parts);
 			if (parts.size() != 1 || !parts.getFirst().getClass().getName().startsWith("net.minecraft.")) {
 				return null;
 			}
