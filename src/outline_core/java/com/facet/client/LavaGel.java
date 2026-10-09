@@ -3,9 +3,7 @@ package com.facet.client;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 
-import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.renderer.block.FluidModel;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.client.resources.model.sprite.MaterialBaker;
@@ -48,13 +46,12 @@ public final class LavaGel {
 	public static void bake(MaterialBaker materials, Map<Fluid, FluidModel> originals) {
 		lavaSide = materials.get(LAVA_SIDE, () -> "Facet lava side direction");
 		waterSide = materials.get(WATER_SIDE, () -> "Facet water side direction");
-		gelModel = new FluidModel(ChunkSectionLayer.TRANSLUCENT,
+		gelModel = FacetFluidModelPlatform.retexture(originals.get(Fluids.LAVA),
 				materials.get(STILL, () -> "Facet still lava"),
-				materials.get(FLOW, () -> "Facet lava direction"), null, (BlockTintSource) null);
+				materials.get(FLOW, () -> "Facet lava direction"), null);
 		var waterStill = materials.get(WATER_STILL, () -> "Facet still water");
-		waterModel = new FluidModel(ChunkSectionLayer.TRANSLUCENT, waterStill,
-				materials.get(WATER_FLOW, () -> "Facet water direction"), waterStill,
-				originals.get(Fluids.WATER).tintSource());
+		waterModel = FacetFluidModelPlatform.retexture(originals.get(Fluids.WATER), waterStill,
+				materials.get(WATER_FLOW, () -> "Facet water direction"), waterStill);
 	}
 
 	/** Side UVs use [0, 0.5], unlike the rotated top-face UVs centered at 0.5. */
