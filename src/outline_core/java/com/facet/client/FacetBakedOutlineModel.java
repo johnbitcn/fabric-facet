@@ -167,16 +167,12 @@ final class FacetBakedOutlineModel {
 	}
 
 	private record BakedPart(BlockStateModelPart original, Map<Direction, List<BakedQuad>> faces)
-			implements BlockStateModelPart {
+			implements FacetAmbientOcclusionPart {
 		@Override
 		public List<BakedQuad> getQuads(Direction face) {
 			return face == null ? List.of() : faces.get(face);
 		}
 
-		@Override
-		public boolean useAmbientOcclusion() {
-			return original.useAmbientOcclusion();
-		}
 
 		@Override
 		public Material.Baked particleMaterial() {

@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.TriState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CarpetBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -289,6 +290,12 @@ final class FacetNeoForgeOutlineRenderer {
 			}
 
 			@Override
+			public TriState ambientOcclusion() {
+				return TriState.DEFAULT;
+			}
+
+			@Deprecated
+			@Override
 			public boolean useAmbientOcclusion() {
 				return true;
 			}
@@ -319,6 +326,12 @@ final class FacetNeoForgeOutlineRenderer {
 				return List.of(createFaceDecal(face, plane, symbolMaterial, size));
 			}
 
+			@Override
+			public TriState ambientOcclusion() {
+				return TriState.FALSE;
+			}
+
+			@Deprecated
 			@Override
 			public boolean useAmbientOcclusion() {
 				return false;
@@ -405,7 +418,7 @@ final class FacetNeoForgeOutlineRenderer {
 	}
 
 	/** Retexture only faces requested by terrain rendering; preserve the original geometry and shading. */
-	static final class RetexturedPart implements BlockStateModelPart {
+	static final class RetexturedPart implements FacetAmbientOcclusionPart {
 		private final BlockStateModelPart delegate;
 		private final Material.Baked material;
 		private final Map<Direction, List<BakedQuad>> faces = new HashMap<>();
@@ -428,8 +441,8 @@ final class FacetNeoForgeOutlineRenderer {
 		}
 
 		@Override
-		public boolean useAmbientOcclusion() {
-			return delegate.useAmbientOcclusion();
+		public BlockStateModelPart original() {
+			return delegate;
 		}
 
 		@Override
@@ -456,6 +469,12 @@ final class FacetNeoForgeOutlineRenderer {
 					: culled.byDirection.getOrDefault(direction, List.of());
 		}
 
+		@Override
+		public TriState ambientOcclusion() {
+			return TriState.DEFAULT;
+		}
+
+		@Deprecated
 		@Override
 		public boolean useAmbientOcclusion() {
 			return true;

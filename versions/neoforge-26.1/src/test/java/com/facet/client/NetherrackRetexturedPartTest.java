@@ -17,7 +17,8 @@ class NetherrackRetexturedPartTest {
 				calls[face == null ? 6 : face.ordinal()]++;
 				return List.of();
 			}
-			public boolean useAmbientOcclusion() { return false; }
+			@Deprecated public boolean useAmbientOcclusion() { return false; }
+			public net.minecraft.util.TriState ambientOcclusion() { return net.minecraft.util.TriState.FALSE; }
 			public Material.Baked particleMaterial() { return null; }
 			public int materialFlags() { return BakedQuad.FLAG_ANIMATED; }
 		};
@@ -30,7 +31,7 @@ class NetherrackRetexturedPartTest {
 			assertEquals(face == Direction.NORTH ? 1 : 0, calls[face.ordinal()]);
 		}
 		assertEquals(1, calls[6]);
-		assertFalse(part.useAmbientOcclusion());
+		assertEquals(net.minecraft.util.TriState.FALSE, part.ambientOcclusion());
 		assertEquals(delegate.materialFlags(), part.materialFlags());
 	}
 }

@@ -73,7 +73,7 @@ class FacetBakedOutlineModelTest {
 			assertEquals(source.sprite(), original.getQuads(face).getFirst().materialInfo().sprite());
 		}
 		assertSame(original.particleMaterial(), baked.particleMaterial());
-		assertEquals(original.useAmbientOcclusion(), baked.useAmbientOcclusion());
+		assertSame(original, ((FacetAmbientOcclusionPart) baked).original());
 		assertEquals(original.materialFlags(), baked.materialFlags());
 	}
 
