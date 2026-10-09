@@ -66,6 +66,19 @@ jobs:
           fi
           echo "RELEASE_VERSION=$release_version" >> "$GITHUB_ENV"
 
+      - name: Load release notes
+        shell: bash
+        run: |
+          {
+            echo 'RELEASE_NOTES<<FACET_RELEASE_NOTES'
+            if [ -f "release-notes/${RELEASE_TAG}.md" ]; then
+              cat "release-notes/${RELEASE_TAG}.md"
+            else
+              echo "Facet ${RELEASE_VERSION}."
+            fi
+            echo 'FACET_RELEASE_NOTES'
+          } >> "$GITHUB_ENV"
+
       - name: Build all release artifacts once
         run: >-
           ./gradlew
@@ -113,8 +126,9 @@ jobs:
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" release/* --clobber
+            gh release edit "$RELEASE_TAG" --notes "$RELEASE_NOTES"
           else
-            gh release create "$RELEASE_TAG" release/* --title "Facet v${RELEASE_VERSION}" --generate-notes
+            gh release create "$RELEASE_TAG" release/* --title "Facet v${RELEASE_VERSION}" --notes "$RELEASE_NOTES"
           fi
 
       - name: Verify GitHub Release asset checksums
@@ -151,7 +165,7 @@ jobs:
             26.1.1
             26.1.2
           curseforge-game-version-filter: none
-          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1 through 26.1.2.
+          curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.2 to CurseForge
         if: github.event_name == 'push' || inputs.publish_curseforge
@@ -167,7 +181,7 @@ jobs:
           curseforge-environment: client
           curseforge-game-versions: 26.2
           curseforge-game-version-filter: none
-          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2.
+          curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.3 to CurseForge
         if: github.event_name == 'push' || inputs.publish_curseforge
@@ -183,7 +197,7 @@ jobs:
           curseforge-environment: client
           curseforge-game-versions: 26.3
           curseforge-game-version-filter: none
-          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3.
+          curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1 to CurseForge
         if: github.event_name == 'push' || inputs.publish_curseforge
@@ -199,7 +213,7 @@ jobs:
           curseforge-environment: client
           curseforge-game-versions: 26.1
           curseforge-game-version-filter: none
-          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1 on NeoForge.
+          curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1.2 to CurseForge
         if: github.event_name == 'push' || inputs.publish_curseforge
@@ -215,7 +229,7 @@ jobs:
           curseforge-environment: client
           curseforge-game-versions: 26.1.2
           curseforge-game-version-filter: none
-          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1.2 on NeoForge.
+          curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.2 to CurseForge
         if: github.event_name == 'push' || inputs.publish_curseforge
@@ -231,7 +245,7 @@ jobs:
           curseforge-environment: client
           curseforge-game-versions: 26.2
           curseforge-game-version-filter: none
-          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2 on NeoForge.
+          curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.3 to CurseForge
         if: github.event_name == 'push' || inputs.publish_curseforge
@@ -247,7 +261,7 @@ jobs:
           curseforge-environment: client
           curseforge-game-versions: 26.3
           curseforge-game-version-filter: none
-          curseforge-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 on NeoForge.
+          curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.1 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
@@ -266,7 +280,7 @@ jobs:
             26.1.1
             26.1.2
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1 through 26.1.2.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.2 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
@@ -282,7 +296,7 @@ jobs:
           modrinth-environment: client
           modrinth-game-versions: 26.2
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.3 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
@@ -298,7 +312,7 @@ jobs:
           modrinth-environment: client
           modrinth-game-versions: 26.3
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
@@ -314,7 +328,7 @@ jobs:
           modrinth-environment: client
           modrinth-game-versions: 26.1
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1 on NeoForge.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1.2 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
@@ -330,7 +344,7 @@ jobs:
           modrinth-environment: client
           modrinth-game-versions: 26.1.2
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.1.2 on NeoForge.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.2 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
@@ -346,7 +360,7 @@ jobs:
           modrinth-environment: client
           modrinth-game-versions: 26.2
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.2 on NeoForge.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.3 to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
@@ -362,4 +376,4 @@ jobs:
           modrinth-environment: client
           modrinth-game-versions: 26.3
           modrinth-game-version-filter: none
-          modrinth-changelog: Facet ${{ env.RELEASE_VERSION }} for Minecraft 26.3 on NeoForge.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}

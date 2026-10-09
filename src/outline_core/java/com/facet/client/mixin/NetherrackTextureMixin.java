@@ -16,7 +16,11 @@ abstract class NetherrackTextureMixin {
 	@Shadow @Final private Identifier name;
 	@Shadow @Final private NativeImage originalImage;
 
-	@Inject(method = "<init>", at = @At("TAIL"))
+	// Resource loading uses the metadata constructor, not the three-argument overload.
+	@Inject(method = "<init>(Lnet/minecraft/resources/Identifier;"
+			+ "Lnet/minecraft/client/resources/metadata/animation/FrameSize;"
+			+ "Lcom/mojang/blaze3d/platform/NativeImage;"
+			+ "Ljava/util/Optional;Ljava/util/List;Ljava/util/Optional;)V", at = @At("TAIL"))
 	private void facet$flattenNetherrackCopy(CallbackInfo ci) {
 		if (name.toString().equals("facet:block/netherrack_average")) {
 			FacetOutlineColor.flattenTexture(originalImage);
