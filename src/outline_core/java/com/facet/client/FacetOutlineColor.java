@@ -1,6 +1,7 @@
 package com.facet.client;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +37,14 @@ public final class FacetOutlineColor {
 	private static final Map<TextureAtlasSprite, Map<UvRegion, TextureSample>> SAMPLE_CACHE =
 			new ConcurrentHashMap<>();
 	private static final Map<BlockState, FaceColorPlan> COLOR_PLANS = new ConcurrentHashMap<>();
+	private static final Map<BlockState, BlockStateModel> CONTEXT_MODELS = new ConcurrentHashMap<>();
+	private static final Map<ContextPlanKey, FaceColorPlan> CONTEXT_PLANS = Collections.synchronizedMap(
+			new LinkedHashMap<>(16, 0.75f, true) {
+				@Override
+				protected boolean removeEldestEntry(Map.Entry<ContextPlanKey, FaceColorPlan> eldest) {
+					return size() > 1024;
+				}
+			});
 	private static final Map<BlockState, List<BlockTintSource>> TINT_SOURCES = new ConcurrentHashMap<>();
 
 	private FacetOutlineColor() {
@@ -67,6 +76,8 @@ public final class FacetOutlineColor {
 	static void clearCache() {
 		SAMPLE_CACHE.clear();
 		COLOR_PLANS.clear();
+		CONTEXT_MODELS.clear();
+		CONTEXT_PLANS.clear();
 		TINT_SOURCES.clear();
 	}
 
@@ -76,7 +87,16 @@ public final class FacetOutlineColor {
 		}
 
 		List<BlockStateModelPart> parts = new ArrayList<>();
-		model.collectParts(RandomSource.create(0L), parts);
+		if (!FacetModelParts.collectStatic(model, state, RandomSource.create(0L), parts)) {
+			COLOR_PLANS.remove(state);
+			CONTEXT_MODELS.put(state, model);
+			return;
+		}
+		CONTEXT_MODELS.remove(state);
+		COLOR_PLANS.put(state, buildPlan(state, parts));
+	}
+
+	private static FaceColorPlan buildPlan(BlockState state, List<BlockStateModelPart> parts) {
 		FacePlanBuilder builder = new FacePlanBuilder();
 		for (BlockStateModelPart part : parts) {
 			for (Direction direction : Direction.values()) {
@@ -84,15 +104,30 @@ public final class FacetOutlineColor {
 			}
 			part.getQuads(null).forEach(builder::accept);
 		}
-		COLOR_PLANS.put(state, builder.finish(state));
+		return builder.finish(state);
 	}
 
 	static FaceColors resolve(BlockAndTintGetter level, BlockPos pos, BlockState state) {
 		FaceColorPlan plan = COLOR_PLANS.get(state);
-		return plan == null
-				? FaceColors.fallback()
-				: plan.resolve(level, pos, state);
+		if (plan != null) return plan.resolve(level, pos, state);
+		BlockStateModel model = CONTEXT_MODELS.get(state);
+		if (model == null) return FaceColors.fallback();
+		RandomSource random = RandomSource.create(0L);
+		Object geometry = FacetModelParts.geometryKey(model, level, pos, state, random);
+		ContextPlanKey key = geometry == null ? null : new ContextPlanKey(state, geometry);
+		plan = key == null ? null : CONTEXT_PLANS.get(key);
+		if (plan == null) {
+			// Geometry-key creation may consume random values. Match the original representative seed.
+			random.setSeed(0L);
+			List<BlockStateModelPart> parts = new ArrayList<>();
+			FacetModelParts.collect(model, level, pos, state, random, parts);
+			plan = buildPlan(state, parts);
+			if (key != null) CONTEXT_PLANS.put(key, plan);
+		}
+		return plan.resolve(level, pos, state);
 	}
+
+	private record ContextPlanKey(BlockState state, Object geometry) { }
 
 	private static TextureSample sample(TextureAtlasSprite sprite, UvRegion region) {
 		return SAMPLE_CACHE.computeIfAbsent(sprite, unused -> new ConcurrentHashMap<>())

@@ -36,7 +36,7 @@ class FacetOutlineLazyFaceTest {
 		}
 		assertTrue(part.getQuads(null).isEmpty());
 		assertEquals(0, part.materialFlags());
-		assertTrue(part.useAmbientOcclusion());
+		assertEquals(net.minecraft.util.TriState.DEFAULT, part.ambientOcclusion());
 	}
 
 	@Test
@@ -78,7 +78,7 @@ class FacetOutlineLazyFaceTest {
 			assertEquals(1, calls[face.ordinal()]);
 		}
 		assertEquals(6, part.generatedFaceCount());
-		assertFalse(part.useAmbientOcclusion());
+		assertEquals(net.minecraft.util.TriState.FALSE, part.ambientOcclusion());
 		assertEquals(BakedQuad.FLAG_TRANSLUCENT | BakedQuad.FLAG_ANIMATED, part.materialFlags());
 	}
 

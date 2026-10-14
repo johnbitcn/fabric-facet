@@ -48,7 +48,7 @@ final class FacetBakedOutlineModel {
 			Function<Identifier, Material.Baked> materials, QuadMapper mapper) {
 		if (model.getClass() == SingleVariant.class) {
 			List<BlockStateModelPart> parts = new ArrayList<>();
-			model.collectParts(RandomSource.create(0), parts);
+			((SingleVariant) model).collectParts(RandomSource.create(0), parts);
 			if (parts.size() != 1 || !parts.getFirst().getClass().getName().startsWith("net.minecraft.")) {
 				return null;
 			}
@@ -167,16 +167,12 @@ final class FacetBakedOutlineModel {
 	}
 
 	private record BakedPart(BlockStateModelPart original, Map<Direction, List<BakedQuad>> faces)
-			implements BlockStateModelPart {
+			implements FacetAmbientOcclusionPart {
 		@Override
 		public List<BakedQuad> getQuads(Direction face) {
 			return face == null ? List.of() : faces.get(face);
 		}
 
-		@Override
-		public boolean useAmbientOcclusion() {
-			return original.useAmbientOcclusion();
-		}
 
 		@Override
 		public Material.Baked particleMaterial() {

@@ -16,6 +16,8 @@ Added Fabric support for Minecraft 26.4 Snapshot 3.
 
 Night vision while holographic preview is enabled and translucent lava make dark areas and lava interiors easier to see.
 
+The children don't like how netherrack looks. It's too ugly :(
+
 ## Complete Feature List
 
 - Holographic placement preview with startup sound
@@ -40,6 +42,9 @@ Night vision while holographic preview is enabled and translucent lava make dark
 - NeoForge
 
 ## Feature Updates
+
+### v1.6.2 - Netherrack Appearance
+- The children don't like how netherrack looks. It's too ugly :(
 
 ### v1.5.3 - Clearer Holographic Preview and Lava
 - Added night vision while holographic placement preview is enabled

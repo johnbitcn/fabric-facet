@@ -10,6 +10,8 @@
     "SpriteContentsAccessor",
     "BakedOutlineAtlasMixin",
     "WeightedVariantsAccessor",
+    "MultiPartSelectedModelsInvoker",
+    "MultiPartStaticChildrenMixin",
     "LavaGelMixin",
     "FluidDirectionSideMixin",
     "LavaGelFogMixin",

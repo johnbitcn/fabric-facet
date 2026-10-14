@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 public final class FacetNeoForgeOutline {
 	static final String MOD_ID = "facet";
 	static final Logger LOGGER = LoggerFactory.getLogger("Facet NeoForge Outline");
-	private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
+	private static final KeyMapping.Category KEY_CATEGORY = new KeyMapping.Category(
 			Identifier.fromNamespaceAndPath(MOD_ID, "keybinds"));
 	private static final SoundEvent PLACEMENT_PREVIEW_TOGGLE_SOUND = SoundEvent.createVariableRangeEvent(
 			Identifier.fromNamespaceAndPath(MOD_ID, "placement_preview_toggle"));

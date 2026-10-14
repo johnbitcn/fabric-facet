@@ -191,7 +191,8 @@ final class FacetNeoForgePlacementPreview {
 
 		BlockStateModel model = minecraft.getModelManager().getBlockStateModelSet().get(state);
 		List<BlockStateModelPart> parts = new ArrayList<>();
-		model.collectParts(RandomSource.create(state.getSeed(preview.pos())), parts);
+		model.collectParts(level, preview.pos(), state,
+				RandomSource.create(state.getSeed(preview.pos())), parts);
 		if (parts.isEmpty()) {
 			return;
 		}

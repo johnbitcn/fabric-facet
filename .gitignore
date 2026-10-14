@@ -3,6 +3,7 @@
 build/
 run/
 versions/**/bin/
+versions/**/logs/
 release/
 *.log
 memory.md

@@ -73,7 +73,7 @@ class FacetBakedOutlineModelTest {
 			assertEquals(source.sprite(), original.getQuads(face).getFirst().materialInfo().sprite());
 		}
 		assertSame(original.particleMaterial(), baked.particleMaterial());
-		assertEquals(original.useAmbientOcclusion(), baked.useAmbientOcclusion());
+		assertSame(original, ((FacetAmbientOcclusionPart) baked).original());
 		assertEquals(original.materialFlags(), baked.materialFlags());
 	}
 
@@ -172,7 +172,7 @@ class FacetBakedOutlineModelTest {
 			List<BlockStateModelPart> parts = new ArrayList<>();
 			// SingleVariant is context-free; Neo's legacy WeightedVariants overload
 			// would require a running FML registry even in a headless test.
-			selected.collectParts(RandomSource.create(seed), parts);
+			((SingleVariant) selected).collectParts(RandomSource.create(seed), parts);
 			assertEquals(1, parts.size());
 			assertEquals(1, parts.getFirst().getQuads(Direction.UP).size());
 		}
