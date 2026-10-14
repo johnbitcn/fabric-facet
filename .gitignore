@@ -1,5 +1,6 @@
 .DS_Store
 .gradle/
+.pi-hybrid/
 build/
 run/
 versions/**/bin/
