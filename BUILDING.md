@@ -124,7 +124,8 @@ Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-4.yml`,
 triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-4-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
 prerelease, then publishes the same JAR to Modrinth as Alpha. Manual recovery
-requires an existing preview tag and explicit destination selection.
+requires an existing preview tag and explicit destination selection. Both
+GitHub and Modrinth read the notes from `release-notes/<preview-tag>.md`.
 Do not use `scripts/release.sh` or a plain `v<mod-version>` tag for previews.
 
 In-world acceptance must cover baked outlines, special block markers, water

@@ -58,6 +58,18 @@ jobs:
           echo "RELEASE_VERSION=$release_version" >> "$GITHUB_ENV"
           echo "PREVIEW_VERSION=${release_version}-s4-preview.${preview_number}" >> "$GITHUB_ENV"
 
+      - name: Load preview release notes
+        shell: bash
+        run: |
+          notes_file="release-notes/${RELEASE_TAG}.md"
+          test -s "$notes_file"
+          cp "$notes_file" "$RUNNER_TEMP/release-notes.md"
+          {
+            echo 'RELEASE_NOTES<<FACET_RELEASE_NOTES'
+            cat "$notes_file"
+            echo 'FACET_RELEASE_NOTES'
+          } >> "$GITHUB_ENV"
+
       - name: Build Snapshot 4 preview
         run: ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-4:build --no-daemon --console=plain
 
@@ -82,15 +94,6 @@ jobs:
             sha256sum --check SHA256SUMS.txt
           )
           cat release/SHA256SUMS.txt >> "$GITHUB_STEP_SUMMARY"
-          cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
-          Fabric compatibility preview for Minecraft 26.4 Snapshot 4 (Alpha).
-
-          - Added support for Minecraft 26.4 Snapshot 4.
-          - Includes the block-outline performance improvements from Facet 1.6.1.
-          - Water and lava show static translucent flow-direction arrows.
-          - Holographic placement preview provides night vision.
-          - Lava is translucent with clearer interior fog.
-          EOF
 
       - name: Archive exact preview files
         uses: actions/upload-artifact@v4
@@ -142,11 +145,4 @@ jobs:
           modrinth-environment: client
           modrinth-game-versions: 26.4-snapshot-4
           modrinth-game-version-filter: none
-          modrinth-changelog: |
-            Fabric compatibility preview for Minecraft 26.4 Snapshot 4 (Alpha).
-
-            - Added support for Minecraft 26.4 Snapshot 4.
-            - Includes the block-outline performance improvements from Facet 1.6.1.
-            - Water and lava show static translucent flow-direction arrows.
-            - Holographic placement preview provides night vision.
-            - Lava is translucent with clearer interior fog.
+          modrinth-changelog: ${{ env.RELEASE_NOTES }}
