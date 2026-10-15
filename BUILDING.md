@@ -27,7 +27,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
-| `versions/fabric-26.4-snapshot-3` | Fabric | 26.4 Snapshot 3 | `Facet-Fabric-<mod-version>-26.4-snapshot-3.jar` |
+| `versions/fabric-26.4-snapshot-4` | Fabric | 26.4 Snapshot 4 | `Facet-Fabric-<mod-version>-26.4-snapshot-4.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -59,7 +59,7 @@ build; the tag workflow rebuilds it for the official release.
 ### Fabric only
 
 ```sh
-./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build :versions:fabric-26.4-snapshot-3:build
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build :versions:fabric-26.4-snapshot-4:build
 ```
 
 ### NeoForge only
@@ -100,24 +100,24 @@ Launch a client for one exact target with that module's `runClient` task:
 A successful build or main-menu startup does not replace in-world validation
 for rendering, input, placement, or Loader-specific behavior.
 
-## Fabric 26.4 Snapshot 3 Preview
+## Fabric 26.4 Snapshot 4 Preview
 
 Use Java 25 to run Gradle. If the default Java installation is newer, set
 `JAVA_HOME` explicitly, for example on macOS:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :versions:fabric-26.4-snapshot-3:build
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :versions:fabric-26.4-snapshot-3:runClient
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :versions:fabric-26.4-snapshot-4:build
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :versions:fabric-26.4-snapshot-4:runClient
 ```
 
-This target uses Fabric API `0.162.2+26.4`. It reuses the 26.3 rendering bridge
+This target uses Fabric API `0.163.0+26.4`. It reuses the 26.3 rendering bridge
 and the shared baked-outline implementation. Its tests include the shared
-outline tests and the Fabric 26.2 behavior tests, run against Snapshot 3.
+outline tests and the Fabric 26.2 behavior tests, run against Snapshot 4.
 Mod Menu is compile-only; it is not installed by `runClient`.
 
 The snapshot target is not part of the seven-target official release workflow.
-Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-3.yml`,
-triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-3-preview.<number>`.
+Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-4.yml`,
+triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-4-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
 prerelease, then publishes the same JAR to Modrinth as Alpha. Manual recovery
 requires an existing preview tag and explicit destination selection.

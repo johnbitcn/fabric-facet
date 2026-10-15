@@ -4,7 +4,10 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -26,14 +29,22 @@ class LavaGelTest {
 		var original = new FluidModel(ChunkSectionLayer.SOLID, null, null, null, (BlockTintSource) null);
 		var gel = new FluidModel(ChunkSectionLayer.TRANSLUCENT, null, null, null, (BlockTintSource) null);
 		var water = new FluidModel(ChunkSectionLayer.TRANSLUCENT, null, null, null, (BlockTintSource) null);
-		for (var fluid : new net.minecraft.world.level.material.Fluid[] {
-				Fluids.LAVA, Fluids.FLOWING_LAVA, Fluids.WATER, Fluids.FLOWING_WATER}) {
-			var expected = fluid == Fluids.LAVA || fluid == Fluids.FLOWING_LAVA ? gel : water;
-			assertSame(expected, LavaGel.selectModel(true, fluid.defaultFluidState(), original, gel, water));
-			assertSame(original, LavaGel.selectModel(false, fluid.defaultFluidState(), original, gel, water));
-			assertSame(original, LavaGel.selectModel(true, fluid.defaultFluidState(), original, null, null));
-		}
+		assertFluidStates(Fluids.LAVA, gel, original, gel, water);
+		BuiltInRegistries.FLUID.getOptional(Identifier.fromNamespaceAndPath("minecraft", "flowing_lava"))
+				.ifPresent(fluid -> assertFluidStates(fluid, gel, original, gel, water));
+		assertFluidStates(Fluids.WATER, water, original, gel, water);
+		BuiltInRegistries.FLUID.getOptional(Identifier.fromNamespaceAndPath("minecraft", "flowing_water"))
+				.ifPresent(fluid -> assertFluidStates(fluid, water, original, gel, water));
 		assertSame(original, LavaGel.selectModel(true, Fluids.EMPTY.defaultFluidState(), original, gel, water));
+	}
+
+	private static void assertFluidStates(Fluid fluid, FluidModel expected, FluidModel original, FluidModel gel,
+			FluidModel water) {
+		for (var state : fluid.getStateDefinition().getPossibleStates()) {
+			assertSame(expected, LavaGel.selectModel(true, state, original, gel, water));
+			assertSame(original, LavaGel.selectModel(false, state, original, gel, water));
+			assertSame(original, LavaGel.selectModel(true, state, original, null, null));
+		}
 	}
 
 	@Test

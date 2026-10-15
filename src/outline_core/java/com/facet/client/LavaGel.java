@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.client.resources.model.sprite.MaterialBaker;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
@@ -20,6 +21,8 @@ public final class LavaGel {
 	private static final Material WATER_FLOW = new Material(Identifier.fromNamespaceAndPath("facet", "block/water_direction_flow"));
 	private static final Material LAVA_SIDE = new Material(Identifier.fromNamespaceAndPath("facet", "block/lava_gel_side"));
 	private static final Material WATER_SIDE = new Material(Identifier.fromNamespaceAndPath("facet", "block/water_direction_side"));
+	private static final Identifier FLOWING_LAVA_ID = Identifier.fromNamespaceAndPath("minecraft", "flowing_lava");
+	private static final Identifier FLOWING_WATER_ID = Identifier.fromNamespaceAndPath("minecraft", "flowing_water");
 	private static volatile Material.Baked lavaSide;
 	private static volatile Material.Baked waterSide;
 	private static volatile BooleanSupplier outlinesEnabled = () -> false;
@@ -68,8 +71,9 @@ public final class LavaGel {
 			FluidModel gel, FluidModel water) {
 		if (!enabled) return original;
 		Fluid type = state.getType();
-		FluidModel replacement = type == Fluids.LAVA || type == Fluids.FLOWING_LAVA ? gel
-				: type == Fluids.WATER || type == Fluids.FLOWING_WATER ? water : null;
+		Identifier id = BuiltInRegistries.FLUID.getKey(type);
+		FluidModel replacement = type == Fluids.LAVA || FLOWING_LAVA_ID.equals(id) ? gel
+				: type == Fluids.WATER || FLOWING_WATER_ID.equals(id) ? water : null;
 		return replacement != null ? replacement : original;
 	}
 }

@@ -12,7 +12,7 @@
 现在我把它分享出来，希望你们喜欢！
 
 ## 最新更新内容
-新增 Fabric 对 Minecraft 26.4 Snapshot 3 的支持。
+新增 Fabric 对 Minecraft 26.4 Snapshot 4 的支持。
 
 开启全息预览时提供夜视效果；熔岩变得半透明，内部视野更清晰。
 

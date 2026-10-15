@@ -36,13 +36,13 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
-		":versions:fabric-26.4-snapshot-3": [
+		":versions:fabric-26.4-snapshot-4": [
 				archivesName: "Facet-Fabric",
-				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_3"),
-				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_3"),
-				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_3"),
-				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_3"),
-				minecraftDependency: "26.4-alpha.3",
+				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_4"),
+				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_4"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_4"),
+				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_4"),
+				minecraftDependency: "26.4-alpha.4",
 				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
@@ -141,16 +141,16 @@ versionConfigs.each { projectPath, cfg ->
 			} else {
 				compileOnly cfg.modMenuDependency
 			}
-			if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-3"]) {
+			if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-4"]) {
 				testImplementation platform("org.junit:junit-bom:5.12.1")
 				testImplementation "org.junit.jupiter:junit-jupiter"
 				testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 			}
 		}
 
-		if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-3"]) {
+		if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-4"]) {
 			sourceSets.test.java.srcDir(rootProject.file("src/outline_core/test/java"))
-			if (projectPath == ":versions:fabric-26.4-snapshot-3") {
+			if (projectPath == ":versions:fabric-26.4-snapshot-4") {
 				sourceSets.test.java.srcDir(rootProject.file("versions/fabric-26.2/src/test/java"))
 			}
 			sourceSets.test.compileClasspath += sourceSets.client.output + configurations.clientCompileClasspath

@@ -76,6 +76,29 @@ final class FacetOutlineRules {
 		return state.is(Blocks.POWDER_SNOW) || usesBrushSymbol(state);
 	}
 
+	static int brittleIceStage(BlockState state) {
+		if (!isBrittleIce(state)) {
+			return -1;
+		}
+
+		for (var entry : state.getValues().toList()) {
+			if (entry.property().getName().equals("age") && entry.value() instanceof Integer age) {
+				return age >= 0 && age < 4 ? age : -1;
+			}
+		}
+
+		return -1;
+	}
+
+	static boolean shouldUseBrittleIceOutline(BlockState state, boolean outlineEnabled) {
+		return outlineEnabled && isBrittleIce(state);
+	}
+
+	static boolean isBrittleIce(BlockState state) {
+		var id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+		return id.getNamespace().equals("minecraft") && id.getPath().equals("brittle_ice");
+	}
+
 	static boolean usesRainbowOutline(BlockState state) {
 		return state.is(Blocks.ANCIENT_DEBRIS) || usesWarningOutline(state) || usesPastelOutline(state);
 	}

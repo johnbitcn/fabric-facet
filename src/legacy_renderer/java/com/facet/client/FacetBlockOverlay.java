@@ -38,6 +38,18 @@ final class FacetBlockOverlay {
 	private static final Material RAINBOW_TEXTURE = new Material(RAINBOW_TEXTURE_ID, false);
 	private static final Material PASTEL_RAINBOW_TEXTURE = new Material(
 			Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline_pastel"), false);
+	private static final Material[] BRITTLE_ICE_TEXTURES = {
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_0"), false),
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_1"), false),
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_2"), false),
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_3"), false)
+	};
+	private static final Material[] BRITTLE_ICE_OUTLINE_TEXTURES = {
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_0"), false),
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_1"), false),
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_2"), false),
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_3"), false)
+	};
 	private static final Material WARNING_TEXTURE = new Material(
 			Identifier.fromNamespaceAndPath("facet", "block/warning_outline"), false);
 	private static final Material INFESTED_WARNING_TEXTURE = new Material(
@@ -68,22 +80,29 @@ final class FacetBlockOverlay {
 			if (state.isAir() || state.getRenderShape() != RenderShape.MODEL || model instanceof OutlineBlockStateModel) {
 				return model;
 			}
+			boolean brittleIce = FacetOutlineRules.isBrittleIce(state);
 			boolean pastelRainbow = FacetOutlineRules.usesPastelOutline(state);
 			boolean rainbowOutline = pastelRainbow || FacetOutlineRules.usesRainbowOutline(state);
-			if (!rainbowOutline) {
+			if (!rainbowOutline && !brittleIce) {
 				FacetOutlineColor.analyze(state, model);
 			}
 
 			boolean warningOutline = FacetOutlineRules.usesWarningOutline(state);
 			Material outlineTexture = FacetOutlineRules.isInfested(state) ? INFESTED_WARNING_TEXTURE
-					: warningOutline ? WARNING_TEXTURE : pastelRainbow ? PASTEL_RAINBOW_TEXTURE
-					: rainbowOutline ? RAINBOW_TEXTURE : OUTLINE_TEXTURE;
-			Material.Baked outlineMaterial = modifierContext.baker().materials().get(outlineTexture, OUTLINE_DEBUG_NAME);
+					: warningOutline ? WARNING_TEXTURE
+					: pastelRainbow ? PASTEL_RAINBOW_TEXTURE : rainbowOutline ? RAINBOW_TEXTURE : OUTLINE_TEXTURE;
+			Material.Baked outlineMaterial = brittleIce ? null
+					: modifierContext.baker().materials().get(outlineTexture, OUTLINE_DEBUG_NAME);
 			Material symbolTexture = state.is(Blocks.POWDER_SNOW) ? SNOWFLAKE_TEXTURE
 					: FacetOutlineRules.usesBrushSymbol(state) ? BRUSH_TEXTURE
 					: FacetOutlineRules.isInfested(state) ? BUG_TEXTURE : null;
 			Material.Baked symbolMaterial = symbolTexture == null ? null
 					: modifierContext.baker().materials().get(symbolTexture, OUTLINE_DEBUG_NAME);
+			int brittleIceStage = brittleIce ? FacetOutlineRules.brittleIceStage(state) : -1;
+			Material.Baked brittleIceSourceMaterial = brittleIceStage < 0 ? null
+					: modifierContext.baker().materials().get(BRITTLE_ICE_TEXTURES[brittleIceStage], OUTLINE_DEBUG_NAME);
+			Material.Baked brittleIceOutlineMaterial = brittleIceStage < 0 ? null
+					: modifierContext.baker().materials().get(BRITTLE_ICE_OUTLINE_TEXTURES[brittleIceStage], OUTLINE_DEBUG_NAME);
 			Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
 
 			for (GraffitiType type : GraffitiType.values()) {
@@ -95,11 +114,13 @@ final class FacetBlockOverlay {
 			Material.Baked netherrackMaterial = state.is(Blocks.NETHERRACK)
 					? modifierContext.baker().materials().get(NETHERRACK_TEXTURE, OUTLINE_DEBUG_NAME)
 					: null;
-			BlockStateModel bakedModel = FacetBakedOutlineModel.create(state, model, netherrackMaterial,
-					id -> modifierContext.baker().materials().get(new Material(id, false), OUTLINE_DEBUG_NAME),
-					FacetBakedOutlineModel::remapQuad);
+			BlockStateModel bakedModel = brittleIce ? null
+					: FacetBakedOutlineModel.create(state, model, netherrackMaterial,
+							id -> modifierContext.baker().materials().get(new Material(id, false), OUTLINE_DEBUG_NAME),
+							FacetBakedOutlineModel::remapQuad);
 			return new OutlineBlockStateModel(model, outlineMaterial, symbolMaterial, graffitiMaterials,
-					netherrackMaterial, rainbowOutline, bakedModel);
+					netherrackMaterial, brittleIce, brittleIceSourceMaterial, brittleIceOutlineMaterial,
+					rainbowOutline, bakedModel);
 		});
 	}
 
@@ -108,27 +129,58 @@ final class FacetBlockOverlay {
 		private final Material.Baked symbolMaterial;
 		private final Map<GraffitiType, Material.Baked> graffitiMaterials;
 		private final Material.Baked netherrackMaterial;
+		private final boolean brittleIce;
+		private final Material.Baked brittleIceSourceMaterial;
+		private final Material.Baked brittleIceOutlineMaterial;
 		private final boolean rainbowOutline;
 		private final BlockStateModel bakedModel;
 
 		private OutlineBlockStateModel(BlockStateModel wrapped, Material.Baked outlineMaterial,
-				Material.Baked symbolMaterial, Map<GraffitiType, Material.Baked> graffitiMaterials, Material.Baked netherrackMaterial,
+				Material.Baked symbolMaterial, Map<GraffitiType, Material.Baked> graffitiMaterials,
+				Material.Baked netherrackMaterial, boolean brittleIce,
+				Material.Baked brittleIceSourceMaterial, Material.Baked brittleIceOutlineMaterial,
 				boolean rainbowOutline, BlockStateModel bakedModel) {
 			super(wrapped);
 			this.outlineMaterial = outlineMaterial;
 			this.symbolMaterial = symbolMaterial;
 			this.graffitiMaterials = graffitiMaterials;
 			this.netherrackMaterial = netherrackMaterial;
+			this.brittleIce = brittleIce;
+			this.brittleIceSourceMaterial = brittleIceSourceMaterial;
+			this.brittleIceOutlineMaterial = brittleIceOutlineMaterial;
 			this.rainbowOutline = rainbowOutline;
 			this.bakedModel = bakedModel;
 		}
 
 		@Override
 		public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
-			boolean baked = bakedModel != null && FacetConfig.enabled()
+			boolean baked = !brittleIce && bakedModel != null && FacetConfig.enabled()
 					&& FacetBakedOutlineTextures.matchesWidth(FacetConfig.effectiveEdgeWidth())
 					&& FacetOutlineRules.shouldRender(level, pos, state);
-			if (baked) {
+			if (brittleIceSourceMaterial != null && brittleIceOutlineMaterial != null
+					&& FacetOutlineRules.shouldUseBrittleIceOutline(state, FacetConfig.enabled())) {
+				var sourceSprite = brittleIceSourceMaterial.sprite();
+				float sourceU0 = sourceSprite.getU0();
+				float sourceV0 = sourceSprite.getV0();
+				float inverseSourceU = 1.0f / (sourceSprite.getU1() - sourceU0);
+				float inverseSourceV = 1.0f / (sourceSprite.getV1() - sourceV0);
+				emitter.pushTransform(quad -> {
+					// BAKE_NORMALIZED expects local 0..1 UVs, not atlas coordinates.
+					ChunkSectionLayer originalLayer = quad.chunkLayer();
+					for (int vertex = 0; vertex < 4; vertex++) {
+						quad.uv(vertex, (quad.u(vertex) - sourceU0) * inverseSourceU,
+								(quad.v(vertex) - sourceV0) * inverseSourceV);
+					}
+					quad.materialBake(brittleIceOutlineMaterial, MutableQuadView.BAKE_NORMALIZED)
+							.chunkLayer(originalLayer);
+					return true;
+				});
+				try {
+					super.emitQuads(emitter, level, pos, state, random, cullTest);
+				} finally {
+					emitter.popTransform();
+				}
+			} else if (baked) {
 				bakedModel.emitQuads(emitter, level, pos, state, random, cullTest);
 				if (FacetOutlineStats.enabled()) {
 					FacetOutlineStats.BAKED_BLOCKS_SERVED.incrementAndGet();
@@ -149,7 +201,7 @@ final class FacetBlockOverlay {
 				super.emitQuads(emitter, level, pos, state, random, cullTest);
 			}
 
-			if (!baked && !FacetClient.usesExperimentalLineOutlines()
+			if (!baked && !brittleIce && !FacetClient.usesExperimentalLineOutlines()
 					&& FacetConfig.enabled()
 					&& (rainbowOutline || FacetOutlineRules.shouldRender(level, pos, state))) {
 				VoxelShape shape = state.getShape(level, pos);

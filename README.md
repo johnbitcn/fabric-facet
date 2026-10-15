@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added Fabric support for Minecraft 26.4 Snapshot 3.
+Added Fabric support for Minecraft 26.4 Snapshot 4.
 
 Night vision while holographic preview is enabled and translucent lava make dark areas and lava interiors easier to see.
 
