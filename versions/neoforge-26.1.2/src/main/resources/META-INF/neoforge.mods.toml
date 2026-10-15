@@ -4,6 +4,7 @@ license="MIT"
 modId="facet"
 version="${version}"
 displayName="Facet NeoForge"
+logoFile="assets/facet/icon.png"
 authors="ByteWave"
 description='''
 Client-side block outlines, hover outlines, distance tools, graffiti, placement preview, and settings for Minecraft 26.1.2.
