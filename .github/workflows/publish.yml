@@ -79,30 +79,43 @@ jobs:
             echo 'FACET_RELEASE_NOTES'
           } >> "$GITHUB_ENV"
 
-      - name: Build all release artifacts once
-        run: >-
-          ./gradlew
-          :versions:fabric-26.1:build
-          :versions:fabric-26.2:build
-          :versions:fabric-26.3:build
-          :versions:neoforge-26.1:build
-          :versions:neoforge-26.1.2:build
-          :versions:neoforge-26.2:build
-          :versions:neoforge-26.3:build
-          --no-daemon
-          --console=plain
+      - name: Test release target selection
+        run: python3 scripts/test-release-targets.py
+
+      - name: Load explicit release targets
+        id: targets
+        shell: bash
+        run: |
+          targets_text="$(python3 scripts/release-targets.py "release-notes/${RELEASE_TAG}.targets")"
+          targets_json="$(printf '%s\n' "$targets_text" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read().splitlines()))')"
+          echo "targets=$targets_json" >> "$GITHUB_OUTPUT"
+          printf 'Selected release targets:\n%s\n' "$targets_text" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build selected release artifacts once
+        shell: bash
+        run: |
+          targets_text="$(python3 scripts/release-targets.py "release-notes/${RELEASE_TAG}.targets")"
+          build_tasks=()
+          while IFS= read -r target; do
+            build_tasks+=(":versions:$target:build")
+          done <<< "$targets_text"
+          ./gradlew "${build_tasks[@]}" --no-daemon --console=plain
 
       - name: Stage release files and create SHA-256 manifest
         shell: bash
         run: |
           mkdir release
-          cp "versions/fabric-26.1/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.1.jar" release/
-          cp "versions/fabric-26.2/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.2.jar" release/
-          cp "versions/fabric-26.3/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.3.jar" release/
-          cp "versions/neoforge-26.1/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.1.jar" release/
-          cp "versions/neoforge-26.1.2/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.1.2.jar" release/
-          cp "versions/neoforge-26.2/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.2.jar" release/
-          cp "versions/neoforge-26.3/build/libs/Facet-NeoForge-${RELEASE_VERSION}-26.3.jar" release/
+          targets_text="$(python3 scripts/release-targets.py "release-notes/${RELEASE_TAG}.targets")"
+          while IFS= read -r target; do
+            loader="${target%%-*}"
+            minecraft_version="${target#*-}"
+            if [[ "$loader" == "fabric" ]]; then
+              archive_name=Facet-Fabric
+            else
+              archive_name=Facet-NeoForge
+            fi
+            cp "versions/$target/build/libs/${archive_name}-${RELEASE_VERSION}-${minecraft_version}.jar" release/
+          done <<< "$targets_text"
           (
             cd release
             sha256sum *.jar | sort > SHA256SUMS.txt
@@ -149,7 +162,7 @@ jobs:
         run: (cd release && sha256sum --check SHA256SUMS.txt)
 
       - name: Publish Fabric 26.1 to CurseForge
-        if: github.event_name == 'push' || inputs.publish_curseforge
+        if: contains(fromJSON(steps.targets.outputs.targets), 'fabric-26.1') && (github.event_name == 'push' || inputs.publish_curseforge)
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -168,7 +181,7 @@ jobs:
           curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.2 to CurseForge
-        if: github.event_name == 'push' || inputs.publish_curseforge
+        if: contains(fromJSON(steps.targets.outputs.targets), 'fabric-26.2') && (github.event_name == 'push' || inputs.publish_curseforge)
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -184,7 +197,7 @@ jobs:
           curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.3 to CurseForge
-        if: github.event_name == 'push' || inputs.publish_curseforge
+        if: contains(fromJSON(steps.targets.outputs.targets), 'fabric-26.3') && (github.event_name == 'push' || inputs.publish_curseforge)
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -200,7 +213,7 @@ jobs:
           curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1 to CurseForge
-        if: github.event_name == 'push' || inputs.publish_curseforge
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.1') && (github.event_name == 'push' || inputs.publish_curseforge)
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -216,7 +229,7 @@ jobs:
           curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1.2 to CurseForge
-        if: github.event_name == 'push' || inputs.publish_curseforge
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.1.2') && (github.event_name == 'push' || inputs.publish_curseforge)
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -232,7 +245,7 @@ jobs:
           curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.2 to CurseForge
-        if: github.event_name == 'push' || inputs.publish_curseforge
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.2') && (github.event_name == 'push' || inputs.publish_curseforge)
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -248,7 +261,7 @@ jobs:
           curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.3 to CurseForge
-        if: github.event_name == 'push' || inputs.publish_curseforge
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.3') && (github.event_name == 'push' || inputs.publish_curseforge)
         uses: Kira-NT/mc-publish@v3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -264,7 +277,7 @@ jobs:
           curseforge-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.1 to Modrinth
-        if: github.event_name == 'push' || inputs.publish_modrinth
+        if: contains(fromJSON(steps.targets.outputs.targets), 'fabric-26.1') && (github.event_name == 'push' || inputs.publish_modrinth)
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
@@ -283,7 +296,7 @@ jobs:
           modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.2 to Modrinth
-        if: github.event_name == 'push' || inputs.publish_modrinth
+        if: contains(fromJSON(steps.targets.outputs.targets), 'fabric-26.2') && (github.event_name == 'push' || inputs.publish_modrinth)
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
@@ -299,7 +312,7 @@ jobs:
           modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish Fabric 26.3 to Modrinth
-        if: github.event_name == 'push' || inputs.publish_modrinth
+        if: contains(fromJSON(steps.targets.outputs.targets), 'fabric-26.3') && (github.event_name == 'push' || inputs.publish_modrinth)
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
@@ -315,7 +328,7 @@ jobs:
           modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1 to Modrinth
-        if: github.event_name == 'push' || inputs.publish_modrinth
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.1') && (github.event_name == 'push' || inputs.publish_modrinth)
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
@@ -331,7 +344,7 @@ jobs:
           modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.1.2 to Modrinth
-        if: github.event_name == 'push' || inputs.publish_modrinth
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.1.2') && (github.event_name == 'push' || inputs.publish_modrinth)
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
@@ -347,7 +360,7 @@ jobs:
           modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.2 to Modrinth
-        if: github.event_name == 'push' || inputs.publish_modrinth
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.2') && (github.event_name == 'push' || inputs.publish_modrinth)
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
@@ -363,7 +376,7 @@ jobs:
           modrinth-changelog: ${{ env.RELEASE_NOTES }}
 
       - name: Publish NeoForge 26.3 to Modrinth
-        if: github.event_name == 'push' || inputs.publish_modrinth
+        if: contains(fromJSON(steps.targets.outputs.targets), 'neoforge-26.3') && (github.event_name == 'push' || inputs.publish_modrinth)
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}

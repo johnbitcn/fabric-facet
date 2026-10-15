@@ -48,6 +48,10 @@ def versionConfigs = [
 		],
 	]
 
+if (findProject(":versions:fabric-26.4-snapshot-4") == null) {
+	versionConfigs.remove(":versions:fabric-26.4-snapshot-4")
+}
+
 allprojects {
 	group = rootProject.maven_group
 
@@ -127,6 +131,13 @@ versionConfigs.each { projectPath, cfg ->
 				}
 
 				java.setSrcDirs(javaDirs)
+				if (cfg.minecraftVersion.contains("-snapshot-")) {
+					// Snapshot overrides must not change the sources compiled by stable targets.
+					java.exclude { entry ->
+						def override = file("src/client/java/${entry.path}")
+						override.isFile() && entry.file != override
+					}
+				}
 				resources.setSrcDirs(resourceDirs)
 			}
 		}
@@ -152,6 +163,10 @@ versionConfigs.each { projectPath, cfg ->
 			sourceSets.test.java.srcDir(rootProject.file("src/outline_core/test/java"))
 			if (projectPath == ":versions:fabric-26.4-snapshot-4") {
 				sourceSets.test.java.srcDir(rootProject.file("versions/fabric-26.2/src/test/java"))
+				sourceSets.test.java.exclude { entry ->
+					def override = file("src/test/java/${entry.path}")
+					override.isFile() && entry.file != override
+				}
 			}
 			sourceSets.test.compileClasspath += sourceSets.client.output + configurations.clientCompileClasspath
 			sourceSets.test.runtimeClasspath += sourceSets.client.output + configurations.clientRuntimeClasspath
@@ -237,10 +252,4 @@ versionConfigs.each { projectPath, cfg ->
 
 tasks.named("build") {
 	dependsOn versionConfigs.keySet().collect { "${it}:build" }
-}
-
-tasks.register("publishModrinth") {
-	group = "publishing"
-	description = "Publishes all Minecraft-version artifacts to Modrinth."
-	dependsOn versionConfigs.keySet().collect { "${it}:modrinth" }
 }

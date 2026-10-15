@@ -6,6 +6,7 @@ a separate Gradle installation is not required.
 ## Requirements
 
 - A Java 25 toolchain available to Gradle
+- Python 3.9 or newer for release-target validation (standard library only)
 - Internet access for the first build so Gradle can resolve Minecraft, Fabric,
   NeoForge, and plugin dependencies
 - On macOS, Linux, and other Unix-like systems, use `./gradlew`
@@ -37,17 +38,17 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 
 ## Build Commands
 
-### All supported targets
+### Stable targets
 
-The unqualified `build` task builds and tests all eight Fabric and NeoForge
-modules:
+The unqualified `build` task builds and tests the seven stable Fabric and
+NeoForge modules. Snapshot modules are excluded unless explicitly enabled:
 
 ```sh
 ./gradlew build
 ```
 
-Use one clean build to create candidate artifacts for a release or validate a
-cross-version change:
+Use a full clean build only to validate a cross-version change. For release
+candidates, `scripts/release.sh` builds only the selected release targets:
 
 ```sh
 ./gradlew clean build
@@ -59,7 +60,7 @@ build; the tag workflow rebuilds it for the official release.
 ### Fabric only
 
 ```sh
-./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build :versions:fabric-26.4-snapshot-4:build
+./gradlew :versions:fabric-26.1:build :versions:fabric-26.2:build :versions:fabric-26.3:build
 ```
 
 ### NeoForge only
@@ -106,16 +107,19 @@ Use Java 25 to run Gradle. If the default Java installation is newer, set
 `JAVA_HOME` explicitly, for example on macOS:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :versions:fabric-26.4-snapshot-4:build
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :versions:fabric-26.4-snapshot-4:runClient
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-4:build
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-4:runClient
 ```
 
-This target uses Fabric API `0.163.0+26.4`. It reuses the 26.3 rendering bridge
-and the shared baked-outline implementation. Its tests include the shared
-outline tests and the Fabric 26.2 behavior tests, run against Snapshot 4.
-Mod Menu is compile-only; it is not installed by `runClient`.
+This target uses Fabric API `0.163.0+26.4` and its own rendering bridge.
+Snapshot-specific classes override shared classes only in this target's
+`sourceSets`. Brittle-ice logic and textures stay in this module; stable
+modules do not compile or package them. Shared code is reused only where the
+API remains compatible. Tests reuse the shared outline and Fabric 26.2
+behavior tests, with Snapshot-specific overrides. Mod Menu is compile-only;
+it is not installed by `runClient`.
 
-The snapshot target is not part of the seven-target official release workflow.
+The snapshot target is not part of the stable release workflow.
 Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-4.yml`,
 triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-4-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
@@ -130,20 +134,37 @@ placement preview with improved transparency both enabled and disabled.
 ## Release Publishing
 
 Official releases use `.github/workflows/publish.yml`. From a version tag, it
-validates `mod_version`, builds every target, stages only main JARs, creates
-`SHA256SUMS.txt`, and publishes the configured destinations.
+validates `mod_version` and reads `release-notes/<tag>.targets`. It builds,
+stages, and publishes only the targets in that file, and creates a SHA-256
+manifest for those main JARs. Missing, empty, unknown, duplicate, or Snapshot
+target selections fail before building or publishing; there is no all-target
+fallback.
 
 The formal release set covers Fabric 26.1, 26.2, and 26.3, plus NeoForge
 26.1, 26.1.2, 26.2, and 26.3. Minecraft 26.3 snapshots, prereleases, and
 release candidates shared one rolling target during development; the 26.3
 release replaced that target, and the pre-release targets have been removed.
 
-Every version tag produces one complete release covering all targets. The
-Minecraft 26.3 builds are published to both Modrinth and CurseForge.
+Before creating a tag, commit `release-notes/<tag>.targets` with one affected
+module name per line, without the `versions/` prefix. For example, if only
+Fabric 26.2 changed, `release-notes/v<mod-version>.targets` contains:
+
+```text
+fabric-26.2
+```
+
+Select targets based on the actual source, resource, dependency, and build
+changes since their last release. A shared change can affect several targets;
+an isolated target change does not justify republishing other versions. A
+mod-wide version bump alone does not make every target affected. Comment lines
+starting with `#` are allowed. Use the independent preview workflow for
+Snapshots. Tags created before target manifests were introduced cannot be
+recovered through this new workflow without a manifest; do not move those tags.
 
 `scripts/release.sh` prepares and verifies a release locally: it guards the
-tree, reads `mod_version`, runs one clean build, mechanically enumerates the
-release JAR set, verifies embedded versions, and stages a diagnostic
+tree, reads `mod_version` and the same target manifest, cleans and builds only
+those modules, mechanically enumerates their release JAR set, verifies embedded
+versions, and stages a diagnostic
 `release/SHA256SUMS.txt`. Run it without arguments for the candidate step,
 then `scripts/release.sh --publish` after in-world acceptance to create the
 annotated tag and push it. The CI build from the tag is the authoritative
@@ -152,6 +173,5 @@ final build; candidate hashes are diagnostic.
 Use the manual inputs only to recover a failed destination on an existing tag;
 leave destinations that already succeeded disabled.
 
-The Gradle `publishModrinth` task is a legacy Fabric-only local path. It does
-not publish NeoForge artifacts or create the GitHub checksum manifest, so it is
-not the official release process.
+The former aggregate `publishModrinth` task has been removed to prevent
+unintentional all-version uploads. Use the explicit-target release workflow.

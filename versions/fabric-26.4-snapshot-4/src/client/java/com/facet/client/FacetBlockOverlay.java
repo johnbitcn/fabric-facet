@@ -1,0 +1,402 @@
+package com.facet.client;
+
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.function.Predicate;
+
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.resources.model.ModelDebugName;
+import net.minecraft.client.resources.model.sprite.Material;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CarpetBlock;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
+
+import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
+import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableQuadView;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.ShadeMode;
+import net.fabricmc.fabric.api.util.TriState;
+
+final class FacetBlockOverlay {
+	private static final double GRAFFITI_SURFACE_BIAS = 1.0 / 512.0;
+	private static final double GRAFFITI_FACE_SIZE = 0.785;
+	private static final float OUTLINE_UV = 0.5f;
+	private static final int RAINBOW_COLOR = FacetOutlineRules.withOutlineAlpha(0xFFFFFFFF);
+	private static final Material OUTLINE_TEXTURE = new Material(Identifier.withDefaultNamespace("block/white_concrete"), true);
+	private static final ModelDebugName OUTLINE_DEBUG_NAME = () -> "facet:outline";
+	private static final Identifier RAINBOW_TEXTURE_ID =
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline");
+	private static final Material RAINBOW_TEXTURE = new Material(RAINBOW_TEXTURE_ID, false);
+	private static final Material PASTEL_RAINBOW_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline_pastel"), false);
+	private static final Material[] BRITTLE_ICE_TEXTURES = {
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_0"), false),
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_1"), false),
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_2"), false),
+			new Material(Identifier.withDefaultNamespace("block/brittle_ice_3"), false)
+	};
+	private static final Material[] BRITTLE_ICE_OUTLINE_TEXTURES = {
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_0"), false),
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_1"), false),
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_2"), false),
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/brittle_ice_outline_3"), false)
+	};
+	private static final Material WARNING_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/warning_outline"), false);
+	private static final Material INFESTED_WARNING_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/infested_warning_outline"), false);
+	private static final Material SNOWFLAKE_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_snowflake"), false);
+	private static final Material BRUSH_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/rainbow_brush"), false);
+	private static final Material BUG_TEXTURE = new Material(
+			Identifier.fromNamespaceAndPath("facet", "block/warning_bug"), false);
+	private static final Material NETHERRACK_TEXTURE =
+			new Material(Identifier.fromNamespaceAndPath("facet", "block/netherrack_average"), false);
+
+	private FacetBlockOverlay() {
+	}
+
+	static void initialize() {
+		if (!FacetClient.usesExperimentalLineOutlines()) {
+			ModelLoadingPlugin.register(FacetBlockOverlay::registerModelModifiers);
+		}
+	}
+
+	private static void registerModelModifiers(ModelLoadingPlugin.Context context) {
+		FacetOutlineColor.clearCache();
+		context.modifyBlockModelAfterBake().register((model, modifierContext) -> {
+			BlockState state = modifierContext.state();
+
+			if (state.isAir() || state.getRenderShape() != RenderShape.MODEL || model instanceof OutlineBlockStateModel) {
+				return model;
+			}
+			boolean brittleIce = FacetBrittleIce.isBrittleIce(state);
+			boolean pastelRainbow = FacetOutlineRules.usesPastelOutline(state);
+			boolean rainbowOutline = pastelRainbow || FacetOutlineRules.usesRainbowOutline(state);
+			if (!rainbowOutline && !brittleIce) {
+				FacetOutlineColor.analyze(state, model);
+			}
+
+			boolean warningOutline = FacetOutlineRules.usesWarningOutline(state);
+			Material outlineTexture = FacetOutlineRules.isInfested(state) ? INFESTED_WARNING_TEXTURE
+					: warningOutline ? WARNING_TEXTURE
+					: pastelRainbow ? PASTEL_RAINBOW_TEXTURE : rainbowOutline ? RAINBOW_TEXTURE : OUTLINE_TEXTURE;
+			Material.Baked outlineMaterial = brittleIce ? null
+					: modifierContext.baker().materials().get(outlineTexture, OUTLINE_DEBUG_NAME);
+			Material symbolTexture = state.is(Blocks.POWDER_SNOW) ? SNOWFLAKE_TEXTURE
+					: FacetOutlineRules.usesBrushSymbol(state) ? BRUSH_TEXTURE
+					: FacetOutlineRules.isInfested(state) ? BUG_TEXTURE : null;
+			Material.Baked symbolMaterial = symbolTexture == null ? null
+					: modifierContext.baker().materials().get(symbolTexture, OUTLINE_DEBUG_NAME);
+			int brittleIceStage = brittleIce ? FacetBrittleIce.brittleIceStage(state) : -1;
+			Material.Baked brittleIceSourceMaterial = brittleIceStage < 0 ? null
+					: modifierContext.baker().materials().get(BRITTLE_ICE_TEXTURES[brittleIceStage], OUTLINE_DEBUG_NAME);
+			Material.Baked brittleIceOutlineMaterial = brittleIceStage < 0 ? null
+					: modifierContext.baker().materials().get(BRITTLE_ICE_OUTLINE_TEXTURES[brittleIceStage], OUTLINE_DEBUG_NAME);
+			Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
+
+			for (GraffitiType type : GraffitiType.values()) {
+				Material texture = new Material(type.materialId(), true);
+				ModelDebugName debugName = () -> "facet:graffiti/" + type.id();
+				graffitiMaterials.put(type, modifierContext.baker().materials().get(texture, debugName));
+			}
+
+			Material.Baked netherrackMaterial = state.is(Blocks.NETHERRACK)
+					? modifierContext.baker().materials().get(NETHERRACK_TEXTURE, OUTLINE_DEBUG_NAME)
+					: null;
+			BlockStateModel bakedModel = brittleIce ? null
+					: FacetBakedOutlineModel.create(state, model, netherrackMaterial,
+							id -> modifierContext.baker().materials().get(new Material(id, false), OUTLINE_DEBUG_NAME),
+							FacetBakedOutlineModel::remapQuad);
+			return new OutlineBlockStateModel(model, outlineMaterial, symbolMaterial, graffitiMaterials,
+					netherrackMaterial, brittleIce, brittleIceSourceMaterial, brittleIceOutlineMaterial,
+					rainbowOutline, bakedModel);
+		});
+	}
+
+	private static final class OutlineBlockStateModel extends WrapperBlockStateModel {
+		private final Material.Baked outlineMaterial;
+		private final Material.Baked symbolMaterial;
+		private final Map<GraffitiType, Material.Baked> graffitiMaterials;
+		private final Material.Baked netherrackMaterial;
+		private final boolean brittleIce;
+		private final Material.Baked brittleIceSourceMaterial;
+		private final Material.Baked brittleIceOutlineMaterial;
+		private final boolean rainbowOutline;
+		private final BlockStateModel bakedModel;
+
+		private OutlineBlockStateModel(BlockStateModel wrapped, Material.Baked outlineMaterial,
+				Material.Baked symbolMaterial, Map<GraffitiType, Material.Baked> graffitiMaterials,
+				Material.Baked netherrackMaterial, boolean brittleIce,
+				Material.Baked brittleIceSourceMaterial, Material.Baked brittleIceOutlineMaterial,
+				boolean rainbowOutline, BlockStateModel bakedModel) {
+			super(wrapped);
+			this.outlineMaterial = outlineMaterial;
+			this.symbolMaterial = symbolMaterial;
+			this.graffitiMaterials = graffitiMaterials;
+			this.netherrackMaterial = netherrackMaterial;
+			this.brittleIce = brittleIce;
+			this.brittleIceSourceMaterial = brittleIceSourceMaterial;
+			this.brittleIceOutlineMaterial = brittleIceOutlineMaterial;
+			this.rainbowOutline = rainbowOutline;
+			this.bakedModel = bakedModel;
+		}
+
+		@Override
+		public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
+			boolean baked = !brittleIce && bakedModel != null && FacetConfig.enabled()
+					&& FacetBakedOutlineTextures.matchesWidth(FacetConfig.effectiveEdgeWidth())
+					&& FacetOutlineRules.shouldRender(level, pos, state);
+			if (brittleIceSourceMaterial != null && brittleIceOutlineMaterial != null
+					&& FacetBrittleIce.shouldUseBrittleIceOutline(state, FacetConfig.enabled())) {
+				var sourceSprite = brittleIceSourceMaterial.sprite();
+				float sourceU0 = sourceSprite.getU0();
+				float sourceV0 = sourceSprite.getV0();
+				float inverseSourceU = 1.0f / (sourceSprite.getU1() - sourceU0);
+				float inverseSourceV = 1.0f / (sourceSprite.getV1() - sourceV0);
+				emitter.pushTransform(quad -> {
+					// BAKE_NORMALIZED expects local 0..1 UVs, not atlas coordinates.
+					ChunkSectionLayer originalLayer = quad.chunkLayer();
+					for (int vertex = 0; vertex < 4; vertex++) {
+						quad.uv(vertex, (quad.u(vertex) - sourceU0) * inverseSourceU,
+								(quad.v(vertex) - sourceV0) * inverseSourceV);
+					}
+					quad.materialBake(brittleIceOutlineMaterial, MutableQuadView.BAKE_NORMALIZED)
+							.chunkLayer(originalLayer);
+					return true;
+				});
+				try {
+					super.emitQuads(emitter, level, pos, state, random, cullTest);
+				} finally {
+					emitter.popTransform();
+				}
+			} else if (baked) {
+				bakedModel.emitQuads(emitter, level, pos, state, random, cullTest);
+				if (FacetOutlineStats.enabled()) {
+					FacetOutlineStats.BAKED_BLOCKS_SERVED.incrementAndGet();
+				}
+			} else if (netherrackMaterial != null && FacetConfig.enabled()) {
+				emitter.pushTransform(quad -> {
+					quad.uv(0, OUTLINE_UV, OUTLINE_UV).uv(1, OUTLINE_UV, OUTLINE_UV)
+							.uv(2, OUTLINE_UV, OUTLINE_UV).uv(3, OUTLINE_UV, OUTLINE_UV)
+							.materialBake(netherrackMaterial, MutableQuadView.BAKE_NORMALIZED);
+					return true;
+				});
+				try {
+					super.emitQuads(emitter, level, pos, state, random, cullTest);
+				} finally {
+					emitter.popTransform();
+				}
+			} else {
+				super.emitQuads(emitter, level, pos, state, random, cullTest);
+			}
+
+			if (!baked && !brittleIce && !FacetClient.usesExperimentalLineOutlines()
+					&& FacetConfig.enabled()
+					&& (rainbowOutline || FacetOutlineRules.shouldRender(level, pos, state))) {
+				VoxelShape shape = state.getShape(level, pos);
+				emitOutlineQuads(emitter, level, pos, state, cullTest, shape);
+				emitGraffitiQuads(emitter, level, pos, state, cullTest, shape);
+			} else {
+				emitGraffitiQuads(emitter, level, pos, state, cullTest, null);
+			}
+		}
+
+		private void emitOutlineQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos,
+				BlockState state, Predicate<Direction> cullTest, VoxelShape shape) {
+			if (shape.isEmpty()) {
+				return;
+			}
+
+			if (symbolMaterial != null) {
+				for (Direction face : Direction.values()) {
+					if (!cullTest.test(face)) {
+						emitFaceDecal(emitter, face,
+								face.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1.0 : 0.0,
+								symbolMaterial, FacetOutlineRules.faceSymbolSize(state), ChunkSectionLayer.TRANSLUCENT);
+					}
+				}
+			}
+
+			int culledFaces = FacetOutlineRules.culledFaces(cullTest);
+			FacetOutlineColor.FaceColors faceColors = rainbowOutline ? null : FacetOutlineColor.resolve(level, pos, state);
+			boolean isCarpet = state.getBlock() instanceof CarpetBlock;
+			boolean stats = FacetOutlineStats.enabled();
+
+			FacetShapeEdges.forEachSurfaceStrip(shape,
+					rainbowOutline ? FacetOutlineRules.ANCIENT_DEBRIS_EDGE_WIDTH : FacetConfig.effectiveEdgeWidth(), culledFaces,
+					(direction, minX, minY, minZ, maxX, maxY, maxZ) -> {
+				boolean carpetSkipped = isCarpet && direction != Direction.UP;
+				if (carpetSkipped) {
+					if (stats) {
+						FacetOutlineStats.STRIPS_SKIPPED_CARPET.incrementAndGet();
+					}
+					return;
+				}
+
+				if (stats) {
+					FacetOutlineStats.STRIPS_EMITTED.incrementAndGet();
+				}
+
+				emitSurfaceStrip(emitter, direction,
+						rainbowOutline ? RAINBOW_COLOR : faceColors.color(direction),
+						minX, minY, minZ, maxX, maxY, maxZ);
+			});
+		}
+
+		private void emitGraffitiQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos,
+				BlockState state, Predicate<Direction> cullTest, VoxelShape shape) {
+			GraffitiType[] types = GraffitiStore.getTypes(pos, state);
+			if (types == null) {
+				return;
+			}
+			if (shape == null) {
+				shape = state.getShape(level, pos);
+			}
+
+			if (shape.isEmpty()) {
+				return;
+			}
+
+			if (GraffitiEligibility.baseResult(level, pos, state) != GraffitiEligibility.Result.ALLOWED) {
+				return;
+			}
+
+			for (Direction direction : Direction.values()) {
+				GraffitiType type = types[direction.ordinal()];
+
+				if (type == null || cullTest.test(direction)
+						|| GraffitiEligibility.evaluateFace(level, pos, state, direction, shape)
+						!= GraffitiEligibility.Result.ALLOWED) {
+					continue;
+				}
+
+				emitFaceDecal(emitter, direction, GraffitiEligibility.facePlane(shape, direction),
+						graffitiMaterials.get(type), GRAFFITI_FACE_SIZE, ChunkSectionLayer.TRANSLUCENT);
+			}
+		}
+
+		private static void emitFaceDecal(QuadEmitter emitter, Direction face, double plane,
+				Material.Baked material, double size, ChunkSectionLayer layer) {
+			double bias = layer == ChunkSectionLayer.TRANSLUCENT
+					? GRAFFITI_SURFACE_BIAS : FacetMcBridge.outlineSurfaceBias();
+			double biasedPlane = plane + bias * face.getAxisDirection().getStep();
+			double min = (1.0 - size) / 2.0;
+			double max = 1.0 - min;
+
+			switch (face) {
+				case DOWN, UP -> emitDecalQuad(emitter, face, material, layer,
+						min, biasedPlane, min, max, biasedPlane, min, max, biasedPlane, max, min, biasedPlane, max);
+				case NORTH, SOUTH -> emitDecalQuad(emitter, face, material, layer,
+						min, min, biasedPlane, max, min, biasedPlane, max, max, biasedPlane, min, max, biasedPlane);
+				case WEST, EAST -> emitDecalQuad(emitter, face, material, layer,
+						biasedPlane, min, min, biasedPlane, min, max, biasedPlane, max, max, biasedPlane, max, min);
+			}
+		}
+
+		private static void emitDecalQuad(QuadEmitter emitter, Direction face, Material.Baked material,
+				ChunkSectionLayer layer,
+				double x1, double y1, double z1,
+				double x2, double y2, double z2,
+				double x3, double y3, double z3,
+				double x4, double y4, double z4) {
+			float normalX = face.getStepX();
+			float normalY = face.getStepY();
+			float normalZ = face.getStepZ();
+			boolean reverseWinding = face == Direction.UP || face == Direction.NORTH || face == Direction.EAST;
+
+			emitter.clear()
+					.pos(0, (float) x1, (float) y1, (float) z1)
+					.pos(1, reverseWinding ? (float) x4 : (float) x2, reverseWinding ? (float) y4 : (float) y2, reverseWinding ? (float) z4 : (float) z2)
+					.pos(2, (float) x3, (float) y3, (float) z3)
+					.pos(3, reverseWinding ? (float) x2 : (float) x4, reverseWinding ? (float) y2 : (float) y4, reverseWinding ? (float) z2 : (float) z4)
+					.color(0, -1).color(1, -1).color(2, -1).color(3, -1)
+					.uv(0, 0.0f, 1.0f)
+					.uv(1, reverseWinding ? 0.0f : 1.0f, reverseWinding ? 0.0f : 1.0f)
+					.uv(2, 1.0f, 0.0f)
+					.uv(3, reverseWinding ? 1.0f : 0.0f, reverseWinding ? 1.0f : 0.0f)
+					.materialBake(material, MutableQuadView.BAKE_NORMALIZED)
+					.normal(0, normalX, normalY, normalZ).normal(1, normalX, normalY, normalZ)
+					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
+					.nominalFace(face)
+					// Preserve the smooth alpha edges of graffiti and 128px face symbols.
+					.chunkLayer(layer)
+					.emissive(false);
+			FacetMcBridge.applyShade(emitter, true);
+			emitter.ambientOcclusion(TriState.FALSE)
+					.shadeMode(ShadeMode.VANILLA)
+					.tintIndex(-1)
+					.emit();
+		}
+
+		private void emitSurfaceStrip(QuadEmitter emitter, Direction face, int color,
+				double minX, double minY, double minZ,
+				double maxX, double maxY, double maxZ) {
+			double bias = FacetMcBridge.outlineSurfaceBias() * face.getAxisDirection().getStep();
+
+			switch (face) {
+				case DOWN, UP -> emitOutlineQuad(emitter, face, color,
+						minX, minY + bias, minZ, maxX, minY + bias, minZ,
+						maxX, minY + bias, maxZ, minX, minY + bias, maxZ);
+				case NORTH, SOUTH -> emitOutlineQuad(emitter, face, color,
+						minX, minY, minZ + bias, maxX, minY, minZ + bias,
+						maxX, maxY, minZ + bias, minX, maxY, minZ + bias);
+				case WEST, EAST -> emitOutlineQuad(emitter, face, color,
+						minX + bias, minY, minZ, minX + bias, minY, maxZ,
+						minX + bias, maxY, maxZ, minX + bias, maxY, minZ);
+			}
+		}
+
+		private void emitOutlineQuad(QuadEmitter emitter, Direction face, int color,
+				double x1, double y1, double z1,
+				double x2, double y2, double z2,
+				double x3, double y3, double z3,
+				double x4, double y4, double z4) {
+			float normalX = face.getStepX();
+			float normalY = face.getStepY();
+			float normalZ = face.getStepZ();
+			boolean reverseWinding = face == Direction.UP || face == Direction.NORTH || face == Direction.EAST;
+
+			emitter.clear()
+					.pos(0, (float) x1, (float) y1, (float) z1)
+					.pos(1, reverseWinding ? (float) x4 : (float) x2, reverseWinding ? (float) y4 : (float) y2, reverseWinding ? (float) z4 : (float) z2)
+					.pos(2, (float) x3, (float) y3, (float) z3)
+					.pos(3, reverseWinding ? (float) x2 : (float) x4, reverseWinding ? (float) y2 : (float) y4, reverseWinding ? (float) z2 : (float) z4)
+					.color(0, color).color(1, color).color(2, color).color(3, color)
+					.uv(0, OUTLINE_UV, OUTLINE_UV).uv(1, OUTLINE_UV, OUTLINE_UV)
+					.uv(2, OUTLINE_UV, OUTLINE_UV).uv(3, OUTLINE_UV, OUTLINE_UV);
+			if (rainbowOutline) {
+				// A shared diagonal coordinate keeps patterned stripes continuous across block faces.
+				for (int vertex = 0; vertex < 4; vertex++) {
+					float u = (emitter.x(vertex) + emitter.y(vertex) + emitter.z(vertex)) / 3.0f;
+					emitter.uv(vertex, Math.clamp(u, 0.0f, 1.0f), OUTLINE_UV);
+				}
+			}
+			emitter.materialBake(outlineMaterial, MutableQuadView.BAKE_NORMALIZED)
+					.normal(0, normalX, normalY, normalZ).normal(1, normalX, normalY, normalZ)
+					.normal(2, normalX, normalY, normalZ).normal(3, normalX, normalY, normalZ)
+					.nominalFace(face)
+					// 26.1/26.2: CUTOUT (world-validated for FPS + visibility). 26.3 snapshot
+					// targets: bridge returns CUTOUT too, pending in-world validation; MultiDraw
+					// cutout depth fighting could make strips nearly invisible (fallback is
+					// TRANSLUCENT via the version bridge, at the cost of per-frame sorting).
+					.chunkLayer(FacetMcBridge.outlineChunkLayer())
+					.emissive(false);
+			FacetMcBridge.applyShade(emitter, true);
+			emitter.ambientOcclusion(TriState.DEFAULT)
+					.shadeMode(ShadeMode.VANILLA)
+					.tintIndex(-1)
+					.emit();
+		}
+	}
+}

@@ -61,23 +61,14 @@ public final class FacetOutlineColor {
 	}
 
 	static int meanTextureColor(NativeImage image) {
-		int mean = meanTextureRgba(image);
-		return ARGB.color(255, ARGB.red(mean), ARGB.green(mean), ARGB.blue(mean));
-	}
-
-	static int meanTextureRgba(NativeImage image) {
 		PixelAccumulator pixels = new PixelAccumulator();
 		for (int y = 0; y < image.getHeight(); y++) {
 			for (int x = 0; x < image.getWidth(); x++) {
 				pixels.add(image.getPixel(x, y));
 			}
 		}
-		return meanTextureRgba(pixels.finish());
-	}
-
-	private static int meanTextureRgba(TextureSample sample) {
-		return ARGB.color(Math.round((float) sample.coverage * 255.0f),
-				Math.round(linearToSrgb(sample.red) * 255.0f),
+		TextureSample sample = pixels.finish();
+		return ARGB.color(255, Math.round(linearToSrgb(sample.red) * 255.0f),
 				Math.round(linearToSrgb(sample.green) * 255.0f),
 				Math.round(linearToSrgb(sample.blue) * 255.0f));
 	}

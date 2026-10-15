@@ -59,7 +59,7 @@ jobs:
           echo "PREVIEW_VERSION=${release_version}-s4-preview.${preview_number}" >> "$GITHUB_ENV"
 
       - name: Build Snapshot 4 preview
-        run: ./gradlew :versions:fabric-26.4-snapshot-4:build --no-daemon --console=plain
+        run: ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-4:build --no-daemon --console=plain
 
       - name: Stage and validate preview artifact
         shell: bash

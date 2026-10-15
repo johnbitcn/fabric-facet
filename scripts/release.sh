@@ -54,49 +54,23 @@ if [[ ! "$mod_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 echo "mod_version=$mod_version"
 
-# 发布目标必须与 .github/workflows/publish.yml 的 staging 列表保持一致。
-release_targets=(
-	fabric-26.1
-	fabric-26.2
-	fabric-26.3
-	neoforge-26.1
-	neoforge-26.1.2
-	neoforge-26.2
-	neoforge-26.3
-)
-
-build_targets=()
-while IFS= read -r line; do
-	if [[ "$line" =~ ^include\ \'versions:(.+)\'$ ]]; then
-		build_targets+=("${BASH_REMATCH[1]}")
-	fi
-done < settings.gradle
-if [[ ${#build_targets[@]} -eq 0 ]]; then
-	echo "无法从 settings.gradle 解析模块列表" >&2
-	exit 1
-fi
-
-for target in "${release_targets[@]}"; do
-	found=0
-	for candidate in "${build_targets[@]}"; do
-		if [[ "$candidate" == "$target" ]]; then
-			found=1
-		fi
-	done
-	if [[ $found -ne 1 ]]; then
-		echo "发布目标 $target 不在 settings.gradle 中" >&2
-		exit 1
-	fi
-done
+targets_text="$(python3 scripts/release-targets.py "release-notes/v${mod_version}.targets")"
+release_targets=()
+build_tasks=()
+while IFS= read -r target; do
+	release_targets+=("$target")
+	build_tasks+=(":versions:$target:clean" ":versions:$target:build")
+done <<< "$targets_text"
+printf '发布目标: %s\n' "${release_targets[*]}"
 
 if git rev-parse --verify "refs/tags/v$mod_version" >/dev/null 2>&1; then
 	echo "tag v$mod_version 已存在，拒绝重复发布" >&2
 	exit 1
 fi
 
-echo "== 3/6 干净构建全部模块 =="
+echo "== 3/6 干净构建所选模块 =="
 
-./gradlew --no-daemon clean build --console=plain
+./gradlew --no-daemon "${build_tasks[@]}" --console=plain
 
 echo "== 4/6 机械枚举并校验产物 =="
 

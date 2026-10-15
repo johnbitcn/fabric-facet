@@ -36,22 +36,22 @@ final class BrittleIceAppearanceTest {
 		var states = Blocks.BRITTLE_ICE.getStateDefinition().getPossibleStates();
 		assertEquals(4, states.size());
 		assertEquals(List.of(0, 1, 2, 3), states.stream()
-				.map(FacetOutlineRules::brittleIceStage).sorted().toList());
+				.map(FacetBrittleIce::brittleIceStage).sorted().toList());
 
 		for (BlockState state : states) {
-			assertTrue(FacetOutlineRules.isBrittleIce(state));
+			assertTrue(FacetBrittleIce.isBrittleIce(state));
 			assertFalse(FacetOutlineRules.usesRainbowOutline(state));
 			assertFalse(FacetOutlineRules.usesPastelOutline(state));
-			assertTrue(FacetOutlineRules.shouldUseBrittleIceOutline(state, true));
-			assertFalse(FacetOutlineRules.shouldUseBrittleIceOutline(state, false));
+			assertTrue(FacetBrittleIce.shouldUseBrittleIceOutline(state, true));
+			assertFalse(FacetBrittleIce.shouldUseBrittleIceOutline(state, false));
 		}
 
 		BlockState powderSnow = Blocks.POWDER_SNOW.defaultBlockState();
 		BlockState frostedIce = Blocks.FROSTED_ICE.defaultBlockState();
 		assertTrue(FacetOutlineRules.usesPastelOutline(powderSnow));
-		assertFalse(FacetOutlineRules.shouldUseBrittleIceOutline(powderSnow, true));
-		assertFalse(FacetOutlineRules.isBrittleIce(frostedIce));
-		assertEquals(-1, FacetOutlineRules.brittleIceStage(frostedIce));
+		assertFalse(FacetBrittleIce.shouldUseBrittleIceOutline(powderSnow, true));
+		assertFalse(FacetBrittleIce.isBrittleIce(frostedIce));
+		assertEquals(-1, FacetBrittleIce.brittleIceStage(frostedIce));
 	}
 
 	@Test
@@ -87,16 +87,6 @@ final class BrittleIceAppearanceTest {
 					}
 				}
 			}
-		}
-	}
-
-	@Test
-	void meanTextureRgbaKeepsAlphaWeightedRgbAndMeanOpacity() {
-		try (NativeImage image = new NativeImage(3, 1, false)) {
-			image.setPixel(0, 0, 0xFFFF0000);
-			image.setPixel(1, 0, 0x800000FF);
-			image.setPixel(2, 0, 0x0000FF00);
-			assertEquals(0x80D5009C, FacetOutlineColor.meanTextureRgba(image));
 		}
 	}
 }
