@@ -3,6 +3,9 @@
 Run all commands from the repository root. Use the included Gradle wrapper;
 a separate Gradle installation is not required.
 
+For development priorities, older-version support, and selective ports, see
+[Version Maintenance](docs/version-maintenance.md).
+
 ## Requirements
 
 - A Java 25 toolchain available to Gradle
