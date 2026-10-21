@@ -36,20 +36,21 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
-		":versions:fabric-26.4-snapshot-4": [
+		":versions:fabric-26.4-snapshot-5": [
 				archivesName: "Facet-Fabric",
-				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_4"),
-				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_4"),
-				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_4"),
-				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_4"),
-				minecraftDependency: "26.4-alpha.4",
+				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_5"),
+				loaderVersion: findProperty("loader_version_26_4_snapshot_5"),
+				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_5"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_5"),
+				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_5"),
+				minecraftDependency: "26.4-alpha.5",
 				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
 	]
 
-if (findProject(":versions:fabric-26.4-snapshot-4") == null) {
-	versionConfigs.remove(":versions:fabric-26.4-snapshot-4")
+if (findProject(":versions:fabric-26.4-snapshot-5") == null) {
+	versionConfigs.remove(":versions:fabric-26.4-snapshot-5")
 }
 
 allprojects {
@@ -100,6 +101,7 @@ subprojects {
 }
 
 versionConfigs.each { projectPath, cfg ->
+	def loaderVersion = cfg.loaderVersion ?: rootProject.loader_version
 	project(projectPath) {
 		apply plugin: "net.fabricmc.fabric-loom"
 		apply plugin: "com.modrinth.minotaur"
@@ -144,7 +146,7 @@ versionConfigs.each { projectPath, cfg ->
 
 		dependencies {
 			minecraft "com.mojang:minecraft:${cfg.minecraftVersion}"
-			implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+			implementation "net.fabricmc:fabric-loader:${loaderVersion}"
 			implementation "net.fabricmc.fabric-api:fabric-api:${cfg.fabricApiVersion}"
 			implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${cfg.lifecycleEventsVersion}"
 			if (cfg.modMenuRuntime) {
@@ -152,16 +154,16 @@ versionConfigs.each { projectPath, cfg ->
 			} else {
 				compileOnly cfg.modMenuDependency
 			}
-			if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-4"]) {
+			if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-5"]) {
 				testImplementation platform("org.junit:junit-bom:5.12.1")
 				testImplementation "org.junit.jupiter:junit-jupiter"
 				testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 			}
 		}
 
-		if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-4"]) {
+		if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-5"]) {
 			sourceSets.test.java.srcDir(rootProject.file("src/outline_core/test/java"))
-			if (projectPath == ":versions:fabric-26.4-snapshot-4") {
+			if (projectPath == ":versions:fabric-26.4-snapshot-5") {
 				sourceSets.test.java.srcDir(rootProject.file("versions/fabric-26.2/src/test/java"))
 				sourceSets.test.java.exclude { entry ->
 					def override = file("src/test/java/${entry.path}")
@@ -179,13 +181,13 @@ versionConfigs.each { projectPath, cfg ->
 		tasks.withType(ProcessResources).configureEach {
 			duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 			inputs.property "version", rootProject.mod_version
-			inputs.property "loader_version", rootProject.loader_version
+			inputs.property "loader_version", loaderVersion
 			inputs.property "minecraft_dependency", cfg.minecraftDependency
 
 			filesMatching("fabric.mod.json") {
 				expand(
 						"version": rootProject.mod_version,
-						"loader_version": rootProject.loader_version,
+						"loader_version": loaderVersion,
 						"minecraft_dependency": cfg.minecraftDependency)
 			}
 		}

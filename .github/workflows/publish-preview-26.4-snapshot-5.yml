@@ -1,13 +1,13 @@
-name: Publish Minecraft 26.4 Snapshot 4 preview
+name: Publish Minecraft 26.4 Snapshot 5 preview
 
 on:
   push:
     tags:
-      - 'v*-mc26.4-snapshot-4-preview.*'
+      - 'v*-mc26.4-snapshot-5-preview.*'
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing Snapshot 4 preview tag to recover
+        description: Existing Snapshot 5 preview tag to recover
         required: true
         type: string
       publish_github_release:
@@ -43,8 +43,8 @@ jobs:
       - name: Validate preview tag and project version
         shell: bash
         run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-mc26\.4-snapshot-4-preview\.([0-9]+)$ ]]; then
-            echo "Invalid Snapshot 4 preview tag: $RELEASE_TAG" >&2
+          if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-mc26\.4-snapshot-5-preview\.([0-9]+)$ ]]; then
+            echo "Invalid Snapshot 5 preview tag: $RELEASE_TAG" >&2
             exit 1
           fi
           release_version="${BASH_REMATCH[1]}"
@@ -56,7 +56,7 @@ jobs:
             exit 1
           fi
           echo "RELEASE_VERSION=$release_version" >> "$GITHUB_ENV"
-          echo "PREVIEW_VERSION=${release_version}-s4-preview.${preview_number}" >> "$GITHUB_ENV"
+          echo "PREVIEW_VERSION=${release_version}-s5-preview.${preview_number}" >> "$GITHUB_ENV"
 
       - name: Load preview release notes
         shell: bash
@@ -70,14 +70,14 @@ jobs:
             echo 'FACET_RELEASE_NOTES'
           } >> "$GITHUB_ENV"
 
-      - name: Build Snapshot 4 preview
-        run: ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-4:build --no-daemon --console=plain
+      - name: Build Snapshot 5 preview
+        run: ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-5:build --no-daemon --console=plain
 
       - name: Stage and validate preview artifact
         shell: bash
         run: |
           mkdir release
-          cp "versions/fabric-26.4-snapshot-4/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.4-snapshot-4.jar" release/
+          cp "versions/fabric-26.4-snapshot-5/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.4-snapshot-5.jar" release/
           python3 - <<'PY'
           import json, os, pathlib, zipfile
           jars = list(pathlib.Path("release").glob("*.jar"))
@@ -86,7 +86,8 @@ jobs:
               assert jar.testzip() is None
               metadata = json.loads(jar.read("fabric.mod.json"))
               assert metadata["version"] == os.environ["RELEASE_VERSION"]
-              assert metadata["depends"]["minecraft"] == "26.4-alpha.4"
+              assert metadata["depends"]["minecraft"] == "26.4-alpha.5"
+              assert metadata["depends"]["fabricloader"] == ">=0.20.0"
           PY
           (
             cd release
@@ -113,7 +114,7 @@ jobs:
             gh release upload "$RELEASE_TAG" release/* --clobber
           else
             gh release create "$RELEASE_TAG" release/* --verify-tag \
-              --title "Facet v${RELEASE_VERSION} Minecraft 26.4 Snapshot 4 Alpha Preview" \
+              --title "Facet v${RELEASE_VERSION} Minecraft 26.4 Snapshot 5 Alpha Preview" \
               --notes-file "$RUNNER_TEMP/release-notes.md" --prerelease
           fi
 
@@ -131,18 +132,18 @@ jobs:
         if: github.event_name == 'push' || inputs.publish_modrinth
         run: (cd release && sha256sum --check SHA256SUMS.txt)
 
-      - name: Publish Snapshot 4 Alpha preview to Modrinth
+      - name: Publish Snapshot 5 Alpha preview to Modrinth
         if: github.event_name == 'push' || inputs.publish_modrinth
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          modrinth-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.4-snapshot-4.jar
-          modrinth-name: Facet ${{ env.RELEASE_VERSION }} Preview for Minecraft 26.4 Snapshot 4
+          modrinth-files: release/Facet-Fabric-${{ env.RELEASE_VERSION }}-26.4-snapshot-5.jar
+          modrinth-name: Facet ${{ env.RELEASE_VERSION }} Preview for Minecraft 26.4 Snapshot 5
           modrinth-version: ${{ env.PREVIEW_VERSION }}
           modrinth-version-type: alpha
           modrinth-loaders: fabric
           modrinth-environment: client
-          modrinth-game-versions: 26.4-snapshot-4
+          modrinth-game-versions: 26.4-snapshot-5
           modrinth-game-version-filter: none
           modrinth-changelog: ${{ env.RELEASE_NOTES }}

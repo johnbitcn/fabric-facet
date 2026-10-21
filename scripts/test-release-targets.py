@@ -16,7 +16,7 @@ class ReleaseTargetsTest(unittest.TestCase):
         self.settings.write_text("include 'versions:fabric-26.2'\n"
                                  "include 'versions:neoforge-26.1'\n"
                                  "include 'versions:neoforge-26.1.2'\n"
-                                 "\tinclude 'versions:fabric-26.4-snapshot-4'\n")
+                                 "\tinclude 'versions:fabric-26.4-snapshot-5'\n")
         self.manifest = root / "v9.0.0.targets"
 
     def select(self, content):
@@ -51,7 +51,7 @@ class ReleaseTargetsTest(unittest.TestCase):
 
     def test_snapshot_cannot_enter_stable_release(self):
         with self.assertRaisesRegex(ValueError, "preview workflow"):
-            self.select("fabric-26.4-snapshot-4\n")
+            self.select("fabric-26.4-snapshot-5\n")
 
 
 if __name__ == "__main__":

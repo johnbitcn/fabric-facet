@@ -31,7 +31,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
-| `versions/fabric-26.4-snapshot-4` | Fabric | 26.4 Snapshot 4 | `Facet-Fabric-<mod-version>-26.4-snapshot-4.jar` |
+| `versions/fabric-26.4-snapshot-5` | Fabric | 26.4 Snapshot 5 | `Facet-Fabric-<mod-version>-26.4-snapshot-5.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -104,17 +104,18 @@ Launch a client for one exact target with that module's `runClient` task:
 A successful build or main-menu startup does not replace in-world validation
 for rendering, input, placement, or Loader-specific behavior.
 
-## Fabric 26.4 Snapshot 4 Preview
+## Fabric 26.4 Snapshot 5 Preview
 
 Use Java 25 to run Gradle. If the default Java installation is newer, set
 `JAVA_HOME` explicitly, for example on macOS:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-4:build
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-4:runClient
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-5:build
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-5:runClient
 ```
 
-This target uses Fabric API `0.163.0+26.4` and its own rendering bridge.
+This target uses Fabric Loader `0.20.0`, Fabric API `0.164.1+26.4`, and its
+own rendering bridge. Stable targets keep their existing Loader version.
 Snapshot-specific classes override shared classes only in this target's
 `sourceSets`. Brittle-ice logic and textures stay in this module; stable
 modules do not compile or package them. Shared code is reused only where the
@@ -123,8 +124,8 @@ behavior tests, with Snapshot-specific overrides. Mod Menu is compile-only;
 it is not installed by `runClient`.
 
 The snapshot target is not part of the stable release workflow.
-Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-4.yml`,
-triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-4-preview.<number>`.
+Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-5.yml`,
+triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-5-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
 prerelease, then publishes the same JAR to Modrinth as Alpha. Manual recovery
 requires an existing preview tag and explicit destination selection. Both

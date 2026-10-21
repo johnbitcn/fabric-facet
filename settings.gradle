@@ -15,7 +15,7 @@ include 'versions:fabric-26.1'
 include 'versions:fabric-26.2'
 include 'versions:fabric-26.3'
 if (providers.gradleProperty('includeSnapshots').getOrElse('false').toBoolean()) {
-	include 'versions:fabric-26.4-snapshot-4'
+	include 'versions:fabric-26.4-snapshot-5'
 }
 include 'versions:neoforge-26.1'
 include 'versions:neoforge-26.1.2'
