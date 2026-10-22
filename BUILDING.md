@@ -104,6 +104,16 @@ Launch a client for one exact target with that module's `runClient` task:
 A successful build or main-menu startup does not replace in-world validation
 for rendering, input, placement, or Loader-specific behavior.
 
+### NeoForge 26.3 startup on macOS
+
+With NeoForge `26.3.0.95` / FML `12.0.12`, the development client was observed
+waiting in the upstream SDL early-loading window before Facet initialization.
+Adding `-XstartOnFirstThread` did not resolve it. Temporarily setting
+`earlyWindowControl = false` in `versions/neoforge-26.3/run/config/fml.toml`
+allowed resource loading and Facet model baking to finish. Restore that local
+setting after diagnosis. The project does not disable the loading window in
+published JARs. Default startup did not complete on this macOS setup.
+
 ## Fabric 26.4 Snapshot 5 Preview
 
 Use Java 25 to run Gradle. If the default Java installation is newer, set
@@ -114,8 +124,9 @@ JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :ver
 JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-5:runClient
 ```
 
-This target uses Fabric Loader `0.20.0`, Fabric API `0.164.1+26.4`, and its
-own rendering bridge. Stable targets keep their existing Loader version.
+This target has its own rendering bridge. Build dependencies and minimum
+runtime requirements are pinned separately in `gradle.properties`; updating
+one does not automatically change the other.
 Snapshot-specific classes override shared classes only in this target's
 `sourceSets`. Brittle-ice logic and textures stay in this module; stable
 modules do not compile or package them. Shared code is reused only where the

@@ -34,7 +34,7 @@ neoForge {
 
 dependencies {
 	// Match this target's userdev config.json/binpatcher.version; build tooling only.
-	neoFormRuntimeExternalTools('net.neoforged.installertools:binarypatcher:4.0.12:fatjar') {
+	neoFormRuntimeExternalTools('net.neoforged.installertools:binarypatcher:4.0.17:fatjar') {
 		transitive = false
 	}
 	testImplementation platform('org.junit:junit-bom:5.12.1')
@@ -67,9 +67,9 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.withType(ProcessResources).configureEach {
 	inputs.property 'version', rootProject.mod_version
-	inputs.property 'neo_version', rootProject.neo_version_26_2
+	inputs.property 'neo_min_version', rootProject.neo_min_version_26_2
 	filesMatching('META-INF/neoforge.mods.toml') {
-		expand(version: rootProject.mod_version, neo_version: rootProject.neo_version_26_2)
+		expand(version: rootProject.mod_version, neo_min_version: rootProject.neo_min_version_26_2)
 	}
 }
 

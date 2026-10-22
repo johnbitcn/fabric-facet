@@ -67,9 +67,9 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.withType(ProcessResources).configureEach {
 	inputs.property 'version', rootProject.mod_version
-	inputs.property 'neo_version', rootProject.neo_version_26_3
+	inputs.property 'neo_min_version', rootProject.neo_min_version_26_3
 	filesMatching('META-INF/neoforge.mods.toml') {
-		expand(version: rootProject.mod_version, neo_version: rootProject.neo_version_26_3)
+		expand(version: rootProject.mod_version, neo_min_version: rootProject.neo_min_version_26_3)
 	}
 }
 

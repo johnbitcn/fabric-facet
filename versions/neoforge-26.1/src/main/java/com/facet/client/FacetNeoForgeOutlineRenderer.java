@@ -43,27 +43,28 @@ final class FacetNeoForgeOutlineRenderer {
 
 	static void modifyBakingResult(ModelEvent.ModifyBakingResult event) {
 		FacetOutlineColor.clearCache();
-		TextureAtlasSprite sprite = event.getTextureGetter().apply(Identifier.withDefaultNamespace("block/white_concrete"));
+		var textureGetter = FacetNeoForgePlatform.blockTextureGetter(event);
+		TextureAtlasSprite sprite = textureGetter.apply(Identifier.withDefaultNamespace("block/white_concrete"));
 		Material.Baked material = new Material.Baked(sprite, true);
-		Material.Baked rainbowMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked rainbowMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline")), false);
-		Material.Baked pastelMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked pastelMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/rainbow_outline_pastel")), false);
-		Material.Baked warningMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked warningMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/warning_outline")), false);
-		Material.Baked infestedWarningMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked infestedWarningMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/infested_warning_outline")), false);
-		Material.Baked snowflakeMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked snowflakeMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/rainbow_snowflake")), false);
-		Material.Baked brushMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked brushMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/rainbow_brush")), false);
-		Material.Baked bugMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked bugMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/warning_bug")), false);
-		Material.Baked netherrackMaterial = new Material.Baked(event.getTextureGetter().apply(
+		Material.Baked netherrackMaterial = new Material.Baked(textureGetter.apply(
 				Identifier.fromNamespaceAndPath("facet", "block/netherrack_average")), false);
 		Map<GraffitiType, Material.Baked> graffitiMaterials = new EnumMap<>(GraffitiType.class);
 		for (GraffitiType type : GraffitiType.values()) {
-			graffitiMaterials.put(type, new Material.Baked(event.getTextureGetter().apply(type.materialId()), true));
+			graffitiMaterials.put(type, new Material.Baked(textureGetter.apply(type.materialId()), true));
 		}
 		int wrapped = 0;
 
@@ -87,7 +88,7 @@ final class FacetNeoForgeOutlineRenderer {
 					: FacetOutlineRules.isInfested(state) ? bugMaterial : null;
 			Material.Baked replacement = state.is(Blocks.NETHERRACK) ? netherrackMaterial : null;
 			BlockStateModel bakedModel = FacetBakedOutlineModel.create(state, model, replacement,
-					id -> new Material.Baked(event.getTextureGetter().apply(id), false),
+					id -> new Material.Baked(textureGetter.apply(id), false),
 					FacetNeoForgeOutlineRenderer::remapBakedQuad);
 			entry.setValue(new OutlineModel(model, outlineMaterial, graffitiMaterials,
 					rainbowOutline, replacement,

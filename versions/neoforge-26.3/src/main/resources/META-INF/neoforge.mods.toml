@@ -4,7 +4,7 @@ license="MIT"
 modId="facet"
 version="${version}"
 displayName="Facet NeoForge"
-logoFile="assets/facet/icon.png"
+iconFile="assets/facet/icon.png"
 authors="ByteWave"
 description='''
 Client-side block outlines, hover outlines, distance tools, graffiti, placement preview, and settings for Minecraft 26.3.
@@ -16,7 +16,7 @@ config="facet.neoforge.mixins.json"
 [[dependencies.facet]]
 modId="neoforge"
 type="required"
-versionRange="[${neo_version},)"
+versionRange="[${neo_min_version},)"
 ordering="NONE"
 side="CLIENT"
 

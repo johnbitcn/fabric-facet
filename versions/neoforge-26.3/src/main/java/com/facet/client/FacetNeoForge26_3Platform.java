@@ -2,6 +2,7 @@ package com.facet.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -20,11 +21,14 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.PrepareRenderBuffersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.quad.MutableQuad;
 import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Quaternionf;
+import org.slf4j.LoggerFactory;
 
 final class FacetNeoForgePlatform {
 	interface Geometry {
@@ -43,6 +47,19 @@ final class FacetNeoForgePlatform {
 	private static final List<ReadyDraw> READY_DRAWS = new ArrayList<>();
 
 	private FacetNeoForgePlatform() {
+	}
+
+	static Function<Identifier, TextureAtlasSprite> blockTextureGetter(ModelEvent.ModifyBakingResult event) {
+		var atlas = event.getBlockAtlasPreparations();
+		return id -> {
+			TextureAtlasSprite sprite = atlas.getSprite(id);
+			if (sprite != null) {
+				return sprite;
+			}
+			LoggerFactory.getLogger(FacetNeoForgePlatform.class).warn(
+					"Failed to retrieve texture '{}' from the block atlas", id, new Throwable());
+			return atlas.missing();
+		};
 	}
 
 	static InputConstants.Type keyboardType() {

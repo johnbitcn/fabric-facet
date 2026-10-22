@@ -1,5 +1,7 @@
 package com.facet.client;
 
+import java.util.function.Function;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -15,6 +17,8 @@ import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.quad.MutableQuad;
 import net.neoforged.neoforge.common.NeoForge;
@@ -35,6 +39,10 @@ final class FacetNeoForgePlatform {
 			new StagedVertexBuffer(() -> "Facet NeoForge 26.2 after translucent terrain secondary", RenderType.TRANSIENT_BUFFER_SIZE);
 
 	private FacetNeoForgePlatform() {
+	}
+
+	static Function<Identifier, TextureAtlasSprite> blockTextureGetter(ModelEvent.ModifyBakingResult event) {
+		return event.getTextureGetter();
 	}
 
 	static InputConstants.Type keyboardType() {

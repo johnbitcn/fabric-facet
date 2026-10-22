@@ -116,6 +116,25 @@ jobs:
             fi
             cp "versions/$target/build/libs/${archive_name}-${RELEASE_VERSION}-${minecraft_version}.jar" release/
           done <<< "$targets_text"
+          TARGETS_TEXT="$targets_text" python3 - <<'PY'
+          import json, os, pathlib, tomllib, zipfile
+          properties = dict(line.split("=", 1) for line in pathlib.Path("gradle.properties").read_text().splitlines()
+                            if line and not line.startswith("#"))
+          for target in os.environ["TARGETS_TEXT"].splitlines():
+              loader, minecraft = target.split("-", 1)
+              key = minecraft.replace(".", "_")
+              archive = "Facet-Fabric" if loader == "fabric" else "Facet-NeoForge"
+              jar = pathlib.Path("release") / f"{archive}-{os.environ['RELEASE_VERSION']}-{minecraft}.jar"
+              with zipfile.ZipFile(jar) as z:
+                  if loader == "fabric":
+                      metadata = json.loads(z.read("fabric.mod.json"))
+                      assert metadata["depends"]["fabricloader"] == ">=" + properties["loader_min_version_" + key]
+                      assert metadata["depends"]["fabric-api"] == ">=" + properties["fabric_api_min_version_" + key]
+                  else:
+                      metadata = tomllib.loads(z.read("META-INF/neoforge.mods.toml").decode())
+                      dependency = next(d for d in metadata["dependencies"]["facet"] if d["modId"] == "neoforge")
+                      assert dependency["versionRange"] == "[" + properties["neo_min_version_" + key] + ",)"
+          PY
           (
             cd release
             sha256sum *.jar | sort > SHA256SUMS.txt

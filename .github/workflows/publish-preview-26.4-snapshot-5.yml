@@ -80,6 +80,8 @@ jobs:
           cp "versions/fabric-26.4-snapshot-5/build/libs/Facet-Fabric-${RELEASE_VERSION}-26.4-snapshot-5.jar" release/
           python3 - <<'PY'
           import json, os, pathlib, zipfile
+          properties = dict(line.split("=", 1) for line in pathlib.Path("gradle.properties").read_text().splitlines()
+                            if line and not line.startswith("#"))
           jars = list(pathlib.Path("release").glob("*.jar"))
           assert len(jars) == 1, jars
           with zipfile.ZipFile(jars[0]) as jar:
@@ -87,7 +89,8 @@ jobs:
               metadata = json.loads(jar.read("fabric.mod.json"))
               assert metadata["version"] == os.environ["RELEASE_VERSION"]
               assert metadata["depends"]["minecraft"] == "26.4-alpha.5"
-              assert metadata["depends"]["fabricloader"] == ">=0.20.0"
+              assert metadata["depends"]["fabricloader"] == ">=" + properties["loader_min_version_26_4_snapshot_5"]
+              assert metadata["depends"]["fabric-api"] == ">=" + properties["fabric_api_min_version_26_4_snapshot_5"]
           PY
           (
             cd release

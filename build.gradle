@@ -9,7 +9,9 @@ def versionConfigs = [
 		":versions:fabric-26.1": [
 				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_1"),
+				loaderMinVersion: findProperty("loader_min_version_26_1"),
 				fabricApiVersion: findProperty("fabric_api_version_26_1"),
+				fabricApiMinVersion: findProperty("fabric_api_min_version_26_1"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_1"),
 				modMenuDependency: findProperty("modmenu_dependency_26_1"),
 				minecraftDependency: "~26.1",
@@ -19,7 +21,9 @@ def versionConfigs = [
 		":versions:fabric-26.2": [
 				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_2"),
+				loaderMinVersion: findProperty("loader_min_version_26_2"),
 				fabricApiVersion: findProperty("fabric_api_version_26_2"),
+				fabricApiMinVersion: findProperty("fabric_api_min_version_26_2"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_2"),
 				modMenuDependency: findProperty("modmenu_dependency_26_2"),
 				minecraftDependency: "~26.2",
@@ -29,18 +33,22 @@ def versionConfigs = [
 		":versions:fabric-26.3": [
 				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_3"),
+				loaderMinVersion: findProperty("loader_min_version_26_3"),
 				fabricApiVersion: findProperty("fabric_api_version_26_3"),
+				fabricApiMinVersion: findProperty("fabric_api_min_version_26_3"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_3"),
 				modMenuDependency: findProperty("modmenu_dependency_26_3"),
 				minecraftDependency: "~26.3",
 				legacyRenderer: true,
-				modMenuRuntime: false,
+				modMenuRuntime: true,
 		],
 		":versions:fabric-26.4-snapshot-5": [
 				archivesName: "Facet-Fabric",
 				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_5"),
 				loaderVersion: findProperty("loader_version_26_4_snapshot_5"),
+				loaderMinVersion: findProperty("loader_min_version_26_4_snapshot_5"),
 				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_5"),
+				fabricApiMinVersion: findProperty("fabric_api_min_version_26_4_snapshot_5"),
 				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_5"),
 				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_5"),
 				minecraftDependency: "26.4-alpha.5",
@@ -70,23 +78,6 @@ allprojects {
 			}
 			filter {
 				includeGroup "com.terraformersmc"
-			}
-		}
-		exclusiveContent {
-			forRepository {
-				ivy {
-					name = "Modrinth CDN"
-					url = "https://cdn.modrinth.com/data"
-					patternLayout {
-						artifact "[module]/versions/[revision]/modmenu-18.0.0.jar"
-					}
-					metadataSources {
-						artifact()
-					}
-				}
-			}
-			filter {
-				includeGroup "maven.modrinth"
 			}
 		}
 		mavenCentral()
@@ -181,13 +172,15 @@ versionConfigs.each { projectPath, cfg ->
 		tasks.withType(ProcessResources).configureEach {
 			duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 			inputs.property "version", rootProject.mod_version
-			inputs.property "loader_version", loaderVersion
+			inputs.property "loader_min_version", cfg.loaderMinVersion
+			inputs.property "fabric_api_min_version", cfg.fabricApiMinVersion
 			inputs.property "minecraft_dependency", cfg.minecraftDependency
 
 			filesMatching("fabric.mod.json") {
 				expand(
 						"version": rootProject.mod_version,
-						"loader_version": loaderVersion,
+						"loader_min_version": cfg.loaderMinVersion,
+						"fabric_api_min_version": cfg.fabricApiMinVersion,
 						"minecraft_dependency": cfg.minecraftDependency)
 			}
 		}

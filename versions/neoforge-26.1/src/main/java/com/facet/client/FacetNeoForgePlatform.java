@@ -1,5 +1,7 @@
 package com.facet.client;
 
+import java.util.function.Function;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -13,6 +15,8 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.quad.MutableQuad;
 import net.neoforged.neoforge.common.NeoForge;
@@ -34,6 +38,10 @@ final class FacetNeoForgePlatform {
 	}
 
 	private FacetNeoForgePlatform() {
+	}
+
+	static Function<Identifier, TextureAtlasSprite> blockTextureGetter(ModelEvent.ModifyBakingResult event) {
+		return event.getTextureGetter();
 	}
 
 	static InputConstants.Type keyboardType() {

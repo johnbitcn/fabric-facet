@@ -83,6 +83,37 @@ moves that line to fixes only. Ending maintenance is a separate decision.
 Record these decisions in the relevant issue or PR, with the affected
 game and loader targets and the reason.
 
+## Build dependencies and minimum runtime requirements
+
+Build with the latest suitable APIs for each retained game target. Check
+for updates during maintenance and adopt useful API fixes, optimizations,
+and replacement interfaces without waiting for unrelated feature work.
+Keep exact build versions in `gradle.properties`; do not use dynamic
+`latest` or `+` selectors in committed build dependencies.
+
+Build versions and runtime minimums serve different purposes:
+
+- `loader_version*`, `fabric_api_version_*`, and `neo_version_*` select
+  the build and development dependencies.
+- `loader_min_version_*`, `fabric_api_min_version_*`, and
+  `neo_min_version_*` control the requirements written into the mod JAR.
+- Raising a build version alone must not raise the runtime requirement.
+  Raise a minimum when an API or behavior actually used by Facet requires
+  it, including resource and metadata APIs.
+- Preserve older runtime support when the new build API keeps the same
+  contract. Use the existing target adapters for game-line differences;
+  do not add compatibility branches for APIs the mod does not use.
+- Check the upstream API introduction and the actual dependency JAR.
+  Compile and test against the proposed minimum, then check the
+  newest-built JAR on that runtime. Record startup, in-world, and resource
+  reload checks separately; a single matching method is not full validation.
+- Keep a verified compatibility baseline when an absolute historical
+  minimum has not been established. Do not advertise an untested lower
+  version, or leave a required Fabric API unconstrained with `*`.
+- Inspect the packaged metadata after changing either version set. Optional
+  integrations retain their own dependency requirements; they must not
+  unnecessarily raise Facet's minimum when they are absent.
+
 ## Keep shared code while it remains useful
 
 `main` remains the integrated development branch, with 26.3 as its primary
