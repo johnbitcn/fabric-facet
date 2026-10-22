@@ -12,9 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Updated the Facet mod icon. NeoForge now displays the Facet icon in the mod list.
-
-The children don't like how netherrack looks. It's too ugly :(
+Made some API optimizations and added support for Fabric 26.4 Snapshot 5.
 
 ## Complete Feature List
 
