@@ -189,5 +189,23 @@ final build; candidate hashes are diagnostic.
 Use the manual inputs only to recover a failed destination on an existing tag;
 leave destinations that already succeeded disabled.
 
+Both release workflows sync the checked-out tag's English `README.md` to the
+Modrinth project body when Modrinth publishing is enabled. Only the exact
+`Official project pages: ...` line is removed; the README file and all other
+Markdown remain unchanged. The sync runs before any publishing step and reads
+the body back to verify it. Failures stop publishing. `MODRINTH_TOKEN` must have
+`PROJECT_WRITE` scope and project edit permission, in addition to its version
+publishing permissions. Validation-only runs with all destinations disabled do
+not update the project body. Recovery of older tags that lack the sync scripts
+skips the new steps and retains the original file publishing behavior. Run
+`python3 scripts/test-modrinth-description.py` to test this without making
+network requests.
+
+For a description-only update, manually run **Sync Modrinth description**
+(`sync-modrinth-description.yml`) from the desired branch. It uses the same
+README transformation, token and read-back check, but does not build or publish
+JARs, change versions, create tags or touch other platforms. It only runs on
+manual dispatch, not on branch or tag pushes.
+
 The former aggregate `publishModrinth` task has been removed to prevent
 unintentional all-version uploads. Use the explicit-target release workflow.

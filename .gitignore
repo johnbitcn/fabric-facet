@@ -1,5 +1,6 @@
 .DS_Store
 .gradle/
+__pycache__/
 .pi-hybrid/
 build/
 run/

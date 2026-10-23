@@ -79,6 +79,10 @@ jobs:
             echo 'FACET_RELEASE_NOTES'
           } >> "$GITHUB_ENV"
 
+      - name: Test Modrinth description sync
+        if: hashFiles('scripts/test-modrinth-description.py') != ''
+        run: python3 scripts/test-modrinth-description.py
+
       - name: Test release target selection
         run: python3 scripts/test-release-targets.py
 
@@ -149,6 +153,13 @@ jobs:
           path: release/
           if-no-files-found: error
           retention-days: 90
+
+      - name: Update Modrinth project description
+        if: (github.event_name == 'push' || inputs.publish_modrinth) && hashFiles('scripts/update-modrinth-description.py') != ''
+        env:
+          MODRINTH_PROJECT_ID: ${{ secrets.MODRINTH_PROJECT_ID }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: python3 scripts/update-modrinth-description.py
 
       - name: Publish GitHub Release assets
         if: github.event_name == 'push' || inputs.publish_github_release

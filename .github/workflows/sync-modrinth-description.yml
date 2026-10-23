@@ -1,0 +1,25 @@
+name: Sync Modrinth description
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out description source
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Test Modrinth description sync
+        run: python3 scripts/test-modrinth-description.py
+
+      - name: Update Modrinth project description
+        env:
+          MODRINTH_PROJECT_ID: ${{ secrets.MODRINTH_PROJECT_ID }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: python3 scripts/update-modrinth-description.py
