@@ -113,7 +113,7 @@ class ModrinthDescriptionTest(unittest.TestCase):
 
     def test_both_workflows_gate_sync_on_modrinth_publishing(self):
         root = Path(__file__).resolve().parent.parent
-        for name in ['publish.yml', 'publish-preview-26.4-snapshot-5.yml']:
+        for name in ['publish.yml', 'publish-preview-26.4-snapshot-6.yml']:
             workflow = (root / '.github/workflows' / name).read_text()
             step = workflow.split('      - name: Update Modrinth project description\n', 1)[1].split('\n      - name:', 1)[0]
             self.assertIn("if: (github.event_name == 'push' || inputs.publish_modrinth) && "

@@ -10,7 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.pipeline.RenderPipelines;
+import net.minecraft.client.gui.GuiPipeline;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
@@ -153,7 +153,7 @@ final class FacetKeyConflictNotifier {
 			for (int scanY = panelY + 6; scanY < panelY + panelHeight - 3; scanY += 4) {
 				graphics.fill(panelX + 2, scanY, panelX + panelWidth - 2, scanY + 1, alpha(0x1836F6FF, opacity));
 			}
-			graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, panelX + 10, panelY - 16,
+			graphics.blit(GuiPipeline.TEXTURED, ICON, panelX + 10, panelY - 16,
 					0.0f, 0.0f, 32, 32, 512, 512, 512, 512, 0xFFFFFFFF);
 			graphics.text(font, title, panelX + 50, panelY + 8, alpha(0xFFB8FBFF, opacity), false);
 			int textY = panelY + 34;

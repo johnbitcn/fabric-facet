@@ -42,23 +42,23 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: true,
 		],
-		":versions:fabric-26.4-snapshot-5": [
+		":versions:fabric-26.4-snapshot-6": [
 				archivesName: "Facet-Fabric",
-				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_5"),
-				loaderVersion: findProperty("loader_version_26_4_snapshot_5"),
-				loaderMinVersion: findProperty("loader_min_version_26_4_snapshot_5"),
-				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_5"),
-				fabricApiMinVersion: findProperty("fabric_api_min_version_26_4_snapshot_5"),
-				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_5"),
-				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_5"),
-				minecraftDependency: "26.4-alpha.5",
+				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_6"),
+				loaderVersion: findProperty("loader_version_26_4_snapshot_6"),
+				loaderMinVersion: findProperty("loader_min_version_26_4_snapshot_6"),
+				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_6"),
+				fabricApiMinVersion: findProperty("fabric_api_min_version_26_4_snapshot_6"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_6"),
+				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_6"),
+				minecraftDependency: "26.4-alpha.6",
 				legacyRenderer: true,
 				modMenuRuntime: false,
 		],
 	]
 
-if (findProject(":versions:fabric-26.4-snapshot-5") == null) {
-	versionConfigs.remove(":versions:fabric-26.4-snapshot-5")
+if (findProject(":versions:fabric-26.4-snapshot-6") == null) {
+	versionConfigs.remove(":versions:fabric-26.4-snapshot-6")
 }
 
 allprojects {
@@ -145,16 +145,16 @@ versionConfigs.each { projectPath, cfg ->
 			} else {
 				compileOnly cfg.modMenuDependency
 			}
-			if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-5"]) {
+			if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-6"]) {
 				testImplementation platform("org.junit:junit-bom:5.12.1")
 				testImplementation "org.junit.jupiter:junit-jupiter"
 				testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 			}
 		}
 
-		if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-5"]) {
+		if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-6"]) {
 			sourceSets.test.java.srcDir(rootProject.file("src/outline_core/test/java"))
-			if (projectPath == ":versions:fabric-26.4-snapshot-5") {
+			if (projectPath == ":versions:fabric-26.4-snapshot-6") {
 				sourceSets.test.java.srcDir(rootProject.file("versions/fabric-26.2/src/test/java"))
 				sourceSets.test.java.exclude { entry ->
 					def override = file("src/test/java/${entry.path}")

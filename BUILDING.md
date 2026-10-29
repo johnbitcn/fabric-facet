@@ -31,7 +31,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
-| `versions/fabric-26.4-snapshot-5` | Fabric | 26.4 Snapshot 5 | `Facet-Fabric-<mod-version>-26.4-snapshot-5.jar` |
+| `versions/fabric-26.4-snapshot-6` | Fabric | 26.4 Snapshot 6 | `Facet-Fabric-<mod-version>-26.4-snapshot-6.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -114,14 +114,14 @@ allowed resource loading and Facet model baking to finish. Restore that local
 setting after diagnosis. The project does not disable the loading window in
 published JARs. Default startup did not complete on this macOS setup.
 
-## Fabric 26.4 Snapshot 5 Preview
+## Fabric 26.4 Snapshot 6 Preview
 
 Use Java 25 to run Gradle. If the default Java installation is newer, set
 `JAVA_HOME` explicitly, for example on macOS:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-5:build
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-5:runClient
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-6:build
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-6:runClient
 ```
 
 This target has its own rendering bridge. Build dependencies and minimum
@@ -134,9 +134,16 @@ API remains compatible. Tests reuse the shared outline and Fabric 26.2
 behavior tests, with Snapshot-specific overrides. Mod Menu is compile-only;
 it is not installed by `runClient`.
 
+Snapshot 6 uses `GuiPipeline.TEXTURED` for GUI texture drawing. Local validation
+with Java 25 covered a clean build, 76 Java tests, 20 Python script tests, and
+development-client resource initialization, including the baked-outline atlas.
+The operator subsequently reported that in-world validation passed. Individual
+feature-toggle and manual resource-reload cases were not separately itemized.
+The client still reports upstream MoltenVK primitive-restart warnings on macOS.
+
 The snapshot target is not part of the stable release workflow.
-Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-5.yml`,
-triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-5-preview.<number>`.
+Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-6.yml`,
+triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-6-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
 prerelease, then publishes the same JAR to Modrinth as Alpha. Manual recovery
 requires an existing preview tag and explicit destination selection. Both
