@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.pipeline.RenderPipelines;
+import net.minecraft.client.gui.GuiPipeline;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -95,7 +95,7 @@ final class GraffitiWheelScreen extends Screen {
 			graphics.fill(bounds.x(), bounds.y(), bounds.right(), bounds.bottom(),
 					applyWheelAlpha(hovered && canApply ? OPTION_HOVER : OPTION_BACKGROUND));
 			graphics.outline(bounds.x(), bounds.y(), bounds.width(), bounds.height(), applyWheelAlpha(borderColor));
-			graphics.blit(RenderPipelines.GUI_TEXTURED, type.textureId(), bounds.x() + 4, bounds.y() + 4,
+			graphics.blit(GuiPipeline.TEXTURED, type.textureId(), bounds.x() + 4, bounds.y() + 4,
 					0.0f, 0.0f, TEXTURE_SIZE, TEXTURE_SIZE,
 					SOURCE_TEXTURE_SIZE, SOURCE_TEXTURE_SIZE, SOURCE_TEXTURE_SIZE, SOURCE_TEXTURE_SIZE,
 					applyWheelAlpha(TEXT_COLOR));

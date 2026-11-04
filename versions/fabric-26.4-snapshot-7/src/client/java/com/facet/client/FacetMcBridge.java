@@ -46,8 +46,7 @@ public final class FacetMcBridge {
 		return true;
 	}
 
-	/** Cutout terrain, no translucency sort. Pending in-world validation on 26.4 Snapshot 5 (see
-	 *  FacetBlockOverlay: MultiDraw cutout depth fighting risk). */
+	/** Cutout terrain, no translucency sort; see FacetBlockOverlay for the MultiDraw depth-fighting risk. */
 	static ChunkSectionLayer outlineChunkLayer() {
 		return ChunkSectionLayer.CUTOUT;
 	}

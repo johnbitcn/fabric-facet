@@ -12,7 +12,7 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Made some API optimizations and added support for Fabric 26.4 Snapshot 5.
+Added support for Fabric 26.4 Snapshot 7.
 
 ## Complete Feature List
 
