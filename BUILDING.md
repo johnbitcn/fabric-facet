@@ -31,7 +31,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
-| `versions/fabric-26.4-snapshot-7` | Fabric | 26.4 Snapshot 7 | `Facet-Fabric-<mod-version>-26.4-snapshot-7.jar` |
+| `versions/fabric-26.4-snapshot-10` | Fabric | 26.4 Snapshot 10 | `Facet-Fabric-<mod-version>-26.4-snapshot-10.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -114,17 +114,19 @@ allowed resource loading and Facet model baking to finish. Restore that local
 setting after diagnosis. The project does not disable the loading window in
 published JARs. Default startup did not complete on this macOS setup.
 
-## Fabric 26.4 Snapshot 7 Preview
+## Fabric 26.4 Snapshot 10 Preview
 
 Use Java 25 to run Gradle. If the default Java installation is newer, set
 `JAVA_HOME` explicitly, for example on macOS:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-7:build
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-7:runClient
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-10:build
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-10:runClient
 ```
 
-This target has its own rendering bridge. Build dependencies and minimum
+This target has its own rendering bridge and builds without Fabric Renderer API
+or Fabric Model Loading API while those modules remain disabled upstream in
+Fabric API `0.166.3+26.4`. Build dependencies and minimum
 runtime requirements are pinned separately in `gradle.properties`; updating
 one does not automatically change the other.
 Snapshot-specific classes override shared classes only in this target's
@@ -134,18 +136,21 @@ API remains compatible. Tests reuse the shared outline and Fabric 26.2
 behavior tests, with Snapshot-specific overrides. Mod Menu is compile-only;
 it is not installed by `runClient`.
 
-Snapshot 7 retains `GuiPipeline.TEXTURED` for GUI texture drawing. Local
-validation with Java 25 covered a fresh build, 76 Java tests, 20 Python script
-tests, JAR dependency metadata, and default-build exclusion of the Snapshot
-module. The development client loaded Minecraft 26.4 Snapshot 7, Fabric Loader
-0.20.1, Fabric API 0.165.4+26.4, and Facet 1.6.6 on the macOS Vulkan backend.
-Resource initialization completed, including the baked-outline atlas. In-world
-rendering, feature toggles, and manual resource reload remain unverified.
-Upstream JOML `Unsafe` and MoltenVK primitive-restart warnings remain.
+Snapshot 10 retains `GuiPipeline.TEXTURED` for GUI texture drawing and uses
+vanilla `MaterialBaker`, `ModelManager`, `SectionCompiler`, and
+`ModelBlockRenderer` hooks in place of FRAPI. Local validation with Java 25
+covered a clean build, 77 Java tests, 20 Python script tests, JAR dependency
+metadata, zero FRAPI bytecode references, and default-build exclusion of the
+Snapshot module. The development client loaded Minecraft 26.4 Snapshot 10,
+Fabric Loader 0.20.1, Fabric API 0.166.3+26.4, and Facet 1.6.6 on the macOS
+Vulkan backend; resource initialization completed, stitching 689 baked-outline
+atlas variants and wrapping 37,754 block-state models (2,349 pre-baked
+full-cube models), followed by user-confirmed in-game acceptance. Upstream JOML
+`Unsafe` warnings remain.
 
 The snapshot target is not part of the stable release workflow.
-Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-7.yml`,
-triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-7-preview.<number>`.
+Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-10.yml`,
+triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-10-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
 prerelease, then publishes the same JAR to Modrinth as Alpha. Manual recovery
 requires an existing preview tag and explicit destination selection. Both

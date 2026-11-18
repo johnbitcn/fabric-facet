@@ -17,10 +17,8 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 
 public final class FacetMcBridge {
@@ -29,6 +27,7 @@ public final class FacetMcBridge {
 	private static final List<ImmediateDraw> AFTER_TERRAIN_DRAWS = new ArrayList<>();
 	private static RenderPass activeClassicTransparencyPass;
 	private static boolean afterTerrainBufferFramePending;
+
 	private FacetMcBridge() {
 	}
 
@@ -59,10 +58,6 @@ public final class FacetMcBridge {
 	/** Same as 26.2: material-average colors from FacetOutlineColor, no extra darken/boost. */
 	static int prepareOutlineColor(int argb) {
 		return argb;
-	}
-
-	static void applyShade(QuadEmitter emitter, boolean shade) {
-		emitter.shadeDirectionOverride(shade ? null : Direction.UP);
 	}
 
 	static Camera mainCamera(Minecraft minecraft) {

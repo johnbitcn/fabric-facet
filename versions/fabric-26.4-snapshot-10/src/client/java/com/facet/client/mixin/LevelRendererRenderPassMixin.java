@@ -11,13 +11,18 @@ import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(LevelRenderer.class)
 abstract class LevelRendererRenderPassMixin {
-	@WrapMethod(method = "executeClassicTransparency")
+	@WrapMethod(method = "executeClassicTransparency("
+			+ "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"
+			+ "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender$ImprovedFogTextures;"
+			+ "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;"
+			+ "Lcom/mojang/renderpearl/api/commands/RenderPass;Z)V")
 	private void facet$withClassicTransparencyPass(ChunkSectionsToRender sections,
+			ChunkSectionsToRender.ImprovedFogTextures improvedFogTextures,
 			FeatureRenderDispatcher.PreparedFrame preparedFrame, RenderPass renderPass,
-			Operation<Void> original) {
+			boolean renderWeather, Operation<Void> original) {
 		FacetMcBridge.beginClassicTransparency(renderPass);
 		try {
-			original.call(sections, preparedFrame, renderPass);
+			original.call(sections, improvedFogTextures, preparedFrame, renderPass, renderWeather);
 		} finally {
 			FacetMcBridge.endClassicTransparency();
 		}

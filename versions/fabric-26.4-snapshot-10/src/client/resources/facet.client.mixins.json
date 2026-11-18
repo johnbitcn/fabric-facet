@@ -11,12 +11,18 @@
     "SpriteContentsAccessor",
     "BakedOutlineAtlasMixin",
     "WeightedVariantsAccessor",
+    "MultiPartSelectedModelsInvoker",
+    "MultiPartStaticChildrenMixin",
     "LavaGelMixin",
     "FluidDirectionSideMixin",
     "LavaGelFogMixin",
     "HologramNightVisionMixin",
     "NetherrackTextureMixin",
-    "LevelRendererRenderPassMixin"
+    "LevelRendererRenderPassMixin",
+    "MaterialBakerMixin",
+    "ModelManagerMixin",
+    "SectionCompilerMixin",
+    "ModelBlockRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
