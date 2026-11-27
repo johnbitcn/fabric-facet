@@ -16,16 +16,17 @@ import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelSubmitContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelTranslucentRenderContext;
 
 public final class FacetMcBridge {
 	private static final StagedVertexBuffer AFTER_TERRAIN_BUFFER =
 			new StagedVertexBuffer(() -> "Facet after translucent terrain", RenderType.TRANSIENT_BUFFER_SIZE);
 	private static final List<ImmediateDraw> AFTER_TERRAIN_DRAWS = new ArrayList<>();
-	private static RenderPass activeClassicTransparencyPass;
 	private static boolean afterTerrainBufferFramePending;
 
 	private FacetMcBridge() {
@@ -95,10 +96,10 @@ public final class FacetMcBridge {
 		minecraft.level.setSectionRangeDirty(sectionX, sectionY, sectionZ, sectionX, sectionY, sectionZ);
 	}
 
-	static void collectSurfaceEffects(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
-		if (Minecraft.getInstance().gameRenderer.useImprovedTransparency()) {
+	static void collectSurfaceEffects(LevelSubmitContext context, Consumer<FacetRenderSink> renderer) {
+		if (context.gameRenderer().useImprovedTransparency()) {
 			renderer.accept((poseStack, renderType, geometry) ->
-					context.submitNodeCollector().submitCustomGeometry(poseStack, renderType, geometry::render));
+					context.submitNodeCollector().submitCustomGeometry(poseStack, oitSurfaceRenderType(renderType), geometry::render));
 			return;
 		}
 
@@ -121,17 +122,22 @@ public final class FacetMcBridge {
 		}
 	}
 
-	static void renderAfterTranslucentTerrain(LevelRenderContext context, Consumer<FacetRenderSink> renderer) {
-		if (Minecraft.getInstance().gameRenderer.useImprovedTransparency()
-				|| activeClassicTransparencyPass == null) {
+	static RenderType oitSurfaceRenderType(RenderType renderType) {
+		// The regular translucent line type has no OIT pipelines in 26.4.
+		return renderType == RenderTypes.linesTranslucent() ? RenderTypes.linesTranslucentNoDepthWrite() : renderType;
+	}
+
+	static void renderAfterTranslucentTerrain(LevelTranslucentRenderContext context) {
+		if (context.oitStage() != null || !afterTerrainBufferFramePending) {
 			return;
 		}
 
+		RenderPass renderPass = context.renderPass();
 		for (ImmediateDraw draw : AFTER_TERRAIN_DRAWS) {
 			StagedVertexBuffer.ExecuteInfo executeInfo = AFTER_TERRAIN_BUFFER.getExecuteInfo(draw.draw());
 
 			if (executeInfo != null) {
-				draw.renderType().drawFromBuffer(executeInfo, activeClassicTransparencyPass);
+				draw.renderType().drawFromBuffer(executeInfo, renderPass);
 			}
 		}
 	}
@@ -142,14 +148,6 @@ public final class FacetMcBridge {
 			afterTerrainBufferFramePending = false;
 			AFTER_TERRAIN_DRAWS.clear();
 		}
-	}
-
-	public static void beginClassicTransparency(RenderPass renderPass) {
-		activeClassicTransparencyPass = renderPass;
-	}
-
-	public static void endClassicTransparency() {
-		activeClassicTransparencyPass = null;
 	}
 
 	static String worldScope(Minecraft minecraft, ClientLevel level) {

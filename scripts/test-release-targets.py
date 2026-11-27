@@ -16,7 +16,9 @@ class ReleaseTargetsTest(unittest.TestCase):
         self.settings.write_text("include 'versions:fabric-26.2'\n"
                                  "include 'versions:neoforge-26.1'\n"
                                  "include 'versions:neoforge-26.1.2'\n"
-                                 "\tinclude 'versions:fabric-26.4-snapshot-10'\n")
+                                 "\tinclude 'versions:fabric-26.4-snapshot-10'\n"
+                                 "\tinclude 'versions:fabric-26.4-pre-1'\n"
+                                 "\tinclude 'versions:fabric-26.4-rc-1'\n")
         self.manifest = root / "v9.0.0.targets"
 
     def select(self, content):
@@ -49,9 +51,10 @@ class ReleaseTargetsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             self.select("fabric-26.2\nfabric-26.2\n")
 
-    def test_snapshot_cannot_enter_stable_release(self):
-        with self.assertRaisesRegex(ValueError, "preview workflow"):
-            self.select("fabric-26.4-snapshot-10\n")
+    def test_preview_cannot_enter_stable_release(self):
+        for target in ("fabric-26.4-snapshot-10", "fabric-26.4-pre-1", "fabric-26.4-rc-1"):
+            with self.subTest(target=target), self.assertRaisesRegex(ValueError, "preview workflow"):
+                self.select(f"{target}\n")
 
 
 if __name__ == "__main__":

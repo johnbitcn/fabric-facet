@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -40,8 +41,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelSubmitContext;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 
@@ -57,8 +58,8 @@ public final class FacetClient implements ClientModInitializer {
 	private static final double HOVER_FACE_PLANE_EPSILON = 1.0e-5;
 	private static final Vector3f LINE_NORMAL_SCRATCH = new Vector3f();
 	private static final Identifier DISTANCE_HUD_ID = Identifier.fromNamespaceAndPath("facet", "distance_hud");
-	private static final SoundEvent PLACEMENT_PREVIEW_TOGGLE_SOUND = SoundEvent.createVariableRangeEvent(
-			Identifier.fromNamespaceAndPath("facet", "placement_preview_toggle"));
+	private static final Holder<SoundEvent> PLACEMENT_PREVIEW_TOGGLE_SOUND = Holder.direct(
+			SoundEvent.createVariableRangeEvent(Identifier.fromNamespaceAndPath("facet", "placement_preview_toggle")));
 	private static KeyMapping toggleOutlineKeyMapping;
 	private static KeyMapping toggleHoverOutlineKeyMapping;
 	private static KeyMapping toggleDistanceHudKeyMapping;
@@ -85,11 +86,16 @@ public final class FacetClient implements ClientModInitializer {
 		GraffitiStore.load();
 		registerKeyMappings();
 		FacetBlockOverlay.initialize();
-		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::renderDistancePath);
-		LevelRenderEvents.COLLECT_SUBMITS.register(FacetClient::collectSurfaceEffects);
-		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetClient::renderSurfaceEffectsAfterTerrain);
-		LevelRenderEvents.START_MAIN.register(context -> clearFarTargetCache());
-		LevelRenderEvents.END_MAIN.register(context -> FacetMcBridge.endSurfaceEffectsFrame());
+		LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
+			clearFarTargetCache();
+			renderDistancePath(context);
+			FacetMcBridge.collectSurfaceEffects(context, sink -> {
+				renderHoverOutline(context, sink);
+				PlacementPreview.render(context.levelState().cameraRenderState, context.poseStack(), sink);
+			});
+		});
+		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(FacetMcBridge::renderAfterTranslucentTerrain);
+		LevelRenderEvents.AFTER_RENDER_PASS.register(context -> FacetMcBridge.endSurfaceEffectsFrame());
 		LevelRenderEvents.BEFORE_BLOCK_OUTLINE.register(FacetClient::beforeBlockOutline);
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, DISTANCE_HUD_ID, FacetClient::renderDistanceHud);
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((minecraft, level) -> {
@@ -187,7 +193,7 @@ public final class FacetClient implements ClientModInitializer {
 	}
 
 	private static void playPlacementPreviewToggleSound(Minecraft minecraft) {
-		minecraft.getSoundManager().play(SimpleSoundInstance.forUI(PLACEMENT_PREVIEW_TOGGLE_SOUND, 1.0F));
+		minecraft.getSoundManager().play(SimpleSoundInstance.forUI(PLACEMENT_PREVIEW_TOGGLE_SOUND));
 	}
 
 	private static void openGraffitiWheel(Minecraft minecraft) {
@@ -340,7 +346,7 @@ public final class FacetClient implements ClientModInitializer {
 	 * Distance HUD/path/hover target. Reuses the per-frame game hit result when the
 	 * crosshair already points at a block (same ray and first-hit target), avoiding a
 	 * full level raycast every frame. When the crosshair misses, the distant raycast
-	 * result is memoized per frame (cleared at START_MAIN) so the HUD, the distance
+	 * result is memoized per frame (cleared at COLLECT_SUBMITS) so the HUD, the distance
 	 * path and the hover outline share a single level.clip instead of each running
 	 * their own (up to 200+ block steps at typical render distances).
 	 */
@@ -381,7 +387,7 @@ public final class FacetClient implements ClientModInitializer {
 		return false;
 	}
 
-	private static void renderDistancePath(LevelRenderContext context) {
+	private static void renderDistancePath(LevelSubmitContext context) {
 		if (!distanceHudVisible || !FacetConfig.distancePathVisible()) {
 			return;
 		}
@@ -418,25 +424,11 @@ public final class FacetClient implements ClientModInitializer {
 		});
 	}
 
-	private static void collectSurfaceEffects(LevelRenderContext context) {
-		FacetMcBridge.collectSurfaceEffects(context, sink -> renderSurfaceEffects(context, sink));
-	}
-
-	private static void renderSurfaceEffectsAfterTerrain(LevelRenderContext context) {
-		FacetMcBridge.renderAfterTranslucentTerrain(context, sink -> renderSurfaceEffects(context, sink));
-	}
-
-	private static void renderSurfaceEffects(LevelRenderContext context, FacetRenderSink sink) {
-		renderHoverOutline(context, sink);
-		PlacementPreview.render(context, sink);
-	}
-
-
-	private static boolean beforeBlockOutline(LevelRenderContext context, BlockOutlineRenderState state) {
+	private static boolean beforeBlockOutline(LevelSubmitContext context, BlockOutlineRenderState state) {
 		return !FacetConfig.hoverEnabled();
 	}
 
-	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink) {
+	private static void renderHoverOutline(LevelSubmitContext context, FacetRenderSink sink) {
 		if (!FacetConfig.hoverEnabled()) {
 			return;
 		}
@@ -468,7 +460,7 @@ public final class FacetClient implements ClientModInitializer {
 		renderHoverOutline(context, sink, level, hitResult, inRange);
 	}
 
-	private static void renderHoverOutline(LevelRenderContext context, FacetRenderSink sink,
+	private static void renderHoverOutline(LevelSubmitContext context, FacetRenderSink sink,
 			ClientLevel level, BlockHitResult hitResult, boolean inRange) {
 		BlockPos pos = hitResult.getBlockPos();
 

@@ -31,7 +31,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
-| `versions/fabric-26.4-snapshot-10` | Fabric | 26.4 Snapshot 10 | `Facet-Fabric-<mod-version>-26.4-snapshot-10.jar` |
+| `versions/fabric-26.4-pre-1` | Fabric | 26.4 Pre-release 1 | `Facet-Fabric-<mod-version>-26.4-pre-1.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -44,7 +44,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 ### Stable targets
 
 The unqualified `build` task builds and tests the seven stable Fabric and
-NeoForge modules. Snapshot modules are excluded unless explicitly enabled:
+NeoForge modules. Preview modules are excluded unless explicitly enabled:
 
 ```sh
 ./gradlew build
@@ -114,43 +114,30 @@ allowed resource loading and Facet model baking to finish. Restore that local
 setting after diagnosis. The project does not disable the loading window in
 published JARs. Default startup did not complete on this macOS setup.
 
-## Fabric 26.4 Snapshot 10 Preview
+## Fabric 26.4 Pre-release 1 Preview
 
 Use Java 25 to run Gradle. If the default Java installation is newer, set
 `JAVA_HOME` explicitly, for example on macOS:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-10:build
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-snapshot-10:runClient
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-pre-1:build
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-pre-1:runClient
 ```
 
-This target has its own rendering bridge and builds without Fabric Renderer API
-or Fabric Model Loading API while those modules remain disabled upstream in
-Fabric API `0.166.3+26.4`. Build dependencies and minimum
-runtime requirements are pinned separately in `gradle.properties`; updating
-one does not automatically change the other.
-Snapshot-specific classes override shared classes only in this target's
-`sourceSets`. Brittle-ice logic and textures stay in this module; stable
-modules do not compile or package them. Shared code is reused only where the
-API remains compatible. Tests reuse the shared outline and Fabric 26.2
-behavior tests, with Snapshot-specific overrides. Mod Menu is compile-only;
-it is not installed by `runClient`.
+This target uses vanilla `MaterialBaker`, `ModelManager`, `SectionCompiler`, and
+`ModelBlockRenderer` hooks. Fabric API `0.167.1+26.4` still does not include
+Fabric Model Loading API, Fabric Renderer API, or Indigo. Build dependencies
+and minimum runtime requirements are pinned separately in `gradle.properties`.
+Preview classes override shared classes only in this target's `sourceSets`.
+Brittle-ice logic and textures stay in this module. Tests reuse the shared
+outline and Fabric 26.2 behavior tests, with preview-specific overrides.
+Placement and hover previews use the Fabric submit event for improved
+transparency and the active Fabric render pass for classic transparency.
+Mod Menu is compile-only; it is not installed by `runClient`.
 
-Snapshot 10 retains `GuiPipeline.TEXTURED` for GUI texture drawing and uses
-vanilla `MaterialBaker`, `ModelManager`, `SectionCompiler`, and
-`ModelBlockRenderer` hooks in place of FRAPI. Local validation with Java 25
-covered a clean build, 77 Java tests, 20 Python script tests, JAR dependency
-metadata, zero FRAPI bytecode references, and default-build exclusion of the
-Snapshot module. The development client loaded Minecraft 26.4 Snapshot 10,
-Fabric Loader 0.20.1, Fabric API 0.166.3+26.4, and Facet 1.6.6 on the macOS
-Vulkan backend; resource initialization completed, stitching 689 baked-outline
-atlas variants and wrapping 37,754 block-state models (2,349 pre-baked
-full-cube models), followed by user-confirmed in-game acceptance. Upstream JOML
-`Unsafe` warnings remain.
-
-The snapshot target is not part of the stable release workflow.
-Snapshot previews use `.github/workflows/publish-preview-26.4-snapshot-10.yml`,
-triggered by annotated tags named `v<mod-version>-mc26.4-snapshot-10-preview.<number>`.
+The preview target is not part of the stable release workflow.
+The preview uses `.github/workflows/publish-preview-26.4-pre-1.yml`, triggered
+by annotated tags named `v<mod-version>-mc26.4-pre-1-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
 prerelease, then publishes the same JAR to Modrinth as Alpha. Manual recovery
 requires an existing preview tag and explicit destination selection. Both
@@ -166,7 +153,7 @@ placement preview with improved transparency both enabled and disabled.
 Official releases use `.github/workflows/publish.yml`. From a version tag, it
 validates `mod_version` and reads `release-notes/<tag>.targets`. It builds,
 stages, and publishes only the targets in that file, and creates a SHA-256
-manifest for those main JARs. Missing, empty, unknown, duplicate, or Snapshot
+manifest for those main JARs. Missing, empty, unknown, duplicate, or preview
 target selections fail before building or publishing; there is no all-target
 fallback.
 
@@ -187,8 +174,7 @@ Select targets based on the actual source, resource, dependency, and build
 changes since their last release. A shared change can affect several targets;
 an isolated target change does not justify republishing other versions. A
 mod-wide version bump alone does not make every target affected. Comment lines
-starting with `#` are allowed. Use the independent preview workflow for
-Snapshots. Tags created before target manifests were introduced cannot be
+starting with `#` are allowed. Use the independent workflow for previews. Tags created before target manifests were introduced cannot be
 recovered through this new workflow without a manifest; do not move those tags.
 
 `scripts/release.sh` prepares and verifies a release locally: it guards the

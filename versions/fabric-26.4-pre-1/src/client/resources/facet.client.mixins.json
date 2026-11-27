@@ -18,7 +18,6 @@
     "LavaGelFogMixin",
     "HologramNightVisionMixin",
     "NetherrackTextureMixin",
-    "LevelRendererRenderPassMixin",
     "MaterialBakerMixin",
     "ModelManagerMixin",
     "SectionCompilerMixin",

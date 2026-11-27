@@ -17,7 +17,7 @@ def load_targets(manifest: Path, settings: Path) -> list[str]:
             continue
         if target not in available:
             raise ValueError(f"Unknown release target: {target}")
-        if "-snapshot-" in target:
+        if re.search(r"-(?:snapshot|pre|rc)-\d+$", target):
             raise ValueError(f"Use the independent preview workflow for {target}")
         if target in targets:
             raise ValueError(f"Duplicate release target: {target}")

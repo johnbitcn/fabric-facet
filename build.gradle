@@ -42,23 +42,24 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: true,
 		],
-		":versions:fabric-26.4-snapshot-10": [
+		":versions:fabric-26.4-pre-1": [
 				archivesName: "Facet-Fabric",
-				minecraftVersion: findProperty("minecraft_version_26_4_snapshot_10"),
-				loaderVersion: findProperty("loader_version_26_4_snapshot_10"),
-				loaderMinVersion: findProperty("loader_min_version_26_4_snapshot_10"),
-				fabricApiVersion: findProperty("fabric_api_version_26_4_snapshot_10"),
-				fabricApiMinVersion: findProperty("fabric_api_min_version_26_4_snapshot_10"),
-				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_snapshot_10"),
-				modMenuDependency: findProperty("modmenu_dependency_26_4_snapshot_10"),
-				minecraftDependency: "26.4-alpha.10",
+				minecraftVersion: findProperty("minecraft_version_26_4_pre_1"),
+				loaderVersion: findProperty("loader_version_26_4_pre_1"),
+				loaderMinVersion: findProperty("loader_min_version_26_4_pre_1"),
+				fabricApiVersion: findProperty("fabric_api_version_26_4_pre_1"),
+				fabricApiMinVersion: findProperty("fabric_api_min_version_26_4_pre_1"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_pre_1"),
+				modMenuDependency: findProperty("modmenu_dependency_26_4_pre_1"),
+				minecraftDependency: "26.4-pre.1",
+				preview: true,
 				legacyRenderer: false,
 				modMenuRuntime: false,
 		],
 	]
 
-if (findProject(":versions:fabric-26.4-snapshot-10") == null) {
-	versionConfigs.remove(":versions:fabric-26.4-snapshot-10")
+if (findProject(":versions:fabric-26.4-pre-1") == null) {
+	versionConfigs.remove(":versions:fabric-26.4-pre-1")
 }
 
 allprojects {
@@ -124,8 +125,8 @@ versionConfigs.each { projectPath, cfg ->
 				}
 
 				java.setSrcDirs(javaDirs)
-				if (cfg.minecraftVersion.contains("-snapshot-")) {
-					// Snapshot overrides must not change the sources compiled by stable targets.
+				if (cfg.preview) {
+					// Preview overrides must not change the sources compiled by stable targets.
 					java.exclude { entry ->
 						def override = file("src/client/java/${entry.path}")
 						override.isFile() && entry.file != override
@@ -145,16 +146,16 @@ versionConfigs.each { projectPath, cfg ->
 			} else {
 				compileOnly cfg.modMenuDependency
 			}
-			if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-10"]) {
+			if (projectPath == ":versions:fabric-26.2" || cfg.preview) {
 				testImplementation platform("org.junit:junit-bom:5.12.1")
 				testImplementation "org.junit.jupiter:junit-jupiter"
 				testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 			}
 		}
 
-		if (projectPath in [":versions:fabric-26.2", ":versions:fabric-26.4-snapshot-10"]) {
+		if (projectPath == ":versions:fabric-26.2" || cfg.preview) {
 			sourceSets.test.java.srcDir(rootProject.file("src/outline_core/test/java"))
-			if (projectPath == ":versions:fabric-26.4-snapshot-10") {
+			if (cfg.preview) {
 				sourceSets.test.java.srcDir(rootProject.file("versions/fabric-26.2/src/test/java"))
 				sourceSets.test.java.exclude { entry ->
 					def override = file("src/test/java/${entry.path}")
@@ -222,7 +223,7 @@ versionConfigs.each { projectPath, cfg ->
 				projectId = findProperty("modrinth_project_id") ?: System.getenv("MODRINTH_PROJECT_ID")
 				versionName = "${cfg.archivesName} ${rootProject.mod_version} for Minecraft ${cfg.minecraftVersion}"
 				versionNumber = "${rootProject.mod_version}+mc${cfg.minecraftVersion}"
-				versionType = cfg.minecraftVersion.contains("-snapshot-")
+				versionType = cfg.preview
 						? "alpha"
 						: findProperty("modrinth_version_type") ?: "release"
 				uploadFile = tasks.named("jar").get()

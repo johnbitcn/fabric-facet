@@ -193,7 +193,7 @@ public final class FacetBlockOverlay {
 					rainbowOutline, bakedModel));
 			wrappedCount++;
 		}
-		LOGGER.info("Wrapped {} Minecraft 26.4 Snapshot 10 block-state models ({} pre-baked full-cube models)",
+		LOGGER.info("Wrapped {} vanilla block-state models ({} pre-baked full-cube models)",
 				wrappedCount, bakedCount);
 	}
 

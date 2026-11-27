@@ -429,7 +429,7 @@ public final class FacetClient implements ClientModInitializer {
 
 	private static void renderSurfaceEffects(LevelRenderContext context, FacetRenderSink sink) {
 		renderHoverOutline(context, sink);
-		PlacementPreview.render(context, sink);
+		PlacementPreview.render(context.levelState().cameraRenderState, context.poseStack(), sink);
 	}
 
 

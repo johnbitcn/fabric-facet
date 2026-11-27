@@ -47,8 +47,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
-
 import com.facet.client.mixin.BlockItemInvoker;
 
 final class PlacementPreview {
@@ -73,7 +71,7 @@ final class PlacementPreview {
 	private PlacementPreview() {
 	}
 
-	static void render(LevelRenderContext context, FacetRenderSink sink) {
+	static void render(CameraRenderState camera, PoseStack poseStack, FacetRenderSink sink) {
 		if (!FacetConfig.placementPreviewEnabled()) {
 			HologramBootAnimation.reset();
 			PlacementRotationController.reset();
@@ -100,8 +98,6 @@ final class PlacementPreview {
 			return;
 		}
 
-		CameraRenderState camera = context.levelState().cameraRenderState;
-
 		if (camera == null || camera.pos == null) {
 			return;
 		}
@@ -121,7 +117,7 @@ final class PlacementPreview {
 				(PreviewBlock block) -> distanceSquared(block.pos(), camera.pos)).reversed());
 
 		for (PreviewBlock block : blocks) {
-			renderBlock(context, sink, minecraft, level, camera.pos, block,
+			renderBlock(poseStack, sink, minecraft, level, camera.pos, block,
 					prediction.anchor(), prediction.visual(), bootFrame, frame, screenRightX, screenRightZ);
 		}
 	}
@@ -232,7 +228,7 @@ final class PlacementPreview {
 		return state.setValue(BlockStateProperties.WATERLOGGED, level.isWaterAt(pos));
 	}
 
-	private static void renderBlock(LevelRenderContext context, FacetRenderSink sink,
+	private static void renderBlock(PoseStack poseStack, FacetRenderSink sink,
 			Minecraft minecraft, ClientLevel level,
 			Vec3 camera, PreviewBlock preview, BlockPos anchor,
 			PlacementRotationController.RotationVisual visual,
@@ -253,7 +249,6 @@ final class PlacementPreview {
 		}
 
 		int[] tints = blockTints(minecraft, level, preview);
-		PoseStack poseStack = context.poseStack();
 		poseStack.pushPose();
 		applyPlacementTransform(poseStack, camera, preview.pos(), anchor, visual);
 		poseStack.translate(screenRightX * bootFrame.horizontalOffset(), bootFrame.verticalOffset(),

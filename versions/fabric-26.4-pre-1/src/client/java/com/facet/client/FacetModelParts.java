@@ -14,7 +14,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Vanilla 26.4 Snapshot 10 model part collection without FRAPI.
+ * Vanilla 26.4 model part collection without FRAPI.
  * Only known deterministic vanilla model implementations are pre-collected without a world.
  */
 final class FacetModelParts {
