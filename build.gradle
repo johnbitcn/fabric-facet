@@ -42,24 +42,24 @@ def versionConfigs = [
 				legacyRenderer: true,
 				modMenuRuntime: true,
 		],
-		":versions:fabric-26.4-pre-1": [
+		":versions:fabric-26.4-pre-2": [
 				archivesName: "Facet-Fabric",
-				minecraftVersion: findProperty("minecraft_version_26_4_pre_1"),
-				loaderVersion: findProperty("loader_version_26_4_pre_1"),
-				loaderMinVersion: findProperty("loader_min_version_26_4_pre_1"),
-				fabricApiVersion: findProperty("fabric_api_version_26_4_pre_1"),
-				fabricApiMinVersion: findProperty("fabric_api_min_version_26_4_pre_1"),
-				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_pre_1"),
-				modMenuDependency: findProperty("modmenu_dependency_26_4_pre_1"),
-				minecraftDependency: "26.4-pre.1",
+				minecraftVersion: findProperty("minecraft_version_26_4_pre_2"),
+				loaderVersion: findProperty("loader_version_26_4_pre_2"),
+				loaderMinVersion: findProperty("loader_min_version_26_4_pre_2"),
+				fabricApiVersion: findProperty("fabric_api_version_26_4_pre_2"),
+				fabricApiMinVersion: findProperty("fabric_api_min_version_26_4_pre_2"),
+				lifecycleEventsVersion: findProperty("lifecycle_events_version_26_4_pre_2"),
+				modMenuDependency: findProperty("modmenu_dependency_26_4_pre_2"),
+				minecraftDependency: "26.4-pre.2",
 				preview: true,
 				legacyRenderer: false,
 				modMenuRuntime: false,
 		],
 	]
 
-if (findProject(":versions:fabric-26.4-pre-1") == null) {
-	versionConfigs.remove(":versions:fabric-26.4-pre-1")
+if (findProject(":versions:fabric-26.4-pre-2") == null) {
+	versionConfigs.remove(":versions:fabric-26.4-pre-2")
 }
 
 allprojects {

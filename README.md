@@ -12,7 +12,8 @@ Oh, and I added the sound effects my children love. They're seriously cool!
 Now I'm sharing it. I hope you enjoy it!
 
 ## Latest Update
-Added support for Fabric 26.4 Snapshot 10.
+Added support for Minecraft 26.4 Pre-release 2 on Fabric.
+Fixed a crash when the holographic placement preview draws its edges with improved transparency enabled.
 
 ## Complete Feature List
 

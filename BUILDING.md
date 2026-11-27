@@ -31,7 +31,7 @@ Modules follow the `versions/<loader>-<minecraft-version>` naming convention.
 | `versions/fabric-26.1` | Fabric | 26.1 | `Facet-Fabric-<mod-version>-26.1.jar` |
 | `versions/fabric-26.2` | Fabric | 26.2 | `Facet-Fabric-<mod-version>-26.2.jar` |
 | `versions/fabric-26.3` | Fabric | 26.3 | `Facet-Fabric-<mod-version>-26.3.jar` |
-| `versions/fabric-26.4-pre-1` | Fabric | 26.4 Pre-release 1 | `Facet-Fabric-<mod-version>-26.4-pre-1.jar` |
+| `versions/fabric-26.4-pre-2` | Fabric | 26.4 Pre-release 2 | `Facet-Fabric-<mod-version>-26.4-pre-2.jar` |
 | `versions/neoforge-26.1` | NeoForge | 26.1 | `Facet-NeoForge-<mod-version>-26.1.jar` |
 | `versions/neoforge-26.1.2` | NeoForge | 26.1.2 | `Facet-NeoForge-<mod-version>-26.1.2.jar` |
 | `versions/neoforge-26.2` | NeoForge | 26.2 | `Facet-NeoForge-<mod-version>-26.2.jar` |
@@ -114,20 +114,22 @@ allowed resource loading and Facet model baking to finish. Restore that local
 setting after diagnosis. The project does not disable the loading window in
 published JARs. Default startup did not complete on this macOS setup.
 
-## Fabric 26.4 Pre-release 1 Preview
+## Fabric 26.4 Pre-release 2 Preview
 
 Use Java 25 to run Gradle. If the default Java installation is newer, set
 `JAVA_HOME` explicitly, for example on macOS:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-pre-1:build
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-pre-1:runClient
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-pre-2:build
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew -PincludeSnapshots=true :versions:fabric-26.4-pre-2:runClient
 ```
 
 This target uses vanilla `MaterialBaker`, `ModelManager`, `SectionCompiler`, and
 `ModelBlockRenderer` hooks. Fabric API `0.167.1+26.4` still does not include
-Fabric Model Loading API, Fabric Renderer API, or Indigo. Build dependencies
-and minimum runtime requirements are pinned separately in `gradle.properties`.
+Fabric Model Loading API, Fabric Renderer API, or Indigo. This API release is
+listed for Pre-release 1 on Modrinth and was verified locally on Pre-release 2
+with Loader 0.20.1. Build dependencies and minimum runtime requirements are
+pinned separately in `gradle.properties`.
 Preview classes override shared classes only in this target's `sourceSets`.
 Brittle-ice logic and textures stay in this module. Tests reuse the shared
 outline and Fabric 26.2 behavior tests, with preview-specific overrides.
@@ -136,8 +138,8 @@ transparency and the active Fabric render pass for classic transparency.
 Mod Menu is compile-only; it is not installed by `runClient`.
 
 The preview target is not part of the stable release workflow.
-The preview uses `.github/workflows/publish-preview-26.4-pre-1.yml`, triggered
-by annotated tags named `v<mod-version>-mc26.4-pre-1-preview.<number>`.
+The preview uses `.github/workflows/publish-preview-26.4-pre-2.yml`, triggered
+by annotated tags named `v<mod-version>-mc26.4-pre-2-preview.<number>`.
 The workflow publishes one main JAR and its SHA-256 manifest to a GitHub
 prerelease, then publishes the same JAR to Modrinth as Alpha. Manual recovery
 requires an existing preview tag and explicit destination selection. Both
